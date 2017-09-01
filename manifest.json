@@ -1,0 +1,20 @@
+{
+	"content_security_policy": "script-src 'self'; object-src 'self'",
+	"content_scripts": [
+		{
+		"matches": [ "*://*.pardus.at/building_trade.php*" ],
+		"js": [ "building.js" ],
+		"all_frames": true
+		}
+		],
+	"description": "User trade interface enhancements for the online game Pardus",
+	"manifest_version": 2,
+	"minimum_chrome_version": "28",
+	"name": "Pardus Copilot",
+	"permissions": [ "storage", "*://*.pardus.at/*" ],
+	"version": "0.05",
+	"browser_action": {
+		"default_title": "Trade info",
+		"default_popup": "popup.html"
+	}
+}
