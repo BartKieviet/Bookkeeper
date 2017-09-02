@@ -45,7 +45,7 @@ function onGameMessage( event ) {
 	time = data.time;
 	amount = data.amount;
 }
-	
+
 function Building(loc,owner,res_upkeep,res_production,amount,amount_max,amount_min,buy_price, sell_price,time) {
 	this.loc = loc;
 	this.owner = "tbd";
@@ -60,13 +60,13 @@ function Building(loc,owner,res_upkeep,res_production,amount,amount_max,amount_m
   /*this.greeting = function() {
     alert('Hi! I\'m ' + this.name + '.');
   };*/
-  
+
 }
 
 function addTrackerButtons() {
 	// We add track/untrack buttons on the trade screen.
 	var transferButton = findTransferButton();
-	
+
 	function addButton(name,listener) {
 		//Adds button below the quickbuttons.
 		//Initially there were two, I decided a single track/untrack button was more elegant.
@@ -80,7 +80,7 @@ function addTrackerButtons() {
 		transferButton.parentNode.appendChild(document.createElement('br'));
 		transferButton.parentNode.appendChild(new_button);
 	}
-	
+
 	addButton('Clear',clear);
 	chrome.storage.local.get("buildingList",addTracker)
 	function addTracker(data) {
@@ -91,7 +91,7 @@ function addTrackerButtons() {
 			addButton('Track',buildingTracker);
 		}
 	}
-	
+
 }
 
 function clear() {
@@ -108,7 +108,7 @@ function checkBuildingSaved(data) {
 				index = i;
 			}
 		}
-	
+
 	}
 	// Returns true if we have data of the building.
 	console.log(saved);
@@ -127,7 +127,7 @@ function toggleButton(btn) {
 function buildingTracker() {
 	if (this.value === "Track") {
 		chrome.storage.local.get("buildingList",addBuilding)
-		
+
 		function addBuilding(data) {
 			//We're adding a building to the tracker here.
 			//So first check if we have a list at all. Not sure if this is really required.
@@ -139,18 +139,18 @@ function buildingTracker() {
 			else {
 				if (!checkBuildingSaved(data)[0]) {
 					data.buildingList.push(userloc);
-					chrome.storage.local.set({"buildingList":data.buildingList});					
+					chrome.storage.local.set({"buildingList":data.buildingList});
 				}
-			
+
 			}
 			// You pressed track so you get all the stuffz saved. Owner is not yet there, saving some space anyway.
 			saveBuilding();
 		}
 	}
-	
+
 	else {
 		chrome.storage.local.get("buildingList",removeBuilding);
-		function removeBuilding(data) {	
+		function removeBuilding(data) {
 			data.buildingList.splice(checkBuildingSaved(data)[1],1);
 			chrome.storage.local.remove("building"+userloc.toString())
 			chrome.storage.local.set({"buildingList":data.buildingList});
@@ -161,7 +161,7 @@ function buildingTracker() {
 
 function findTransferButton() {
 	// Function finds the transfer button since Pardus sadly gave it
-	// neither ID nor name, so we have to check all input elements for 
+	// neither ID nor name, so we have to check all input elements for
 	// the value '<- Transfer ->'
 	var inputs = document.getElementsByTagName("input");
 	var transferButton;
@@ -176,10 +176,10 @@ function findTransferButton() {
 function saveBuilding() {
 	var buildingData = new Building(userloc,"",res_upkeep,res_production,amount,amount_max,amount_min,buy_price, sell_price,time);
 	var buildingId = "building" + userloc.toString();
-	console.log(buildingData);
-	chrome.storage.local.set({buildingId:JSON.stringify(buildingData).toString()});
-	console.log(buildingId);
-	console.log(JSON.stringify(buildingData));
+	var items = new Object();
+	items[buildingId] = JSON.stringify(buildingData);
+	console.log('saveBuilding', items);
+	chrome.storage.local.set(items);
 }
 
 configure();
@@ -187,6 +187,6 @@ addTrackerButtons();
 
 // TO DO
 // Automatic saving if tracked.
-// 
+//
 
 })();
