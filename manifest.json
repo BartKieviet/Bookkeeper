@@ -5,6 +5,11 @@
 		"matches": [ "*://*.pardus.at/building_trade.php*" ],
 		"js": [ "building.js" ],
 		"all_frames": true
+		},
+		{
+		"matches": [ "*://*.pardus.at/overview_buildings.php*" ],
+		"js": [ "overview.js" ],
+		"all_frames": true
 		}
 		],
 	"description": "User trade interface enhancements for the online game Pardus",
@@ -12,7 +17,7 @@
 	"minimum_chrome_version": "28",
 	"name": "Pardus Copilot",
 	"permissions": [ "storage", "*://*.pardus.at/*" ],
-	"version": "0.05",
+	"version": "0.07",
 	"browser_action": {
 		"default_title": "Trade info",
 		"default_popup": "popup.html"

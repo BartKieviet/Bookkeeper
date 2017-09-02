@@ -17,7 +17,7 @@ function configure() {
 		amount_min:typeof(amount_min)=='undefined'?null:amount_min,\
 		player_buy_price:typeof(player_buy_price)=='undefined'?null:player_buy_price,\
 		player_sell_price:typeof(player_sell_price)=='undefined'?null:player_sell_price,\
-		time:typeof(millitime)=='undefined'?null:milliTime,\
+		time:typeof(milliTime)=='undefined'?null:milliTime,\
 		amount:typeof(amount)=='undefined'?null:amount,\
 		},window.location.origin);};if(typeof(addUserFunction)=='function')addUserFunction(fn);fn();})();";
 		document.body.appendChild( script );
@@ -176,7 +176,9 @@ function findTransferButton() {
 function saveBuilding() {
 	var buildingData = new Building(userloc,"",res_upkeep,res_production,amount,amount_max,amount_min,buy_price, sell_price,time);
 	var buildingId = "building" + userloc.toString();
-	chrome.storage.local.set({buildingId:JSON.stringify(buildingData)});
+	console.log(buildingData);
+	chrome.storage.local.set({buildingId:JSON.stringify(buildingData).toString()});
+	console.log(buildingId);
 	console.log(JSON.stringify(buildingData));
 }
 
