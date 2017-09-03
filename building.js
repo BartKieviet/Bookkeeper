@@ -185,8 +185,4 @@ function saveBuilding() {
 configure();
 addTrackerButtons();
 
-// TO DO
-// Automatic saving if tracked.
-//
-
 })();

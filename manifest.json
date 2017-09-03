@@ -17,7 +17,7 @@
 	"minimum_chrome_version": "28",
 	"name": "Pardus Copilot",
 	"permissions": [ "storage", "*://*.pardus.at/*" ],
-	"version": "0.07",
+	"version": "1.00",
 	"browser_action": {
 		"default_title": "Trade info",
 		"default_popup": "popup.html"
