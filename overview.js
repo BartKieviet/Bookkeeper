@@ -39,7 +39,7 @@ function showOverview(data) {
 		
 		function addBuildingData(data) {
 			var building = JSON.parse(data[buildingId]);
-			console.log(building);
+			//console.log(building);
 			var counter = 0;
 			for (var res in building.amount) {
 				// add empty cells if next commodity is not next in the list.
