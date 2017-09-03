@@ -81,7 +81,7 @@ function addTrackerButtons() {
 		transferButton.parentNode.appendChild(new_button);
 	}
 
-	addButton('Clear',clear);
+	//addButton('Clear',clear);
 	chrome.storage.local.get("buildingList",addTracker)
 	function addTracker(data) {
 		if (checkBuildingSaved(data)[0]) {
@@ -93,10 +93,10 @@ function addTrackerButtons() {
 	}
 
 }
-
+/*
 function clear() {
 	chrome.storage.local.clear();
-}
+}*/
 
 function checkBuildingSaved(data) {
 	var index;
@@ -111,7 +111,7 @@ function checkBuildingSaved(data) {
 
 	}
 	// Returns true if we have data of the building.
-	console.log(saved);
+	//console.log(saved);
 	return [saved, index];
 }
 
@@ -178,7 +178,7 @@ function saveBuilding() {
 	var buildingId = "building" + userloc.toString();
 	var items = new Object();
 	items[buildingId] = JSON.stringify(buildingData);
-	console.log('saveBuilding', items);
+	//console.log('saveBuilding', items);
 	chrome.storage.local.set(items);
 }
 
