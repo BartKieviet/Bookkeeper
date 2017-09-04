@@ -3,6 +3,8 @@
 //Global variables.
 var configured = false;
 var userloc, res_upkeep, res_production, amount_max, amount_min, buy_price, sell_price, time, amount;
+var universe = getUniverse();
+var buildingListId = universe + buildingListId;
 
 function configure() {
 	if (!configured) {
@@ -82,7 +84,7 @@ function addTrackerButtons() {
 	}
 
 	//addButton('Clear',clear);
-	chrome.storage.local.get("buildingList",addTracker)
+	chrome.storage.local.get(buildingListId,addTracker)
 	function addTracker(data) {
 		if (checkBuildingSaved(data)[0]) {
 			saveBuilding();
@@ -101,9 +103,9 @@ function clear() {
 function checkBuildingSaved(data) {
 	var index;
 	var saved = false;
-	if (!!data.buildingList) {
-		for (var i = 0; i < data.buildingList.length; i++) {
-			if (data.buildingList[i] === userloc) {
+	if (!!data[buildingListId]) {
+		for (var i = 0; i < data[buildingListId]length; i++) {
+			if (data[buildingListId][i] === userloc) {
 				saved = true;
 				index = i;
 			}
@@ -126,34 +128,34 @@ function toggleButton(btn) {
 
 function buildingTracker() {
 	if (this.value === "Track") {
-		chrome.storage.local.get("buildingList",addBuilding)
+		chrome.storage.local.get(buildingListId,addBuilding)
 
 		function addBuilding(data) {
 			//We're adding a building to the tracker here.
 			//So first check if we have a list at all. Not sure if this is really required.
-			if (!data.buildingList) {
+			if (!data[buildingListId]) {
 				var list = [];
 				list[0] = userloc;
-				chrome.storage.local.set({"buildingList":list})
+				chrome.storage.local.set({buildingListId:list})
 			} //If we have a list, we add the building if it's not there yet.
 			else {
 				if (!checkBuildingSaved(data)[0]) {
-					data.buildingList.push(userloc);
-					chrome.storage.local.set({"buildingList":data.buildingList});
+					data[buildingListId].push(userloc);
+					chrome.storage.local.set({buildingListId:data[buildingListId]});
 				}
 
 			}
-			// You pressed track so you get all the stuffz saved. Owner is not yet there, saving some space anyway.
+			// You pressed track so you get all the stuffz saved. Owner is not yet there, reserving some space anyway.
 			saveBuilding();
 		}
 	}
 
 	else {
-		chrome.storage.local.get("buildingList",removeBuilding);
+		chrome.storage.local.get(buildingListId,removeBuilding);
 		function removeBuilding(data) {
-			data.buildingList.splice(checkBuildingSaved(data)[1],1);
-			chrome.storage.local.remove("building"+userloc.toString())
-			chrome.storage.local.set({"buildingList":data.buildingList});
+			data[buildingListId].splice(checkBuildingSaved(data)[1],1);
+			chrome.storage.local.remove(universe+"Building"+userloc.toString())
+			chrome.storage.local.set({buildingListId:data.buildingList});
 		}
 	}
 	toggleButton(this);
@@ -175,7 +177,7 @@ function findTransferButton() {
 
 function saveBuilding() {
 	var buildingData = new Building(userloc,"",res_upkeep,res_production,amount,amount_max,amount_min,buy_price, sell_price,time);
-	var buildingId = "building" + userloc.toString();
+	var buildingId = universe + "Building" + userloc.toString();
 	var items = new Object();
 	items[buildingId] = JSON.stringify(buildingData);
 	//console.log('saveBuilding', items);

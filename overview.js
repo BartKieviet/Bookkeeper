@@ -26,7 +26,7 @@ function showOverview(data) {
 	table.firstChild.lastChild.textContent = "Time updated";
 	
 	//Fill the table.
-	data.buildingList.forEach(addBuilding);
+	data.buildingListId.forEach(addBuilding);
 	function addBuilding (loc) {
 		var row = document.createElement("tr");
 		table.appendChild(row);
@@ -34,7 +34,7 @@ function showOverview(data) {
 		cell.textContent = loc.toString();
 		row.appendChild(cell);
 		
-		var buildingId = "building" + loc.toString();
+		var buildingId = universe + "building" + loc.toString();
 		chrome.storage.local.get(buildingId, addBuildingData);
 		
 		function addBuildingData(data) {
@@ -106,8 +106,9 @@ function timeConverter(UNIX_timestamp){
 	var time = date + ' ' + month + ' ' + year + ' ' + hour + ':' + min + ':' + sec ;
 	return time;
 }
-	
-chrome.storage.local.get("buildingList",showOverview);
+
+var buildingListId = getUniverse() + "BuildingList";
+chrome.storage.local.get(buildingListId,showOverview);
 
 // To do
 // * Make universe specific.

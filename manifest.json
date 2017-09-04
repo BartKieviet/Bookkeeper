@@ -3,12 +3,12 @@
 	"content_scripts": [
 		{
 		"matches": [ "*://*.pardus.at/building_trade.php*" ],
-		"js": [ "building.js" ],
+		"js": [ "functions.js", "building.js" ],
 		"all_frames": true
 		},
 		{
 		"matches": [ "*://*.pardus.at/overview_buildings.php*" ],
-		"js": [ "overview.js" ],
+		"js": [ "functions.js", "overview.js" ],
 		"all_frames": true
 		}
 		],
@@ -17,7 +17,7 @@
 	"minimum_chrome_version": "28",
 	"name": "Pardus Copilot",
 	"permissions": [ "storage", "*://*.pardus.at/*" ],
-	"version": "1.00",
+	"version": "1.1",
 	"browser_action": {
 		"default_title": "Trade info",
 		"default_popup": "popup.html"
