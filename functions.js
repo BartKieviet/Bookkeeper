@@ -1,6 +1,4 @@
 // Contains functions used in both files.
-(function () {
-
 function getUniverse() {
 	var match;
 
@@ -11,4 +9,3 @@ function getUniverse() {
 
 	return null;
 }
-})();

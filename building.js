@@ -4,7 +4,8 @@
 var configured = false;
 var userloc, res_upkeep, res_production, amount_max, amount_min, buy_price, sell_price, time, amount;
 var universe = getUniverse();
-var buildingListId = universe + buildingListId;
+var buildingList = new Object();
+var buildingListId = universe + "BuildingList";
 
 function configure() {
 	if (!configured) {
@@ -95,8 +96,8 @@ function addTrackerButtons() {
 	}
 
 }
-/*
-function clear() {
+
+/*function clear() {
 	chrome.storage.local.clear();
 }*/
 
@@ -104,7 +105,7 @@ function checkBuildingSaved(data) {
 	var index;
 	var saved = false;
 	if (!!data[buildingListId]) {
-		for (var i = 0; i < data[buildingListId]length; i++) {
+		for (var i = 0; i < data[buildingListId].length; i++) {
 			if (data[buildingListId][i] === userloc) {
 				saved = true;
 				index = i;
@@ -136,12 +137,13 @@ function buildingTracker() {
 			if (!data[buildingListId]) {
 				var list = [];
 				list[0] = userloc;
-				chrome.storage.local.set({buildingListId:list})
+				buildingList[buildingListId] = list;
+				chrome.storage.local.set(buildingList)
 			} //If we have a list, we add the building if it's not there yet.
 			else {
 				if (!checkBuildingSaved(data)[0]) {
 					data[buildingListId].push(userloc);
-					chrome.storage.local.set({buildingListId:data[buildingListId]});
+					chrome.storage.local.set(data);
 				}
 
 			}
@@ -155,7 +157,7 @@ function buildingTracker() {
 		function removeBuilding(data) {
 			data[buildingListId].splice(checkBuildingSaved(data)[1],1);
 			chrome.storage.local.remove(universe+"Building"+userloc.toString())
-			chrome.storage.local.set({buildingListId:data.buildingList});
+			chrome.storage.local.set(data);
 		}
 	}
 	toggleButton(this);

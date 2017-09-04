@@ -6,6 +6,8 @@ var res_names = {'1': 'Food', '2': 'Energy', '3': 'Water', '4': 'Animal embryos'
 //, '100': 'Package', '101': 'Faction package', '102': 'Explosives', '103': 'VIP', '104': 'Christmas Glitter', '105': 'Military Explosives', '150': 'Exotic Crystal', '151': 'Feral Egg', '201': 'Human intestines', '202': 'Skaari limbs', '203': 'Keldon brains', '204': 'Rashkir bones', '211': 'Blue Sapphire jewels', '212': 'Ruby jewels', '213': 'Golden Beryl jewels'};
 var res_img = {'1': '//static.pardus.at/img/stdhq/res/food.png', '2': '//static.pardus.at/img/stdhq/res/energy.png', '3': '//static.pardus.at/img/stdhq/res/water.png', '4': '//static.pardus.at/img/stdhq/res/animal_embryos.png', '5': '//static.pardus.at/img/stdhq/res/ore.png', '6': '//static.pardus.at/img/stdhq/res/metal.png', '7': '//static.pardus.at/img/stdhq/res/electronics.png', '8': '//static.pardus.at/img/stdhq/res/robots.png', '9': '//static.pardus.at/img/stdhq/res/heavy-plastics.png', '10': '//static.pardus.at/img/stdhq/res/hand-weapons.png', '11': '//static.pardus.at/img/stdhq/res/medicines.png', '12': '//static.pardus.at/img/stdhq/res/nebula-gas.png', '13': '//static.pardus.at/img/stdhq/res/chemical-supplies.png', '14': '//static.pardus.at/img/stdhq/res/gem-stones.png', '15': '//static.pardus.at/img/stdhq/res/liquor.png', '16': '//static.pardus.at/img/stdhq/res/hydrogen-fuel.png', '17': '//static.pardus.at/img/stdhq/res/exotic_matter.png', '18': '//static.pardus.at/img/stdhq/res/optical_components.png', '19': '//static.pardus.at/img/stdhq/res/radioactive_cells.png', '20': '//static.pardus.at/img/stdhq/res/droid_modules.png', '21': '//static.pardus.at/img/stdhq/res/biowaste.png', '22': '//static.pardus.at/img/stdhq/res/leech_baby.png', '23': '//static.pardus.at/img/stdhq/res/nutrient_clods.png', '24': '//static.pardus.at/img/stdhq/res/cybernetic_x993_parts.png', '25': '//static.pardus.at/img/stdhq/res/x993_repairdrone.png', '26': '//static.pardus.at/img/stdhq/res/neural_stimulator.png', '27': '//static.pardus.at/img/stdhq/res/battleweapon_parts.png', '28': '//static.pardus.at/img/stdhq/res/neural_tissue.png', '29': '//static.pardus.at/img/stdhq/res/stim_chip.png', '30': '//static.pardus.at/img/stdhq/res/stim_chip_fed.png', '31': '//static.pardus.at/img/stdhq/res/stim_chip_emp.png', '32': '//static.pardus.at/img/stdhq/res/stim_chip_uni.png', '50': '//static.pardus.at/img/stdhq/res/slaves.png', '51': '//static.pardus.at/img/stdhq/res/drugs.png', '100': '//static.pardus.at/img/stdhq/res/package.png', '101': '//static.pardus.at/img/stdhq/res/package_faction.png', '102': '//static.pardus.at/img/stdhq/res/explosives.png', '103': '//static.pardus.at/img/stdhq/res/vip.png', '104': '//static.pardus.at/img/stdhq/res/christmas_glitter.png', '105': '//static.pardus.at/img/stdhq/res/explosives_military.png', '150': '//static.pardus.at/img/stdhq/res/exotic_crystal.png', '151': '//static.pardus.at/img/stdhq/res/feral_egg.png', '201': '//static.pardus.at/img/stdhq/res/human_intestines.png', '202': '//static.pardus.at/img/stdhq/res/skaari_limbs.png', '203': '//static.pardus.at/img/stdhq/res/keldon_brains.png', '204': '//static.pardus.at/img/stdhq/res/rashkir_bones.png', '211': '//static.pardus.at/img/stdhq/res/jewels_fed.png', '212': '//static.pardus.at/img/stdhq/res/jewels_emp.png', '213': '//static.pardus.at/img/stdhq/res/jewels_uni.png'};
 var credits_img = "<img src='//static.pardus.at/img/stdhq/credits_16x16.png' alt='Credits' width='16' height='16' style='vertical-align: middle;'>";
+var universe = getUniverse();
+var buildingListId = universe + "BuildingList";
 
 function showOverview(data) {
 	var table = document.createElement("table");
@@ -26,7 +28,7 @@ function showOverview(data) {
 	table.firstChild.lastChild.textContent = "Time updated";
 	
 	//Fill the table.
-	data.buildingListId.forEach(addBuilding);
+	data[buildingListId].forEach(addBuilding);
 	function addBuilding (loc) {
 		var row = document.createElement("tr");
 		table.appendChild(row);
@@ -34,7 +36,7 @@ function showOverview(data) {
 		cell.textContent = loc.toString();
 		row.appendChild(cell);
 		
-		var buildingId = universe + "building" + loc.toString();
+		var buildingId = universe + "Building" + loc.toString();
 		chrome.storage.local.get(buildingId, addBuildingData);
 		
 		function addBuildingData(data) {
@@ -106,14 +108,14 @@ function timeConverter(UNIX_timestamp){
 	var time = date + ' ' + month + ' ' + year + ' ' + hour + ':' + min + ':' + sec ;
 	return time;
 }
+//chrome.storage.local.get(null,function (data){console.log(JSON.stringify(data))});
 
-var buildingListId = getUniverse() + "BuildingList";
 chrome.storage.local.get(buildingListId,showOverview);
 
 // To do
-// * Make universe specific.
+// X Make universe specific. -> added on 4 sept '17
 // * Add owner (since it is in the building_trade html).
-// * Add type based on res_upkeep or res_production.
+// * Add type based on res_upkeep or res_production (or from building trade html)
 // * Sum all rows of a single column.
 // * Add building delete button.
 // * Add option to allow own buildings to be added.
