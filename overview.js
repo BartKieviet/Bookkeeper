@@ -33,28 +33,30 @@ function showOverview(data) {
 
 	//Fill the table.
 	data[buildingListId].forEach(addBuilding);
-	function addBuilding (loc) {
-		var row = document.createElement("tr");
+	function addBuilding( loc ) {
+		var row = document.createElement("tr"),
+		    buildingId = universe + "Building" + loc.toString();
+
 		table.appendChild(row);
-		var cell = document.createElement("td");
-		cell.textContent = loc.toString();
-		row.appendChild(cell);
+		chrome.storage.local.get( buildingId, addBuildingData );
 
-		var buildingId = universe + "Building" + loc.toString();
-		chrome.storage.local.get(buildingId, addBuildingData);
+		function addBuildingData( data ) {
+			var building = JSON.parse( data[buildingId] ),
+			    cell;
 
-		function addBuildingData(data) {
-			var building = JSON.parse(data[buildingId]);
+			cell = document.createElement( 'td' );
+			cell.textContent = humanCoords( building );
+			row.appendChild(cell);
 
-			var cell = document.createElement("td");
+			cell = document.createElement( 'td' );
 			cell.textContent = building.owner;
 			row.appendChild(cell);
 
-			var cell = document.createElement("td");
+			cell = document.createElement( 'td' );
 			cell.textContent = building.type;
 			row.appendChild(cell);
 
-			var cell = document.createElement("td");
+			cell = document.createElement( 'td' );
 			cell.textContent = building.level;
 			row.appendChild(cell);
 
@@ -74,12 +76,12 @@ function showOverview(data) {
 
 				if (parseInt(res) > counter) {
 					for (var i = counter; i < parseInt(res); i++) {
-						var cell = document.createElement("td");
+						cell = document.createElement("td");
 						row.appendChild(cell);
 						counter += 1;
 					}
 				}
-				var cell = document.createElement("td");
+				cell = document.createElement("td");
 				// check if res is upkeep or production.
 				// If upkeep we do amount - min, else we do max - amount and make it negative..
 				if (!building.res_upkeep[res]) {
@@ -95,14 +97,14 @@ function showOverview(data) {
 				counter -= 18;
 			}
 			for (var i = counter; i < 34; i++) {
-				var cell = document.createElement("td");
+				cell = document.createElement("td");
 				row.appendChild(cell);
 			}
 
-			var cell = document.createElement("td");
+			cell = document.createElement("td");
 			cell.textContent = timeConverter(building.time);
 			row.appendChild(cell);
-			var cell = document.createElement("td");
+			cell = document.createElement("td");
 			var trash_img = document.createElement("img");
 			trash_img.src = "http://static.pardus.at/img/stdhq/ui_trash.png";
 			trash_img.onclick = function(){removeBuilding(loc,universe); row.style.display="none";};
@@ -115,6 +117,15 @@ function showOverview(data) {
 	table.setAttribute("class" , "messagestyle");
 	table.align = "center"
 	document.getElementsByTagName("h1")[0].parentNode.appendChild(table);
+}
+
+function humanCoords( building ) {
+	if( building.sector ) {
+		return building.sector + ' [' +
+			(typeof building.x == 'number' ? building.x : '?') + ',' +
+			(typeof building.y == 'number' ? building.y : '?') + ']';
+	}
+	return 'need update';
 }
 
 function timeConverter(UNIX_timestamp){
