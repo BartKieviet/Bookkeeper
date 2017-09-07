@@ -47,8 +47,6 @@ function onGameMessage( event ) {
 	sell_price = data.player_sell_price;
 	time = data.time;
 	amount = data.amount;
-	var temp = getLevel();
-	console.log(temp);
 }
 
 function Building(loc,owner,res_upkeep,res_production,amount,amount_max,amount_min,buy_price, sell_price, time, type, level) {
