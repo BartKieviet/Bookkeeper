@@ -16,6 +16,9 @@ function showOverview(data) {
 	//Make the header.
 	table.firstChild.appendChild(document.createElement("td"));
 	table.firstChild.firstChild.textContent = "Location";
+
+	table.firstChild.appendChild(document.createElement("td"));
+	table.firstChild.lastChild.textContent = "Owner";
 	
 	for (var img in res_img) {
 		if (parseInt(img) < 52) {
@@ -41,6 +44,9 @@ function showOverview(data) {
 		
 		function addBuildingData(data) {
 			var building = JSON.parse(data[buildingId]);
+			var cell = document.createElement("td");
+			cell.textContent = building.owner;
+			row.appendChild(cell);
 			//console.log(building);
 			var counter = 0;
 			for (var res in building.amount) {
@@ -85,7 +91,12 @@ function showOverview(data) {
 			var cell = document.createElement("td");
 			cell.textContent = timeConverter(building.time);
 			row.appendChild(cell);
-			
+			var cell = document.createElement("td");
+			var trash_img = document.createElement("img");
+			trash_img.src = "http://static.pardus.at/img/stdhq/ui_trash.png";
+			trash_img.onclick = function(){removeBuilding(loc,universe); row.style.display="none";};
+			cell.appendChild(trash_img);
+			row.appendChild(cell);
 		}
 	}
 	
