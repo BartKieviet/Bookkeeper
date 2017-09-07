@@ -12,17 +12,15 @@ var buildingListId = universe + "BuildingList";
 function showOverview(data) {
 	var table = document.createElement("table");
 	table.appendChild(document.createElement("tr"));
-	
+	var headerList = ["Location","Owner","Type","Level"]
 	//Make the header.
-	table.firstChild.appendChild(document.createElement("td"));
-	table.firstChild.firstChild.textContent = "Location";
-
-	table.firstChild.appendChild(document.createElement("td"));
-	table.firstChild.lastChild.textContent = "Owner";
 	
-	table.firstChild.appendChild(document.createElement("td"));
-	table.firstChild.lastChild.textContent = "Type";
-
+	headerList.forEach(makeHeader);
+	function makeHeader (name) {
+		table.firstChild.appendChild(document.createElement("td"));
+		table.firstChild.lastChild.textContent = name;
+	}
+	//add the commodities
 	for (var img in res_img) {
 		if (parseInt(img) < 52) {
 			var cell = document.createElement("th");
@@ -54,6 +52,10 @@ function showOverview(data) {
 			
 			var cell = document.createElement("td");
 			cell.textContent = building.type;
+			row.appendChild(cell);
+			
+			var cell = document.createElement("td");
+			cell.textContent = building.level;
 			row.appendChild(cell);
 			
 			//console.log(building);

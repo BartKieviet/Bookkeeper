@@ -1,5 +1,5 @@
 (function () {
-	'use strict';
+'use strict';
 //Global variables.
 var configured = false;
 var userloc, res_upkeep, res_production, amount_max, amount_min, buy_price, sell_price, time, amount;
@@ -47,9 +47,11 @@ function onGameMessage( event ) {
 	sell_price = data.player_sell_price;
 	time = data.time;
 	amount = data.amount;
+	var temp = getLevel();
+	console.log(temp);
 }
 
-function Building(loc,owner,res_upkeep,res_production,amount,amount_max,amount_min,buy_price, sell_price,time,type) {
+function Building(loc,owner,res_upkeep,res_production,amount,amount_max,amount_min,buy_price, sell_price, time, type, level) {
 	this.loc = loc;
 	this.owner = owner;
 	this.res_upkeep = res_upkeep;
@@ -61,6 +63,7 @@ function Building(loc,owner,res_upkeep,res_production,amount,amount_max,amount_m
 	this.sell_price = sell_price;
 	this.time = time;
 	this.type = type;
+	this.level = level;
   /*this.greeting = function() {
     alert('Hi! I\'m ' + this.name + '.');
   };*/
@@ -159,7 +162,7 @@ function findTransferButton() {
 function parseInfo() {
 	var tds = document.getElementsByTagName("td");
 	for (var i =0; i<tds.length;i++){
-		// so Pardus has the color for two TDs, pilot and building owner.
+		// so Pardus has this specific color for two TDs, pilot and building owner.
 		if (tds[i].style.color === "rgb(221, 221, 255)"){
 			var nameline = tds[i].firstChild.innerHTML;
 		}
@@ -170,16 +173,49 @@ function parseInfo() {
 	return [owner, type];
 }
 
+function getLevel() {
+	var perCommodity = new Object();
+	var levelEst = new Object();
+	for (var key in amount_max) {
+		perCommodity[key] = parseInt(document.getElementById('baserow'+key).getElementsByTagName("font")[0].innerHTML);
+		if (perCommodity[key] > 0) {
+			levelEst[key] = ((((perCommodity[key] / res_production[key]) - 1) / 0.5) + 1);
+		} else {
+			levelEst[key] = ((((-perCommodity[key] / res_upkeep[key]) - 1) / 0.4) + 1);
+		}
+	}
+	var level = 0;
+	var index = 0;
+	// So thanks to Div we only loop the upkeep.
+	for (var key in res_upkeep) {
+		level += Math.round(levelEst[key]);
+		index += 1;
+	}
+	level = Math.round(level / index);
+	
+	// here we double check it.
+	var levelCheck = 0;
+	for (var key in res_upkeep) {
+		levelCheck += Math.round(res_upkeep[key]*(1+0.4*(level - 1))) + perCommodity[key];
+	}
+
+	if (levelCheck === 0) {
+		
+		
+		
+		return level;
+	}
+}
+
 function saveBuilding() {
-	var buildingData = new Building(userloc,parseInfo()[0],res_upkeep,res_production,amount,amount_max,amount_min,buy_price, sell_price,time,parseInfo()[1]);
+	var buildingData = new Building(userloc,parseInfo()[0],res_upkeep,res_production,amount,amount_max,amount_min,buy_price, sell_price,time,parseInfo()[1],getLevel());
 	var buildingId = universe + "Building" + userloc.toString();
 	var items = new Object();
 	items[buildingId] = JSON.stringify(buildingData);
 	//console.log('saveBuilding', items);
 	chrome.storage.local.set(items);
 }
-parseInfo();
-configure();
-addTrackerButtons();
 
+configure();
+addTrackerButtons(); 
 })();
