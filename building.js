@@ -190,7 +190,7 @@ function getLevel() {
 		index += 1;
 	}
 	level = Math.round(level / index);
-	
+
 	// here we double check it.
 	var levelCheck = 0;
 	for (var key in res_upkeep) {
@@ -198,9 +198,9 @@ function getLevel() {
 	}
 
 	if (levelCheck === 0) {
-		
-		
-		
+
+
+
 		return level;
 	}
 }
@@ -215,5 +215,5 @@ function saveBuilding() {
 }
 
 configure();
-addTrackerButtons(); 
+addTrackerButtons();
 })();
