@@ -1,6 +1,6 @@
 (function (){
 
-//Stolen from Pardus	
+//Stolen from Pardus
 var res_names = {'1': 'Food', '2': 'Energy', '3': 'Water', '4': 'Animal embryos', '5': 'Ore', '6': 'Metal', '7': 'Electronics', '8': 'Robots', '9': 'Heavy plastics', '10': 'Hand weapons', '11': 'Medicines', '12': 'Nebula gas', '13': 'Chemical supplies', '14': 'Gem stones', '15': 'Liquor', '16': 'Hydrogen fuel', '17': 'Exotic matter', '18': 'Optical components', '19': 'Radioactive cells', '20': 'Droid modules', '21': 'Bio-waste', '22': 'Leech baby', '23': 'Nutrient clods', '24': 'Cybernetic X-993 Parts', '25': 'X-993 Repair-Drone', '26': 'Neural Stimulator', '27': 'Battleweapon Parts', '28': 'Neural Tissue', '29': 'Stim Chip', '30': 'Capri Stim', '31': 'Crimson Stim', '32': 'Amber Stim', '50': 'Slaves', '51': 'Drugs'}
 // Below are not used often. Too bad jewel loving stim mills.
 //, '100': 'Package', '101': 'Faction package', '102': 'Explosives', '103': 'VIP', '104': 'Christmas Glitter', '105': 'Military Explosives', '150': 'Exotic Crystal', '151': 'Feral Egg', '201': 'Human intestines', '202': 'Skaari limbs', '203': 'Keldon brains', '204': 'Rashkir bones', '211': 'Blue Sapphire jewels', '212': 'Ruby jewels', '213': 'Golden Beryl jewels'};
@@ -14,7 +14,7 @@ function showOverview(data) {
 	table.appendChild(document.createElement("tr"));
 	var headerList = ["Location","Owner","Type","Level"]
 	//Make the header.
-	
+
 	headerList.forEach(makeHeader);
 	function makeHeader (name) {
 		table.firstChild.appendChild(document.createElement("td"));
@@ -30,7 +30,7 @@ function showOverview(data) {
 	}
 	table.firstChild.appendChild(document.createElement("td"));
 	table.firstChild.lastChild.textContent = "Time updated";
-	
+
 	//Fill the table.
 	data[buildingListId].forEach(addBuilding);
 	function addBuilding (loc) {
@@ -39,25 +39,25 @@ function showOverview(data) {
 		var cell = document.createElement("td");
 		cell.textContent = loc.toString();
 		row.appendChild(cell);
-		
+
 		var buildingId = universe + "Building" + loc.toString();
 		chrome.storage.local.get(buildingId, addBuildingData);
-		
+
 		function addBuildingData(data) {
 			var building = JSON.parse(data[buildingId]);
-			
+
 			var cell = document.createElement("td");
 			cell.textContent = building.owner;
 			row.appendChild(cell);
-			
+
 			var cell = document.createElement("td");
 			cell.textContent = building.type;
 			row.appendChild(cell);
-			
+
 			var cell = document.createElement("td");
 			cell.textContent = building.level;
 			row.appendChild(cell);
-			
+
 			//console.log(building);
 			var counter = 0;
 			for (var res in building.amount) {
@@ -71,7 +71,7 @@ function showOverview(data) {
 				else if (res === "51" && counter < 50) {
 					counter += 19;
 				}
-				
+
 				if (parseInt(res) > counter) {
 					for (var i = counter; i < parseInt(res); i++) {
 						var cell = document.createElement("td");
@@ -90,7 +90,7 @@ function showOverview(data) {
 				}
 				row.appendChild(cell);
 			}
-			
+
 			if (counter > 50) {
 				counter -= 18;
 			}
@@ -98,7 +98,7 @@ function showOverview(data) {
 				var cell = document.createElement("td");
 				row.appendChild(cell);
 			}
-			
+
 			var cell = document.createElement("td");
 			cell.textContent = timeConverter(building.time);
 			row.appendChild(cell);
@@ -110,7 +110,7 @@ function showOverview(data) {
 			row.appendChild(cell);
 		}
 	}
-	
+
 	table.style.background = "url(//static.pardus.at/img/stdhq/bgdark.gif)";
 	table.setAttribute("class" , "messagestyle");
 	table.align = "center"
@@ -141,6 +141,6 @@ chrome.storage.local.get(buildingListId,showOverview);
 // * Sum all rows of a single column.
 // * Add building delete button.
 // * Add option to allow own buildings to be added.
-// * Find a way to convert location number to Sector [x,y]. 
+// * Find a way to convert location number to Sector [x,y].
 
 })();
