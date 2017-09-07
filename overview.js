@@ -20,6 +20,9 @@ function showOverview(data) {
 	table.firstChild.appendChild(document.createElement("td"));
 	table.firstChild.lastChild.textContent = "Owner";
 	
+	table.firstChild.appendChild(document.createElement("td"));
+	table.firstChild.lastChild.textContent = "Type";
+
 	for (var img in res_img) {
 		if (parseInt(img) < 52) {
 			var cell = document.createElement("th");
@@ -44,9 +47,15 @@ function showOverview(data) {
 		
 		function addBuildingData(data) {
 			var building = JSON.parse(data[buildingId]);
+			
 			var cell = document.createElement("td");
 			cell.textContent = building.owner;
 			row.appendChild(cell);
+			
+			var cell = document.createElement("td");
+			cell.textContent = building.type;
+			row.appendChild(cell);
+			
 			//console.log(building);
 			var counter = 0;
 			for (var res in building.amount) {

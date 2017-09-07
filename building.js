@@ -49,9 +49,9 @@ function onGameMessage( event ) {
 	amount = data.amount;
 }
 
-function Building(loc,owner,res_upkeep,res_production,amount,amount_max,amount_min,buy_price, sell_price,time) {
+function Building(loc,owner,res_upkeep,res_production,amount,amount_max,amount_min,buy_price, sell_price,time,type) {
 	this.loc = loc;
-	this.owner = "tbd";
+	this.owner = owner;
 	this.res_upkeep = res_upkeep;
 	this.res_production = res_production;
 	this.amount = amount;
@@ -60,6 +60,7 @@ function Building(loc,owner,res_upkeep,res_production,amount,amount_max,amount_m
 	this.buy_price = buy_price;
 	this.sell_price = sell_price;
 	this.time = time;
+	this.type = type;
   /*this.greeting = function() {
     alert('Hi! I\'m ' + this.name + '.');
   };*/
@@ -155,15 +156,29 @@ function findTransferButton() {
 	return transferButton;
 }
 
+function parseInfo() {
+	var tds = document.getElementsByTagName("td");
+	for (var i =0; i<tds.length;i++){
+		// so Pardus has the color for two TDs, pilot and building owner.
+		if (tds[i].style.color === "rgb(221, 221, 255)"){
+			var nameline = tds[i].firstChild.innerHTML;
+		}
+	}
+	nameline = nameline.split(/'s /);
+	var owner = nameline[0];
+	var type = nameline[1];
+	return [owner, type];
+}
+
 function saveBuilding() {
-	var buildingData = new Building(userloc,"",res_upkeep,res_production,amount,amount_max,amount_min,buy_price, sell_price,time);
+	var buildingData = new Building(userloc,parseInfo()[0],res_upkeep,res_production,amount,amount_max,amount_min,buy_price, sell_price,time,parseInfo()[1]);
 	var buildingId = universe + "Building" + userloc.toString();
 	var items = new Object();
 	items[buildingId] = JSON.stringify(buildingData);
 	//console.log('saveBuilding', items);
 	chrome.storage.local.set(items);
 }
-
+parseInfo();
 configure();
 addTrackerButtons();
 
