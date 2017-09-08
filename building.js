@@ -178,35 +178,32 @@ function parseInfo() {
 function getLevel() {
 	var perCommodity = new Object();
 	var levelEst = new Object();
+	var level = 0;
+	
 	for (var key in amount_max) {
 		perCommodity[key] = parseInt(document.getElementById('baserow'+key).getElementsByTagName("font")[0].innerHTML);
 		if (perCommodity[key] > 0) {
 			levelEst[key] = ((((perCommodity[key] / res_production[key]) - 1) / 0.5) + 1);
 		} else {
 			levelEst[key] = ((((-perCommodity[key] / res_upkeep[key]) - 1) / 0.4) + 1);
+			// So thanks to Div we only take the upkeep for level determination.
+			level += levelEst[key];
 		}
 	}
-	var level = 0;
-	var index = 0;
-	// So thanks to Div we only loop the upkeep.
-	for (var key in res_upkeep) {
-		level += Math.round(levelEst[key]);
-		index += 1;
-	}
-	level = Math.round(level / index);
+	
+	// The average of the estimated levels is most likely correct.
+	level = Math.round(level / Object.keys(res_upkeep).length);
 
-	// here we double check it.
+	// here we double check the level by calculating the upkeep.
 	var levelCheck = 0;
 	for (var key in res_upkeep) {
 		levelCheck += Math.round(res_upkeep[key]*(1+0.4*(level - 1))) + perCommodity[key];
 	}
 
 	if (levelCheck === 0) {
-
-
-
+		
 		return level;
-	}
+	} 
 }
 
 function saveBuilding() {
