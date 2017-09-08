@@ -209,6 +209,8 @@ function showOverviewBuildings( buildingData ) {
 	}
 
 	addTH( tr, 'Updated' );
+	addTH( tr, 'Ticks' );
+	
 	addTH( tr, '' ); // the bin icon column
 	table.appendChild( tr );
 
@@ -253,6 +255,8 @@ function showOverviewBuildings( buildingData ) {
 			removeBuilding( building.loc, universe );
 			row.style.display = "none";
 		};
+		
+		addTD( tr, numberOfTicks( building ).toString() );
 		addTD( tr, img );
 		table.appendChild( tr );
 	}
@@ -320,6 +324,21 @@ function humanCoords( building ) {
 			(typeof building.y == 'number' ? building.y : '?') + ']';
 	}
 	return 'need update';
+}
+
+function numberOfTicks( building ) { 
+	var minAmount = 9999;
+	var minKey = "0";
+	
+	for (var key in building.res_upkeep) {
+		if (building.amount[key]/building.res_upkeep[key] < minAmount) {
+			minAmount = building.amount[key];
+			minKey = key;
+		}
+	}
+	var tickAmount = ((building.level - 1) * 0.4 + 1) * building.res_upkeep[minKey];
+	var ticks = Math.floor(minAmount / tickAmount);
+	return ticks;
 }
 
 //chrome.storage.local.get(null,function (data){console.log(JSON.stringify(data))});
