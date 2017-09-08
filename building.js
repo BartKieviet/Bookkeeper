@@ -181,7 +181,8 @@ function getLevel() {
 	var level = 0;
 	
 	for (var key in amount_max) {
-		perCommodity[key] = parseInt(document.getElementById('baserow'+key).getElementsByTagName("font")[0].innerHTML);
+		var fontList = document.getElementById('baserow'+key).getElementsByTagName("font");
+		perCommodity[key] = parseInt(fontList[fontList.length-1].innerHTML);
 		if (perCommodity[key] > 0) {
 			levelEst[key] = ((((perCommodity[key] / res_production[key]) - 1) / 0.5) + 1);
 		} else {
