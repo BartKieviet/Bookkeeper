@@ -203,7 +203,14 @@ function getLevel() {
 	if (levelCheck === 0) {
 		
 		return level;
-	} 
+	} else {
+		console.log(level);
+		console.log(levelCheck);
+		console.log(levelEst);
+		console.log(Object.keys(res_upkeep).length);
+		console.log(perCommodity);
+	}
+	
 }
 
 function saveBuilding() {
