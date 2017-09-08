@@ -207,6 +207,7 @@ function showOverviewBuildings( buildingData ) {
 		img.title = commodity.n;
 		addTH( tr, img );
 	}
+
 	addTH( tr, 'Updated' );
 	addTH( tr, '' ); // the bin icon column
 	table.appendChild( tr );
@@ -216,7 +217,7 @@ function showOverviewBuildings( buildingData ) {
 		building = buildingData[ key ];
 		tr = document.createElement( 'tr' );
 
-		addTD( tr, String(building.loc) );
+		addTD( tr, humanCoords( building ) );
 		addTD( tr, building.owner || 'need update' );
 		if( building.type ) {
 			cell = addTD( tr, BUILDING_SHORTNAMES[building.type] || building.type );
@@ -310,6 +311,15 @@ function makeTimeTD( timestamp ) {
 		n = String(n);
 		return n.length < 2 ? '0' + n : n;
 	}
+}
+
+function humanCoords( building ) {
+	if( building.sector ) {
+		return building.sector + ' [' +
+			(typeof building.x == 'number' ? building.x : '?') + ',' +
+			(typeof building.y == 'number' ? building.y : '?') + ']';
+	}
+	return 'need update';
 }
 
 //chrome.storage.local.get(null,function (data){console.log(JSON.stringify(data))});

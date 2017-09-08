@@ -2,16 +2,21 @@
 	"content_security_policy": "script-src 'self'; object-src 'self'",
 	"content_scripts": [
 		{
-		"matches": [ "*://*.pardus.at/building_trade.php*" ],
-		"js": [ "functions.js", "building.js" ],
-		"all_frames": true
+			"matches": [ "*://*.pardus.at/building_trade.php*" ],
+			"js": [ "functions.js", "building.js" ],
+			"all_frames": true
 		},
 		{
-		"matches": [ "*://*.pardus.at/overview_buildings.php*" ],
-		"js": [ "functions.js", "overview.js" ],
-		"all_frames": true
+			"matches": [ "*://*.pardus.at/overview_buildings.php*" ],
+			"js": [ "functions.js", "overview.js" ],
+			"all_frames": true
+		},
+		{
+			"matches": [ "*://*.pardus.at/main.php*" ],
+			"js": [ "nav.js" ],
+			"all_frames": true
 		}
-		],
+	],
 	"description": "User trade interface enhancements for the online game Pardus",
 	"manifest_version": 2,
 	"minimum_chrome_version": "28",

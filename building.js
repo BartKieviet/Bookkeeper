@@ -49,7 +49,11 @@ function onGameMessage( event ) {
 	amount = data.amount;
 }
 
-function Building(loc,owner,res_upkeep,res_production,amount,amount_max,amount_min,buy_price, sell_price, time, type, level) {
+function Building( sector, x, y, loc, owner, res_upkeep, res_production, amount,
+		   amount_max, amount_min, buy_price, sell_price, time, type, level ) {
+	this.sector = sector;
+	this.x = x;
+	this.y = y;
 	this.loc = loc;
 	this.owner = owner;
 	this.res_upkeep = res_upkeep;
@@ -190,7 +194,7 @@ function getLevel() {
 		index += 1;
 	}
 	level = Math.round(level / index);
-	
+
 	// here we double check it.
 	var levelCheck = 0;
 	for (var key in res_upkeep) {
@@ -198,15 +202,24 @@ function getLevel() {
 	}
 
 	if (levelCheck === 0) {
-		
-		
-		
+
+
+
 		return level;
 	}
 }
 
 function saveBuilding() {
-	var buildingData = new Building(userloc,parseInfo()[0],res_upkeep,res_production,amount,amount_max,amount_min,buy_price, sell_price,time,parseInfo()[1],getLevel());
+	// Get the current sector and coords
+	chrome.storage.local.get( ['sector', 'x', 'y'], finishSaveBuilding);
+}
+
+function finishSaveBuilding( cfg_data ) {
+	var buildingData = new Building(
+		cfg_data.sector, cfg_data.x, cfg_data.y,
+		userloc, parseInfo()[0], res_upkeep, res_production,
+		amount, amount_max, amount_min,
+		buy_price, sell_price, time, parseInfo()[1],getLevel() );
 	var buildingId = universe + "Building" + userloc.toString();
 	var items = new Object();
 	items[buildingId] = JSON.stringify(buildingData);
@@ -215,5 +228,5 @@ function saveBuilding() {
 }
 
 configure();
-addTrackerButtons(); 
+addTrackerButtons();
 })();
