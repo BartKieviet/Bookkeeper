@@ -1,135 +1,317 @@
 (function (){
 
-//Stolen from Pardus
-var res_names = {'1': 'Food', '2': 'Energy', '3': 'Water', '4': 'Animal embryos', '5': 'Ore', '6': 'Metal', '7': 'Electronics', '8': 'Robots', '9': 'Heavy plastics', '10': 'Hand weapons', '11': 'Medicines', '12': 'Nebula gas', '13': 'Chemical supplies', '14': 'Gem stones', '15': 'Liquor', '16': 'Hydrogen fuel', '17': 'Exotic matter', '18': 'Optical components', '19': 'Radioactive cells', '20': 'Droid modules', '21': 'Bio-waste', '22': 'Leech baby', '23': 'Nutrient clods', '24': 'Cybernetic X-993 Parts', '25': 'X-993 Repair-Drone', '26': 'Neural Stimulator', '27': 'Battleweapon Parts', '28': 'Neural Tissue', '29': 'Stim Chip', '30': 'Capri Stim', '31': 'Crimson Stim', '32': 'Amber Stim', '50': 'Slaves', '51': 'Drugs'}
-// Below are not used often. Too bad jewel loving stim mills.
-//, '100': 'Package', '101': 'Faction package', '102': 'Explosives', '103': 'VIP', '104': 'Christmas Glitter', '105': 'Military Explosives', '150': 'Exotic Crystal', '151': 'Feral Egg', '201': 'Human intestines', '202': 'Skaari limbs', '203': 'Keldon brains', '204': 'Rashkir bones', '211': 'Blue Sapphire jewels', '212': 'Ruby jewels', '213': 'Golden Beryl jewels'};
-var res_img = {'1': '//static.pardus.at/img/stdhq/res/food.png', '2': '//static.pardus.at/img/stdhq/res/energy.png', '3': '//static.pardus.at/img/stdhq/res/water.png', '4': '//static.pardus.at/img/stdhq/res/animal_embryos.png', '5': '//static.pardus.at/img/stdhq/res/ore.png', '6': '//static.pardus.at/img/stdhq/res/metal.png', '7': '//static.pardus.at/img/stdhq/res/electronics.png', '8': '//static.pardus.at/img/stdhq/res/robots.png', '9': '//static.pardus.at/img/stdhq/res/heavy-plastics.png', '10': '//static.pardus.at/img/stdhq/res/hand-weapons.png', '11': '//static.pardus.at/img/stdhq/res/medicines.png', '12': '//static.pardus.at/img/stdhq/res/nebula-gas.png', '13': '//static.pardus.at/img/stdhq/res/chemical-supplies.png', '14': '//static.pardus.at/img/stdhq/res/gem-stones.png', '15': '//static.pardus.at/img/stdhq/res/liquor.png', '16': '//static.pardus.at/img/stdhq/res/hydrogen-fuel.png', '17': '//static.pardus.at/img/stdhq/res/exotic_matter.png', '18': '//static.pardus.at/img/stdhq/res/optical_components.png', '19': '//static.pardus.at/img/stdhq/res/radioactive_cells.png', '20': '//static.pardus.at/img/stdhq/res/droid_modules.png', '21': '//static.pardus.at/img/stdhq/res/biowaste.png', '22': '//static.pardus.at/img/stdhq/res/leech_baby.png', '23': '//static.pardus.at/img/stdhq/res/nutrient_clods.png', '24': '//static.pardus.at/img/stdhq/res/cybernetic_x993_parts.png', '25': '//static.pardus.at/img/stdhq/res/x993_repairdrone.png', '26': '//static.pardus.at/img/stdhq/res/neural_stimulator.png', '27': '//static.pardus.at/img/stdhq/res/battleweapon_parts.png', '28': '//static.pardus.at/img/stdhq/res/neural_tissue.png', '29': '//static.pardus.at/img/stdhq/res/stim_chip.png', '30': '//static.pardus.at/img/stdhq/res/stim_chip_fed.png', '31': '//static.pardus.at/img/stdhq/res/stim_chip_emp.png', '32': '//static.pardus.at/img/stdhq/res/stim_chip_uni.png', '50': '//static.pardus.at/img/stdhq/res/slaves.png', '51': '//static.pardus.at/img/stdhq/res/drugs.png', '100': '//static.pardus.at/img/stdhq/res/package.png', '101': '//static.pardus.at/img/stdhq/res/package_faction.png', '102': '//static.pardus.at/img/stdhq/res/explosives.png', '103': '//static.pardus.at/img/stdhq/res/vip.png', '104': '//static.pardus.at/img/stdhq/res/christmas_glitter.png', '105': '//static.pardus.at/img/stdhq/res/explosives_military.png', '150': '//static.pardus.at/img/stdhq/res/exotic_crystal.png', '151': '//static.pardus.at/img/stdhq/res/feral_egg.png', '201': '//static.pardus.at/img/stdhq/res/human_intestines.png', '202': '//static.pardus.at/img/stdhq/res/skaari_limbs.png', '203': '//static.pardus.at/img/stdhq/res/keldon_brains.png', '204': '//static.pardus.at/img/stdhq/res/rashkir_bones.png', '211': '//static.pardus.at/img/stdhq/res/jewels_fed.png', '212': '//static.pardus.at/img/stdhq/res/jewels_emp.png', '213': '//static.pardus.at/img/stdhq/res/jewels_uni.png'};
+// Data taken from Pardus. 'i' is the icon, minus the image pack prefix and the
+// .png suffix. 'n' is the proper name of a commodity.
+
+var COMMODITIES = {
+	1: { i: 'food',
+	     n: 'Food' },
+	2: { i: 'energy',
+	     n: 'Energy' },
+	3: { i: 'water',
+	     n: 'Water' },
+	4: { i: 'animal_embryos',
+	     n: 'Animal embryos' },
+	5: { i: 'ore',
+	     n: 'Ore' },
+	6: { i: 'metal',
+	     n: 'Metal' },
+	7: { i: 'electronics',
+	     n: 'Electronics' },
+	8: { i: 'robots',
+	     n: 'Robots' },
+	9: { i: 'heavy-plastics',
+	     n: 'Heavy plastics' },
+	10: { i: 'hand-weapons',
+	      n: 'Hand weapons' },
+	11: { i: 'medicines',
+	      n: 'Medicines' },
+	12: { i: 'nebula-gas',
+	      n: 'Nebula gas' },
+	13: { i: 'chemical-supplies',
+	      n: 'Chemical supplies' },
+	14: { i: 'gem-stones',
+	      n: 'Gem stones' },
+	15: { i: 'liquor',
+	      n: 'Liquor' },
+	16: { i: 'hydrogen-fuel',
+	      n: 'Hydrogen fuel' },
+	17: { i: 'exotic_matter',
+	      n: 'Exotic matter' },
+	18: { i: 'optical_components',
+	      n: 'Optical components' },
+	19: { i: 'radioactive_cells',
+	      n: 'Radioactive cells' },
+	20: { i: 'droid_modules',
+	      n: 'Droid modules' },
+	21: { i: 'biowaste',
+	      n: 'Bio-waste' },
+	22: { i: 'leech_baby',
+	      n: 'Leech baby' },
+	23: { i: 'nutrient_clods',
+	      n: 'Nutrient clods' },
+	24: { i: 'cybernetic_x993_parts',
+	      n: 'Cybernetic X-993 Parts' },
+	25: { i: 'x993_repairdrone',
+	      n: 'X-993 Repair-Drone' },
+	26: { i: 'neural_stimulator',
+	      n: 'Neural Stimulator' },
+	27: { i: 'battleweapon_parts',
+	      n: 'Battleweapon Parts' },
+	28: { i: 'neural_tissue',
+	      n: 'Neural Tissue' },
+	29: { i: 'stim_chip',
+	      n: 'Stim Chip' },
+	30: { i: 'stim_chip_fed',
+	      n: 'Capri Stim' },
+	31: { i: 'stim_chip_emp',
+	      n: 'Crimson Stim' },
+	32: { i: 'stim_chip_uni',
+	      n: 'Amber Stim' },
+	50: { i: 'slaves',
+	      n: 'Slaves' },
+	51: { i: 'drugs',
+	      n: 'Drugs' },
+	100: { i: 'package',
+	       n: 'Package' },
+	101: { i: 'package_faction',
+	       n: 'Faction package' },
+	102: { i: 'explosives',
+	       n: 'Explosives' },
+	103: { i: 'vip',
+	       n: 'VIP' },
+	104: { i: 'christmas_glitter',
+	       n: 'Christmas Glitter' },
+	105: { i: 'explosives_military',
+	       n: 'Military Explosives' },
+	150: { i: 'exotic_crystal',
+	       n: 'Exotic Crystal' },
+	151: { i: 'feral_egg',
+	       n: 'Feral Egg' },
+	201: { i: 'human_intestines',
+	       n: 'Human intestines' },
+	202: { i: 'skaari_limbs',
+	       n: 'Skaari limbs' },
+	203: { i: 'keldon_brains',
+	       n: 'Keldon brains' },
+	204: { i: 'rashkir_bones',
+	       n: 'Rashkir bones' },
+	211: { i: 'jewels_fed',
+	       n: 'Blue Sapphire jewels' },
+	212: { i: 'jewels_emp',
+	       n: 'Ruby jewels' },
+	213: { i: 'jewels_uni',
+	       n: 'Golden Beryl jewels' }
+};
+// This is handy to preserve order
+var COMMODITY_INDICES = Object.keys( COMMODITIES ).sort( compareAsInt );
+
+var BUILDING_SHORTNAMES = {
+	'Alliance Command Station': 'ACS',
+	'Asteroid Mine': 'AM',
+	'Battleweapons Factory': 'BWF',
+	'Brewery': 'Brew',
+	'Chemical Laboratory': 'CL',
+	'Clod Generator': 'Clod',
+	'Dark Dome': 'Dome',
+	'Droid Assembly Complex': 'DAC',
+	'Drug Station': 'DS',
+	'Electronics Facility': 'EF',
+	'Energy Well': 'Ewell',
+	'Fuel Collector': 'FC',
+	'Gas Collector': 'GC',
+	'Handweapons Factory': 'HWF',
+	'Leech Nursery': 'Leech',
+	'Medical Laboratory': 'ML',
+	'Nebula Plant': 'NP',
+	'Neural Laboratory': 'Neur',
+	'Optics Research Center': 'ORC',
+	'Plastics Facility': 'PF',
+	'Radiation Collector': 'RC',
+	'Recyclotron': 'Recyc',
+	'Robots Factory': 'RF',
+	'Slave Camp': 'SC',
+	'Smelting Facility': 'Smelt',
+	'Space Farm': 'Farm',
+	'Stim Chip Mill': 'SCM'
+};
+
+var WEEKDAYS = [ 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat' ];
+var MONTHS = [ 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+	       'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec' ];
+
+function compareAsInt( a, b ) {
+	return parseInt(a) - parseInt(b);
+}
+
 var credits_img = "<img src='//static.pardus.at/img/stdhq/credits_16x16.png' alt='Credits' width='16' height='16' style='vertical-align: middle;'>";
 var universe = getUniverse();
 var buildingListId = universe + "BuildingList";
 
-function showOverview(data) {
-	var table = document.createElement("table");
-	table.appendChild(document.createElement("tr"));
-	var headerList = ["Location","Owner","Type","Level"]
-	//Make the header.
+function showOverview( data ) {
+	// Data contains a property named as the contents of the buildingListId
+	// variable.  This is an array of location IDs of every building tracked.
+	var buildingList = data[ buildingListId ],
+	    prefix = universe + "Building",
+	    buildingKeys = [],
+	    i, end;
 
-	headerList.forEach(makeHeader);
-	function makeHeader (name) {
-		table.firstChild.appendChild(document.createElement("td"));
-		table.firstChild.lastChild.textContent = name;
+	// Build an array of storage keys that we'll need to display the overview.
+	for( i = 0, end = buildingList.length; i < end; i++ ) {
+		buildingKeys.push( prefix + buildingList[i] );
 	}
-	//add the commodities
-	for (var img in res_img) {
-		if (parseInt(img) < 52) {
-			var cell = document.createElement("th");
-			cell.innerHTML = "<img src=" + res_img[img] + " />";
-			table.firstChild.appendChild(cell);
-		}
+
+	// Query everything in one swoop.
+	chrome.storage.local.get( buildingKeys, showOverviewBuildings );
+}
+
+// Return an array of commodities actually in use by the collection of buildings
+// given.
+function getCommoditiesInUse( buildingData ) {
+	// Now figure out which commodities are actually in use by at least one building.
+	var in_use = new Object(),
+	    key, commodity;
+
+	for( key in buildingData ) {
+		// XXX - do we need to check something other than `amount` ?
+		for( commodity in buildingData[key].amount )
+			in_use[commodity] = true;
 	}
-	table.firstChild.appendChild(document.createElement("td"));
-	table.firstChild.lastChild.textContent = "Time updated";
 
-	//Fill the table.
-	data[buildingListId].forEach(addBuilding);
-	function addBuilding (loc) {
-		var row = document.createElement("tr");
-		table.appendChild(row);
-		var cell = document.createElement("td");
-		cell.textContent = loc.toString();
-		row.appendChild(cell);
+	return Object.keys( in_use ).sort( compareAsInt );
+}
 
-		var buildingId = universe + "Building" + loc.toString();
-		chrome.storage.local.get(buildingId, addBuildingData);
+function showOverviewBuildings( buildingData ) {
+	var in_use, key, ckey, i, end, commodity, table, tr, cell, img, building, n;
 
-		function addBuildingData(data) {
-			var building = JSON.parse(data[buildingId]);
+	// Parse each building.
+	for( key in buildingData )
+		buildingData[key] = JSON.parse( buildingData[key] );
 
-			var cell = document.createElement("td");
-			cell.textContent = building.owner;
-			row.appendChild(cell);
+	in_use = getCommoditiesInUse( buildingData );
 
-			var cell = document.createElement("td");
-			cell.textContent = building.type;
-			row.appendChild(cell);
+	// Build the table and headers
+	table = document.createElement( 'table' );
 
-			var cell = document.createElement("td");
-			cell.textContent = building.level;
-			row.appendChild(cell);
+	tr = document.createElement( 'tr' );
+	addTH( tr, 'Location' );
+	addTH( tr, 'Owner' );
+	addTH( tr, 'Type' );
+	addTH( tr, 'Lvl' );
+	for( i = 0, end = in_use.length; i < end; i++ ) {
+		ckey = in_use[i];
+		commodity = COMMODITIES[ckey];
+		img = document.createElement( 'img' );
+		img.src = '//static.pardus.at/img/stdhq/res/'
+			+ commodity.i + '.png';
+		img.title = commodity.n;
+		addTH( tr, img );
+	}
+	addTH( tr, 'Updated' );
+	addTH( tr, '' ); // the bin icon column
+	table.appendChild( tr );
 
-			//console.log(building);
-			var counter = 0;
-			for (var res in building.amount) {
-				// add empty cells if next commodity is not next in the list.
-				// We compare the number of cells created (counter) with the res number.
-				// Sadly pardus does not always add one, but jumps arount, mightily screwing up this method.
-				counter += 1;
-				if (res === "50") {
-					counter += 18;
-				}
-				else if (res === "51" && counter < 50) {
-					counter += 19;
-				}
+	// Now add a row per building
+	for( key in buildingData ) {
+		building = buildingData[ key ];
+		tr = document.createElement( 'tr' );
 
-				if (parseInt(res) > counter) {
-					for (var i = counter; i < parseInt(res); i++) {
-						var cell = document.createElement("td");
-						row.appendChild(cell);
-						counter += 1;
-					}
-				}
-				var cell = document.createElement("td");
-				// check if res is upkeep or production.
-				// If upkeep we do amount - min, else we do max - amount and make it negative..
-				if (!building.res_upkeep[res]) {
-					cell.textContent = building.amount[res] - building.amount_min[res];
-				}
-				else {
-					cell.textContent = -(building.amount_max[res] - building.amount[res]);
-				}
-				row.appendChild(cell);
-			}
-
-			if (counter > 50) {
-				counter -= 18;
-			}
-			for (var i = counter; i < 34; i++) {
-				var cell = document.createElement("td");
-				row.appendChild(cell);
-			}
-
-			var cell = document.createElement("td");
-			cell.textContent = timeConverter(building.time);
-			row.appendChild(cell);
-			var cell = document.createElement("td");
-			var trash_img = document.createElement("img");
-			trash_img.src = "http://static.pardus.at/img/stdhq/ui_trash.png";
-			trash_img.onclick = function(){removeBuilding(loc,universe); row.style.display="none";};
-			cell.appendChild(trash_img);
-			row.appendChild(cell);
+		addTD( tr, String(building.loc) );
+		addTD( tr, building.owner || 'need update' );
+		if( building.type ) {
+			cell = addTD( tr, BUILDING_SHORTNAMES[building.type] || building.type );
+			cell.title = building.type;
 		}
+		else
+			addTD( tr, 'need update' );
+		addTD( tr, building.level ? String(building.level) : '?');
+
+		for( i = 0, end = in_use.length; i < end; i++ ) {
+			ckey = in_use[i];
+			commodity = COMMODITIES[ckey];
+
+			// If upkeep we do amount - min, else we do max - amount and make it negative..
+			if( building.res_upkeep[ckey] )
+				n = String( -(building.amount_max[ckey] - building.amount[ckey]) );
+			else if( building.res_production[ckey] )
+				n = String( building.amount[ckey] - building.amount_min[ckey] );
+			else
+				n = null;
+
+			cell = addTD( tr, n );
+			if( n )
+				cell.title = commodity.n;
+		}
+
+		cell = makeTimeTD( building.time );
+		tr.appendChild( cell );
+
+		img = document.createElement("img");
+		img.src = "http://static.pardus.at/img/stdhq/ui_trash.png";
+		img.onclick = function() {
+			removeBuilding( building.loc, universe );
+			row.style.display = "none";
+		};
+		addTD( tr, img );
+		table.appendChild( tr );
 	}
 
 	table.style.background = "url(//static.pardus.at/img/stdhq/bgdark.gif)";
 	table.setAttribute("class" , "messagestyle");
 	table.align = "center"
 	document.getElementsByTagName("h1")[0].parentNode.appendChild(table);
+
+	// Shorthands we use above..
+	function addTH( tr, content ) { return addChild( tr, 'th', content ); }
+	function addTD( tr, content ) { return addChild( tr, 'td', content ); }
+	function addChild( parent, tagname, content ) {
+		if( typeof content == 'string' )
+			content = document.createTextNode( String(content) );
+		var elt = document.createElement( tagname );
+		if( content )
+			elt.appendChild( content );
+		parent.appendChild( elt );
+		return elt;
+	}
 }
 
-function timeConverter(UNIX_timestamp){
-    // Borrowed this from https://stackoverflow.com/questions/847185/convert-a-unix-timestamp-to-time-in-javascript
-	var a = new Date(UNIX_timestamp);
-	var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-	var year = a.getFullYear();
-	var month = months[a.getMonth()];
-	var date = a.getDate();
-	var hour = a.getHours();
-	var min = a.getMinutes();
-	var sec = a.getSeconds();
-	var time = date + ' ' + month + ' ' + year + ' ' + hour + ':' + min + ':' + sec ;
-	return time;
+function makeTimeTD( timestamp ) {
+	var t = new Date( timestamp ),
+	    now = Date.now(),
+	    s, td;
+
+	// If the date is old, we just display the day and month.
+	// 432000000 is the number of milliseconds in five days.
+	if( now - timestamp > 432000000 ) {
+		s = MONTHS[ t.getMonth() ] + ' ' + t.getDate();
+	}
+	else {
+		now = new Date( now );
+		if( now.getDate() == t.getDate() )
+			// This is today.  Just the time will do.
+			// We'll add seconds because why not.
+			s = twoDigits( t.getHours() )
+			  + ':' + twoDigits( t.getMinutes() )
+			  + ':' + twoDigits( t.getSeconds() );
+		else
+			// Show weekday and time.
+			s = WEEKDAYS[ t.getDay() ] + ' '
+			  + twoDigits( t.getHours() )
+			  + ':' + twoDigits( t.getMinutes() );
+	}
+
+	td = document.createElement( 'td' );
+	td.appendChild( document.createTextNode(s) );
+	td.title = t.toLocaleString();
+
+	return td;
+
+	function twoDigits( n ) {
+		n = String(n);
+		return n.length < 2 ? '0' + n : n;
+	}
 }
+
 //chrome.storage.local.get(null,function (data){console.log(JSON.stringify(data))});
 
 chrome.storage.local.get(buildingListId,showOverview);
