@@ -1,7 +1,9 @@
 (function (){
 
 // Data taken from Pardus. 'i' is the icon, minus the image pack prefix and the
-// .png suffix. 'n' is the proper name of a commodity.
+// .png suffix. 'n' is the proper name of a commodity.  These specific ID
+// numbers, and the inconsistent capitalisation of names, should both stay like
+// this exactly (we need to match the game).
 
 var COMMODITIES = {
 	1: { i: 'food',
@@ -103,42 +105,45 @@ var COMMODITIES = {
 	213: { i: 'jewels_uni',
 	       n: 'Golden Beryl jewels' }
 };
-// This is handy to preserve order
+
+// An array of indices into the catalogue above.  Used to preserve order when
+// traversing.
+
 var COMMODITY_INDICES = Object.keys( COMMODITIES ).sort( compareAsInt );
 
 var BUILDING_SHORTNAMES = {
 	'Alliance Command Station': 'ACS',
 	'Asteroid Mine': 'AM',
 	'Battleweapons Factory': 'BWF',
-	'Brewery': 'Brew',
+	'Brewery': 'Br',
 	'Chemical Laboratory': 'CL',
-	'Clod Generator': 'Clod',
-	'Dark Dome': 'Dome',
+	'Clod Generator': 'CG',
+	'Dark Dome': 'DD',
 	'Droid Assembly Complex': 'DAC',
 	'Drug Station': 'DS',
 	'Electronics Facility': 'EF',
-	'Energy Well': 'Ewell',
+	'Energy Well': 'EW',
 	'Fuel Collector': 'FC',
 	'Gas Collector': 'GC',
 	'Handweapons Factory': 'HWF',
-	'Leech Nursery': 'Leech',
+	'Leech Nursery': 'LN',
 	'Medical Laboratory': 'ML',
 	'Nebula Plant': 'NP',
-	'Neural Laboratory': 'Neur',
+	'Neural Laboratory': 'NL',
 	'Optics Research Center': 'ORC',
 	'Plastics Facility': 'PF',
 	'Radiation Collector': 'RC',
-	'Recyclotron': 'Recyc',
+	'Recyclotron': 'Rcy',
 	'Robot Factory': 'RF',
 	'Slave Camp': 'SC',
-	'Smelting Facility': 'Smelt',
-	'Space Farm': 'Farm',
+	'Smelting Facility': 'Sm',
+	'Space Farm': 'SF',
 	'Stim Chip Mill': 'SCM'
 };
 
 var WEEKDAYS = [ 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat' ];
 var MONTHS = [ 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-	       'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec' ];
+	       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec' ];
 
 function compareAsInt( a, b ) {
 	return parseInt(a) - parseInt(b);
@@ -149,8 +154,9 @@ var universe = getUniverse();
 var buildingListId = universe + "BuildingList";
 
 function showOverview( data ) {
-	// Data contains a property named as the contents of the buildingListId
-	// variable.  This is an array of location IDs of every building tracked.
+	// Data contains a property whose name we computed and stored in the
+	// buildingListId variable.  Its value is an array of location IDs of
+	// every building tracked.
 	var buildingList = data[ buildingListId ],
 	    prefix = universe + "Building",
 	    buildingKeys = [],
@@ -168,7 +174,6 @@ function showOverview( data ) {
 // Return an array of commodities actually in use by the collection of buildings
 // given.
 function getCommoditiesInUse( buildingData ) {
-	// Now figure out which commodities are actually in use by at least one building.
 	var in_use = new Object(),
 	    key, commodity;
 
@@ -210,7 +215,7 @@ function showOverviewBuildings( buildingData ) {
 
 	addTH( tr, 'Updated' );
 	addTH( tr, 'Ticks' );
-	
+
 	addTH( tr, '' ); // the bin icon column
 	table.appendChild( tr );
 
@@ -255,7 +260,7 @@ function showOverviewBuildings( buildingData ) {
 			removeBuilding( building.loc, universe );
 			row.style.display = "none";
 		};
-		
+
 		addTD( tr, numberOfTicks( building ).toString() );
 		addTD( tr, img );
 		table.appendChild( tr );
@@ -266,7 +271,7 @@ function showOverviewBuildings( buildingData ) {
 	table.align = "center"
 	document.getElementsByTagName("h1")[0].parentNode.appendChild(table);
 
-	// Shorthands we use above..
+	// Shorthands we use above.
 	function addTH( tr, content ) { return addChild( tr, 'th', content ); }
 	function addTD( tr, content ) { return addChild( tr, 'td', content ); }
 	function addChild( parent, tagname, content ) {
@@ -326,10 +331,10 @@ function humanCoords( building ) {
 	return 'need update';
 }
 
-function numberOfTicks( building ) { 
+function numberOfTicks( building ) {
 	var minAmount = 9999;
 	var minKey = "0";
-	
+
 	for (var key in building.res_upkeep) {
 		if (building.amount[key]/building.res_upkeep[key] < minAmount) {
 			minAmount = building.amount[key];
@@ -341,17 +346,10 @@ function numberOfTicks( building ) {
 	return ticks;
 }
 
-//chrome.storage.local.get(null,function (data){console.log(JSON.stringify(data))});
-
 chrome.storage.local.get(buildingListId,showOverview);
 
 // To do
-// X Make universe specific. -> added on 4 sept '17
-// * Add owner (since it is in the building_trade html).
-// * Add type based on res_upkeep or res_production (or from building trade html)
 // * Sum all rows of a single column.
-// * Add building delete button.
 // * Add option to allow own buildings to be added.
-// * Find a way to convert location number to Sector [x,y].
 
 })();
