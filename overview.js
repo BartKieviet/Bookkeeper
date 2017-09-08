@@ -129,7 +129,7 @@ var BUILDING_SHORTNAMES = {
 	'Plastics Facility': 'PF',
 	'Radiation Collector': 'RC',
 	'Recyclotron': 'Recyc',
-	'Robots Factory': 'RF',
+	'Robot Factory': 'RF',
 	'Slave Camp': 'SC',
 	'Smelting Facility': 'Smelt',
 	'Space Farm': 'Farm',
