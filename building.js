@@ -1,3 +1,5 @@
+// -*- js3-indent-level: 8; js3-indent-tabs-mode: t -*-
+
 (function () {
 'use strict';
 //Global variables.
@@ -179,7 +181,7 @@ function getLevel() {
 	var perCommodity = new Object();
 	var levelEst = new Object();
 	var level = 0;
-	
+
 	for (var key in amount_max) {
 		var fontList = document.getElementById('baserow'+key).getElementsByTagName("font");
 		perCommodity[key] = parseInt(fontList[fontList.length-1].innerHTML);
@@ -191,7 +193,7 @@ function getLevel() {
 			level += levelEst[key];
 		}
 	}
-	
+
 	// The average of the estimated levels is most likely correct.
 	level = Math.round(level / Object.keys(res_upkeep).length);
 
@@ -202,7 +204,7 @@ function getLevel() {
 	}
 
 	if (levelCheck === 0) {
-		
+
 		return level;
 	} else {
 		console.log(level);
@@ -211,7 +213,7 @@ function getLevel() {
 		console.log(Object.keys(res_upkeep).length);
 		console.log(perCommodity);
 	}
-	
+
 }
 
 function saveBuilding() {

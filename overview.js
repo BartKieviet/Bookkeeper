@@ -1,3 +1,5 @@
+// -*- js3-indent-level: 8; js3-indent-tabs-mode: t -*-
+
 (function (){
 
 // Data taken from Pardus. 'i' is the icon, minus the image pack prefix and the

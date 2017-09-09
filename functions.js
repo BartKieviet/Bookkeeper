@@ -1,4 +1,7 @@
+// -*- js3-indent-level: 8; js3-indent-tabs-mode: t -*-
+
 // Contains functions used in both files.
+
 function getUniverse() {
 	var match;
 

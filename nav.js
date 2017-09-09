@@ -1,4 +1,4 @@
-// This shall be the nav content script
+// -*- js3-indent-level: 8; js3-indent-tabs-mode: t -*-
 
 (function( doc ) {
 
