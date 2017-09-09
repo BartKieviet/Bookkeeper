@@ -1,0 +1,48 @@
+/* -*- css-indent-offset: 8; indent-tabs-mode: t -*- */
+
+h1.copilot img {
+	vertical-align: -2px;
+	margin-right: 4px;
+}
+
+#copilot-overview {
+	display: inline-block;
+	width: auto;
+	border: outset 1px #A0B1C9;
+	margin-bottom: 2ex;
+	padding: 5px;
+}
+
+#copilot-overview table {
+	text-align: inherit;
+	border-collapse: collapse;
+	cursor: crosshair;
+}
+
+#copilot-overview th {
+	padding: 0 2px;
+	background: #a1a1af;
+	color: #00001c;
+	font-weight: bold;
+	text-align: center;
+	border-left: solid 2px #00001c;
+	border-right: solid 2px #00001c;
+}
+
+#copilot-overview th.c {
+	background: #3b3b49;
+	border: none;
+}
+
+#copilot-overview tr:hover {
+	background-color: #1a1a36;
+}
+
+#copilot-overview td {
+	border: solid 1px #1a1a36;
+}
+
+#copilot-overview td.r,
+#copilot-overview td.c {
+	text-align: right;
+}

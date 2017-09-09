@@ -9,6 +9,7 @@
 		{
 			"matches": [ "*://*.pardus.at/overview_buildings.php*" ],
 			"js": [ "functions.js", "overview.js" ],
+			"css": [ "copilot.css" ],
 			"all_frames": true
 		},
 		{
@@ -33,5 +34,8 @@
 		"48":  "icons/48.png",
 		"64":  "icons/64.png",
 		"128": "icons/128.png"
-	}
+	},
+	"web_accessible_resources": [
+		"icons/24.png"
+	]
 }

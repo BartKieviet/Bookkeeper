@@ -195,7 +195,8 @@ function getCommoditiesInUse( buildingData ) {
 }
 
 function showOverviewBuildings( buildingData ) {
-	var in_use, key, ckey, i, end, commodity, table, tr, cell, img, building, n;
+	var in_use, key, ckey, i, end, commodity,
+	    h1, container, table, tr, cell, img, building, n;
 
 	// Parse each building.
 	for( key in buildingData )
@@ -204,12 +205,15 @@ function showOverviewBuildings( buildingData ) {
 	in_use = getCommoditiesInUse( buildingData );
 
 	// Build the table and headers
+	container = document.createElement( 'div' );
+	container.id = 'copilot-overview';
+
 	table = document.createElement( 'table' );
 
 	tr = document.createElement( 'tr' );
 	addTH( tr, 'Location' );
-	addTH( tr, 'Owner' );
 	addTH( tr, 'Type' );
+	addTH( tr, 'Owner' );
 	addTH( tr, 'Lvl' );
 	for( i = 0, end = in_use.length; i < end; i++ ) {
 		ckey = in_use[i];
@@ -218,7 +222,7 @@ function showOverviewBuildings( buildingData ) {
 		img.src = '//static.pardus.at/img/stdhq/res/'
 			+ commodity.i + '.png';
 		img.title = commodity.n;
-		addTH( tr, img );
+		addTH( tr, img ).className = 'c';
 	}
 
 	addTH( tr, 'Updated' );
@@ -233,14 +237,14 @@ function showOverviewBuildings( buildingData ) {
 		tr = document.createElement( 'tr' );
 
 		addTD( tr, humanCoords( building ) );
-		addTD( tr, building.owner || 'need update' );
 		if( building.type ) {
 			cell = addTD( tr, BUILDING_SHORTNAMES[building.type] || building.type );
 			cell.title = building.type;
 		}
 		else
 			addTD( tr, 'need update' );
-		addTD( tr, building.level ? String(building.level) : '?');
+		addTD( tr, building.owner || 'need update' );
+		addTD( tr, building.level ? String(building.level) : '?').className = 'right';
 
 		for( i = 0, end = in_use.length; i < end; i++ ) {
 			ckey = in_use[i];
@@ -255,11 +259,14 @@ function showOverviewBuildings( buildingData ) {
 				n = null;
 
 			cell = addTD( tr, n );
-			if( n )
+			if( n ) {
 				cell.title = commodity.n;
+				cell.className = 'c';
+			}
 		}
 
 		cell = makeTimeTD( building.time );
+		cell.className = 'r';
 		tr.appendChild( cell );
 
 		img = document.createElement("img");
@@ -269,15 +276,24 @@ function showOverviewBuildings( buildingData ) {
 			row.style.display = "none";
 		};
 
-		addTD( tr, numberOfTicks( building ).toString() );
+		addTD( tr, numberOfTicks( building ).toString() ).className = 'r';
 		addTD( tr, img );
 		table.appendChild( tr );
 	}
 
 	table.style.background = "url(//static.pardus.at/img/stdhq/bgdark.gif)";
-	table.setAttribute("class" , "messagestyle");
-	table.align = "center"
-	document.getElementsByTagName("h1")[0].parentNode.appendChild(table);
+	container.appendChild( table );
+	var anchor = document.getElementsByTagName('h1')[0];
+
+	h1 = document.createElement( 'h1' );
+	h1.className = 'copilot';
+	img = document.createElement( 'img' );
+	img.src = chrome.extension.getURL( 'icons/24.png' );
+	h1.appendChild( img );
+	h1.appendChild( document.createTextNode('Copilot Overview') );
+
+	anchor.parentNode.insertBefore( h1, anchor );
+	anchor.parentNode.insertBefore( container, anchor );
 
 	// Shorthands we use above.
 	function addTH( tr, content ) { return addChild( tr, 'th', content ); }
