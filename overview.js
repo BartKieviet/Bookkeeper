@@ -130,6 +130,7 @@ var BUILDING_SHORTNAMES = {
 	'Handweapons Factory': 'HWF',
 	'Leech Nursery': 'LN',
 	'Medical Laboratory': 'ML',
+	'Military Outpost': 'MO',
 	'Nebula Plant': 'NP',
 	'Neural Laboratory': 'NL',
 	'Optics Research Center': 'ORC',
