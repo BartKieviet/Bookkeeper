@@ -160,8 +160,13 @@ function showOverview( data ) {
 	// Data contains a property whose name we computed and stored in the
 	// buildingListId variable.  Its value is an array of location IDs of
 	// every building tracked.
-	var buildingList = data[ buildingListId ],
-	    prefix = universe + "Building",
+	var buildingList = data[ buildingListId ];
+
+	if( !buildingList )
+		// No configuration, odd. Do nothing.
+		return;
+
+	var prefix = universe + "Building",
 	    buildingKeys = [],
 	    i, end;
 
