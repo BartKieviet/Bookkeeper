@@ -16,7 +16,6 @@ h1.copilot img {
 #copilot-overview table {
 	text-align: inherit;
 	border-collapse: collapse;
-	cursor: crosshair;
 }
 
 #copilot-overview th {
@@ -34,7 +33,11 @@ h1.copilot img {
 	border: none;
 }
 
-#copilot-overview tr:hover {
+#copilot-overview tbody {
+	cursor: crosshair;
+}
+
+#copilot-overview tbody tr:hover {
 	background-color: #1a1a36;
 }
 

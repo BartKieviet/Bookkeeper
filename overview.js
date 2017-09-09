@@ -196,7 +196,7 @@ function getCommoditiesInUse( buildingData ) {
 
 function showOverviewBuildings( buildingData ) {
 	var in_use, key, ckey, i, end, commodity,
-	    h1, container, table, tr, cell, img, building, n;
+	    h1, container, table, thead, tbody, tr, cell, img, building, n;
 
 	// Parse each building.
 	for( key in buildingData )
@@ -209,6 +209,7 @@ function showOverviewBuildings( buildingData ) {
 	container.id = 'copilot-overview';
 
 	table = document.createElement( 'table' );
+	thead = document.createElement( 'thead' );
 
 	tr = document.createElement( 'tr' );
 	addTH( tr, 'Location' );
@@ -229,7 +230,10 @@ function showOverviewBuildings( buildingData ) {
 	addTH( tr, 'Ticks' );
 
 	addTH( tr, '' ); // the bin icon column
-	table.appendChild( tr );
+	thead.appendChild( tr );
+	table.appendChild( thead );
+
+	tbody = document.createElement( 'tbody' );
 
 	// Now add a row per building
 	for( key in buildingData ) {
@@ -278,8 +282,9 @@ function showOverviewBuildings( buildingData ) {
 
 		addTD( tr, numberOfTicks( building ).toString() ).className = 'r';
 		addTD( tr, img );
-		table.appendChild( tr );
+		tbody.appendChild( tr );
 	}
+	table.appendChild( tbody );
 
 	table.style.background = "url(//static.pardus.at/img/stdhq/bgdark.gif)";
 	container.appendChild( table );
