@@ -356,6 +356,9 @@ function humanCoords( building ) {
 }
 
 function numberOfTicks( building ) {
+	if( !building.level )
+		return '?';
+
 	var minAmount = 9999;
 	var minKey = "0";
 
