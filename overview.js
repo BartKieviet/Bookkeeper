@@ -148,13 +148,37 @@ var WEEKDAYS = [ 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat' ];
 var MONTHS = [ 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
 	       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec' ];
 
+var BUILDING_SORT_FUNCTIONS = {
+	loc: function( a, b ) {
+		// XXX - is this enough? Should we sort by (sector, y, x) instead?
+		return a.loc - b.loc;
+	},
+	type: function( a, b ) {
+		return a.stype.localeCompare( b.stype );
+	},
+	owner: function( a, b ) {
+		return a.owner.localeCompare( b.owner );
+	},
+	level: function( a, b ) {
+		return a.level - b.level;
+	},
+	time: function( a, b ) {
+		return a.time - b.time;
+	},
+	ticks: function( a, b ) {
+		return a.ticks - b.ticks;
+	}
+};
+
 function compareAsInt( a, b ) {
 	return parseInt(a) - parseInt(b);
 }
 
-var credits_img = "<img src='//static.pardus.at/img/stdhq/credits_16x16.png' alt='Credits' width='16' height='16' style='vertical-align: middle;'>";
-var universe = getUniverse();
-var buildingListId = universe + "BuildingList";
+var credits_img = "<img src='//static.pardus.at/img/stdhq/credits_16x16.png' alt='Credits' width='16' height='16' style='vertical-align: middle;'>",
+    universe = getUniverse(),
+    buildingListId = universe + "BuildingList",
+    sortCritKey = universe + 'OverviewSortCrit',
+    sortAscKey = universe + 'OverviewSortAsc';
 
 function showOverview( data ) {
 	// Data contains a property whose name we computed and stored in the
@@ -167,42 +191,78 @@ function showOverview( data ) {
 		return;
 
 	var prefix = universe + "Building",
-	    buildingKeys = [],
+	    keys = [ sortCritKey, sortAscKey ],
 	    i, end;
 
 	// Build an array of storage keys that we'll need to display the overview.
 	for( i = 0, end = buildingList.length; i < end; i++ ) {
-		buildingKeys.push( prefix + buildingList[i] );
+		keys.push( prefix + buildingList[i] );
 	}
 
 	// Query everything in one swoop.
-	chrome.storage.local.get( buildingKeys, showOverviewBuildings );
+	chrome.storage.local.get( keys, showOverviewBuildings );
 }
 
 // Return an array of commodities actually in use by the collection of buildings
 // given.
-function getCommoditiesInUse( buildingData ) {
+function getCommoditiesInUse( buildings ) {
 	var in_use = new Object(),
-	    key, commodity;
+	    i, end, commodity;
 
-	for( key in buildingData ) {
+	for( i = 0, end = buildings.length; i < end; i++ ) {
 		// XXX - do we need to check something other than `amount` ?
-		for( commodity in buildingData[key].amount )
+		for( commodity in buildings[i].amount )
 			in_use[commodity] = true;
 	}
 
 	return Object.keys( in_use ).sort( compareAsInt );
 }
 
-function showOverviewBuildings( buildingData ) {
-	var in_use, key, ckey, i, end, commodity,
-	    h1, container, table, thead, tbody, tr, cell, img, building, n;
+// Produce an array of buildings from data coming from chrome.storage.
+//
+// `data` is an object with attributes of the form "universeBuildingNNN", where
+// universe is 'artemis', 'orion', 'pegasus'; and NNN is the id of the tile on
+// which the building is located.  The content of each of these attributes is a
+// single JSON string encoding a building object.
+//
+// This function deserialises each building object, and normalises it for our
+// requirements here.  The whole collection of loaded buildings is returned in
+// an array.  The order of the array should not be relied upon.
+
+function loadBuildings( data ) {
+	var key, b, stype,
+	    buildings = [];
+
+	for( key in data ) {
+		b = JSON.parse( data[key] );
+		if( !b.level )
+			b.level = -1;
+		b.stype = BUILDING_SHORTNAMES[ b.type ] || '???';
+		b.ticks = numberOfTicks( b );
+		buildings.push( b );
+	}
+
+	return buildings;
+}
+
+function showOverviewBuildings( data ) {
+	var buildings, b, ckey, commodity, container, end, h1, i, img, in_use,
+	    key, table, tbody, thead, tr, sort, ascending;
+
+	// Get the sorting keys
+	sort = data[ sortCritKey ];
+	ascending = data[ sortAscKey ];
+	if( !sort )
+		sort = 'time';
+	if( typeof ascending != 'boolean' )
+		ascending = true;
+	delete data[ sortCritKey ];
+	delete data[ sortAscKey ];
 
 	// Parse each building.
-	for( key in buildingData )
-		buildingData[key] = JSON.parse( buildingData[key] );
-
-	in_use = getCommoditiesInUse( buildingData );
+	buildings = loadBuildings( data );
+	data = null; // don't need this anymore, may be garbage collected
+	in_use = getCommoditiesInUse( buildings );
 
 	// Build the table and headers
 	container = document.createElement( 'div' );
@@ -212,10 +272,10 @@ function showOverviewBuildings( buildingData ) {
 	thead = document.createElement( 'thead' );
 
 	tr = document.createElement( 'tr' );
-	addTH( tr, 'Location' );
-	addTH( tr, 'Type' );
-	addTH( tr, 'Owner' );
-	addTH( tr, 'Lvl' );
+	addTH( tr, 'Location', 'sort', 'copilot-hdr-loc' );
+	addTH( tr, 'Type', 'sort', 'copilot-hdr-type' );
+	addTH( tr, 'Owner', 'sort', 'copilot-hdr-owner' );
+	addTH( tr, 'Lvl', 'sort', 'copilot-hdr-level' );
 	for( i = 0, end = in_use.length; i < end; i++ ) {
 		ckey = in_use[i];
 		commodity = COMMODITIES[ckey];
@@ -223,35 +283,86 @@ function showOverviewBuildings( buildingData ) {
 		img.src = '//static.pardus.at/img/stdhq/res/'
 			+ commodity.i + '.png';
 		img.title = commodity.n;
-		addTH( tr, img ).className = 'c';
+		addTH( tr, img, 'c' );
 	}
 
-	addTH( tr, 'Updated' );
-	addTH( tr, 'Ticks' );
+	addTH( tr, 'Updated', 'sort', 'copilot-hdr-time' );
+	addTH( tr, 'Ticks', 'sort', 'copilot-hdr-ticks' );
 
 	addTH( tr, '' ); // the bin icon column
 	thead.appendChild( tr );
+	thead.addEventListener( 'click', onHeaderClick, false );
 	table.appendChild( thead );
 
+	// Now add the rows
 	tbody = document.createElement( 'tbody' );
+	fillTBody( tbody, in_use, buildings, sort, ascending );
+	table.appendChild( tbody );
 
-	// Now add a row per building
-	for( key in buildingData ) {
-		building = buildingData[ key ];
+	table.style.background = "url(//static.pardus.at/img/stdhq/bgdark.gif)";
+	container.appendChild( table );
+	var anchor = document.getElementsByTagName('h1')[0];
+
+	h1 = document.createElement( 'h1' );
+	h1.className = 'copilot';
+	img = document.createElement( 'img' );
+	img.src = chrome.extension.getURL( 'icons/24.png' );
+	h1.appendChild( img );
+	h1.appendChild( document.createTextNode('Copilot Overview') );
+
+	anchor.parentNode.insertBefore( h1, anchor );
+	anchor.parentNode.insertBefore( container, anchor );
+
+	function onHeaderClick( event ) {
+		var target = event.target;
+		if( target.id && target.id.startsWith( 'copilot-hdr-' ) ) {
+			event.stopPropagation();
+			var newsort = target.id.substr( 12 );
+			if( newsort == sort )
+				ascending = !ascending;
+			else {
+				sort = newsort;
+				ascending = true;
+			}
+
+			var items = {};
+			items[ sortCritKey ] = sort;
+			items[ sortAscKey ] = ascending;
+			chrome.storage.local.set( items );
+
+			fillTBody( tbody, in_use, buildings, sort, ascending );
+		}
+	}
+}
+
+function fillTBody( tbody, in_use, buildings, sort, ascending ) {
+	var key, building, tr, cell, img, ckey, n, i , end, j, jend, commodity, sortfn, fn;
+
+	sortfn = BUILDING_SORT_FUNCTIONS[ sort ];
+	if( sortfn ) {
+		if( ascending )
+			fn = sortfn;
+		else
+			fn = function( a, b ) { return -sortfn( a, b ); };
+		buildings.sort( fn );
+	}
+
+	while( tbody.hasChildNodes() )
+		tbody.removeChild( tbody.firstChild );
+
+	for( i = 0, end = buildings.length; i < end; i++ ) {
+		building = buildings[ i ];
 		tr = document.createElement( 'tr' );
 
 		addTD( tr, humanCoords( building ) );
-		if( building.type ) {
-			cell = addTD( tr, BUILDING_SHORTNAMES[building.type] || building.type );
+		cell = addTD( tr, building.stype );
+		if( building.type )
 			cell.title = building.type;
-		}
-		else
-			addTD( tr, 'need update' );
 		addTD( tr, building.owner || 'need update' );
-		addTD( tr, building.level ? String(building.level) : '?').className = 'right';
+		addTD( tr, building.level > 0 ? String(building.level) : '??', 'right' );
 
-		for( i = 0, end = in_use.length; i < end; i++ ) {
-			ckey = in_use[i];
+		for( j = 0, jend = in_use.length; j < jend; j++ ) {
+			ckey = in_use[j];
 			commodity = COMMODITIES[ckey];
 
 			// If upkeep we do amount - min, else we do max - amount and make it negative..
@@ -270,47 +381,19 @@ function showOverviewBuildings( buildingData ) {
 		}
 
 		cell = makeTimeTD( building.time );
-		cell.className = 'r';
 		tr.appendChild( cell );
+
+		addTD( tr, building.ticks < Infinity ? String(building.ticks) : '??', 'r' );
 
 		img = document.createElement("img");
 		img.src = "http://static.pardus.at/img/stdhq/ui_trash.png";
 		img.onclick = function() {
 			removeBuilding( building.loc, universe );
-			row.style.display = "none";
+			tr.style.display = "none";
 		};
-
-		addTD( tr, numberOfTicks( building ).toString() ).className = 'r';
 		addTD( tr, img );
+
 		tbody.appendChild( tr );
-	}
-	table.appendChild( tbody );
-
-	table.style.background = "url(//static.pardus.at/img/stdhq/bgdark.gif)";
-	container.appendChild( table );
-	var anchor = document.getElementsByTagName('h1')[0];
-
-	h1 = document.createElement( 'h1' );
-	h1.className = 'copilot';
-	img = document.createElement( 'img' );
-	img.src = chrome.extension.getURL( 'icons/24.png' );
-	h1.appendChild( img );
-	h1.appendChild( document.createTextNode('Copilot Overview') );
-
-	anchor.parentNode.insertBefore( h1, anchor );
-	anchor.parentNode.insertBefore( container, anchor );
-
-	// Shorthands we use above.
-	function addTH( tr, content ) { return addChild( tr, 'th', content ); }
-	function addTD( tr, content ) { return addChild( tr, 'td', content ); }
-	function addChild( parent, tagname, content ) {
-		if( typeof content == 'string' )
-			content = document.createTextNode( String(content) );
-		var elt = document.createElement( tagname );
-		if( content )
-			elt.appendChild( content );
-		parent.appendChild( elt );
-		return elt;
 	}
 }
 
@@ -341,6 +424,7 @@ function makeTimeTD( timestamp ) {
 
 	td = document.createElement( 'td' );
 	td.appendChild( document.createTextNode(s) );
+	td.className = 'r';
 	td.title = t.toLocaleString();
 
 	return td;
@@ -361,8 +445,8 @@ function humanCoords( building ) {
 }
 
 function numberOfTicks( building ) {
-	if( !building.level )
-		return '?';
+	if( !(building.level > 0) )
+		return Infinity;
 
 	var minAmount = 9999;
 	var minKey = "0";
@@ -376,6 +460,27 @@ function numberOfTicks( building ) {
 	var tickAmount = ((building.level - 1) * 0.4 + 1) * building.res_upkeep[minKey];
 	var ticks = Math.floor(minAmount / tickAmount);
 	return ticks;
+}
+
+// Shorthands we use above.
+function addTH( tr, content, className, id ) {
+	return addChild( tr, 'th', content, className, id );
+}
+function addTD( tr, content, className, id ) {
+	return addChild( tr, 'td', content, className, id );
+}
+function addChild( parent, tagname, content, className, id ) {
+	var elt = document.createElement( tagname );
+	if( className )
+		elt.className = className;
+	if( id )
+		elt.id = id;
+	if( typeof content == 'string' )
+		content = document.createTextNode( String(content) );
+	if( content )
+		elt.appendChild( content );
+	parent.appendChild( elt );
+	return elt;
 }
 
 chrome.storage.local.get(buildingListId,showOverview);

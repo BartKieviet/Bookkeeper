@@ -33,6 +33,10 @@ h1.copilot img {
 	border: none;
 }
 
+#copilot-overview th.sort {
+	cursor: pointer;
+}
+
 #copilot-overview tbody {
 	cursor: crosshair;
 }
