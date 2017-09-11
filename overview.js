@@ -167,7 +167,10 @@ var BUILDING_SORT_FUNCTIONS = {
 	},
 	ticks: function( a, b ) {
 		return a.ticks - b.ticks;
-	}
+	},
+	/*ticksLeft: function( a, b ) {
+		return a.ticks - b.ticks;
+	}*/
 };
 
 function compareAsInt( a, b ) {
@@ -239,6 +242,7 @@ function loadBuildings( data ) {
 			b.level = -1;
 		b.stype = BUILDING_SHORTNAMES[ b.type ] || '???';
 		b.ticks = numberOfTicks( b );
+		b.ticksPassed = ticksPassed ( b );
 		buildings.push( b );
 	}
 
@@ -276,6 +280,7 @@ function showOverviewBuildings( data ) {
 	addTH( tr, 'Type', 'sort', 'copilot-hdr-type' );
 	addTH( tr, 'Owner', 'sort', 'copilot-hdr-owner' );
 	addTH( tr, 'Lvl', 'sort', 'copilot-hdr-level' );
+	
 	for( i = 0, end = in_use.length; i < end; i++ ) {
 		ckey = in_use[i];
 		commodity = COMMODITIES[ckey];
@@ -288,7 +293,8 @@ function showOverviewBuildings( data ) {
 
 	addTH( tr, 'Updated', 'sort', 'copilot-hdr-time' );
 	addTH( tr, 'Ticks', 'sort', 'copilot-hdr-ticks' );
-
+	addTH( tr, 'Ticks left', 'sort', 'copilot-hdr-ticksLeft' );
+	
 	addTH( tr, '' ); // the bin icon column
 	thead.appendChild( tr );
 	thead.addEventListener( 'click', onHeaderClick, false );
@@ -384,7 +390,17 @@ function fillTBody( tbody, in_use, buildings, sort, ascending ) {
 		tr.appendChild( cell );
 
 		addTD( tr, building.ticks < Infinity ? String(building.ticks) : '??', 'r' );
-
+		
+		var tickPassedClass = 'r';
+		if (building.ticks < Infinity) {
+			// Not pretty but fast according to:
+			// https://stackoverflow.com/questions/6665997/switch-statement-for-greater-than-less-than
+			if ((building.ticks - building.ticksPassed ) < 2) { tickPassedClass = "red"; } else
+			if ((building.ticks - building.ticksPassed ) < 3) { tickPassedClass = "yellow"; }
+		}
+		
+		addTD( tr, building.ticks < Infinity ? String(building.ticks - building.ticksPassed ) : '??', tickPassedClass );
+		
 		img = document.createElement("img");
 		img.src = "http://static.pardus.at/img/stdhq/ui_trash.png";
 		img.onclick = function() {
@@ -442,24 +458,6 @@ function humanCoords( building ) {
 			(typeof building.y == 'number' ? building.y : '?') + ']';
 	}
 	return 'need update';
-}
-
-function numberOfTicks( building ) {
-	if( !(building.level > 0) )
-		return Infinity;
-
-	var minAmount = 9999;
-	var minKey = "0";
-
-	for (var key in building.res_upkeep) {
-		if (building.amount[key]/building.res_upkeep[key] < minAmount) {
-			minAmount = building.amount[key];
-			minKey = key;
-		}
-	}
-	var tickAmount = ((building.level - 1) * 0.4 + 1) * building.res_upkeep[minKey];
-	var ticks = Math.floor(minAmount / tickAmount);
-	return ticks;
 }
 
 // Shorthands we use above.

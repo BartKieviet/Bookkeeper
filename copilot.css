@@ -53,3 +53,13 @@ h1.copilot img {
 #copilot-overview td.c {
 	text-align: right;
 }
+
+#copilot-overview td.red{	
+	color:red;
+	text-align: right;
+}
+
+#copilot-overview td.yellow{	
+	color:yellow;
+	text-align: right;
+}

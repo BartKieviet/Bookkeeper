@@ -42,3 +42,36 @@ function removeBuilding(loc,universe) {
 		chrome.storage.local.get(null,function(result){console.log(result)});
 	}
 }
+
+function numberOfTicks( building ) {
+	if( !(building.level > 0) )
+		return Infinity;
+
+	var minAmount = 9999;
+	var minKey = "0";
+
+	for (var key in building.res_upkeep) {
+		if (building.amount[key]/building.res_upkeep[key] < minAmount) {
+			minAmount = building.amount[key];
+			minKey = key;
+		}
+	}
+	var tickAmount = ((building.level - 1) * 0.4 + 1) * building.res_upkeep[minKey];
+	var ticks = Math.floor(minAmount / tickAmount);
+	return ticks;
+}
+
+function ticksPassed ( building ) {
+	if( !(building.level > 0) )
+		return 0;
+	
+	var timeToTick = 6 * 3600000 - (building.time - 5100000) % (6 * 3600000);
+	var timePassed = Date.now() - building.time;
+	
+	var ticksPassed = 0;
+	if (timePassed > timeToTick) {
+		ticksPassed += 1;
+	}
+	ticksPassed += Math.floor(timePassed / (6 * 3600000));
+	return ticksPassed;
+}
