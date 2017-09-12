@@ -1,5 +1,9 @@
 # Pardus Bookkeeper
 
+![Portrait of Luca Pacioli by Jacopo de' Barbari, 1495](
+https://raw.githubusercontent.com/BartKieviet/Bookkeeper/master/Pacioli.jpg
+"Like Luca here, only in space")
+
 Enhancements to the trading user interface of the online
 game [Pardus](http://www.pardus.at/).
 
