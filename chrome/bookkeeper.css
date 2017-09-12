@@ -54,12 +54,12 @@ h1.bookkeeper img {
 	text-align: right;
 }
 
-#bookkeeper-overview td.red{
-	color:red;
-	text-align: right;
+#bookkeeper-overview td.red {
+	color: red;
+	font-weight: bold;
 }
 
-#bookkeeper-overview td.yellow{
-	color:yellow;
-	text-align: right;
+#bookkeeper-overview td.yellow {
+	color: yellow;
+	font-weight: bold;
 }

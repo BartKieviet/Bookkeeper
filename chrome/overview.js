@@ -168,9 +168,9 @@ var BUILDING_SORT_FUNCTIONS = {
 	ticks: function( a, b ) {
 		return a.ticks - b.ticks;
 	},
-	/*ticksLeft: function( a, b ) {
-		return a.ticks - b.ticks;
-	}*/
+	tleft: function( a, b ) {
+		return a.ticksLeft - b.ticksLeft;
+	}
 };
 
 function compareAsInt( a, b ) {
@@ -242,7 +242,13 @@ function loadBuildings( data ) {
 			b.level = -1;
 		b.stype = BUILDING_SHORTNAMES[ b.type ] || '???';
 		b.ticks = numberOfTicks( b );
-		b.ticksPassed = ticksPassed ( b );
+		if( b.ticks < Infinity ) {
+			b.ticksLeft = b.ticks - ticksPassed(b);
+			if( b.ticksLeft < 0 )
+				b.ticksLeft = 0;
+		}
+		else
+			b.ticksLeft = Infinity;
 		buildings.push( b );
 	}
 
@@ -293,7 +299,7 @@ function showOverviewBuildings( data ) {
 
 	addTH( tr, 'Updated', 'sort', 'bookkeeper-hdr-time' );
 	addTH( tr, 'Ticks', 'sort', 'bookkeeper-hdr-ticks' );
-	addTH( tr, 'Ticks left', 'sort', 'bookkeeper-hdr-ticksLeft' );
+	addTH( tr, 'Left', 'sort', 'bookkeeper-hdr-tleft' );
 
 	addTH( tr, '' ); // the bin icon column
 	thead.appendChild( tr );
@@ -322,9 +328,10 @@ function showOverviewBuildings( data ) {
 
 	function onHeaderClick( event ) {
 		var target = event.target;
+		console.log( 'header click', target );
 		if( target.id && target.id.startsWith( 'bookkeeper-hdr-' ) ) {
 			event.stopPropagation();
-			var newsort = target.id.substr( 12 );
+			var newsort = target.id.substr( 15 );
 			if( newsort == sort )
 				ascending = !ascending;
 			else {
@@ -343,7 +350,8 @@ function showOverviewBuildings( data ) {
 }
 
 function fillTBody( tbody, in_use, buildings, sort, ascending ) {
-	var key, building, tr, cell, img, ckey, n, i , end, j, jend, commodity, sortfn, fn;
+	var key, building, tr, cell, img, ckey, n, i , end, j, jend, commodity,
+	    sortfn, fn, className;
 
 	sortfn = BUILDING_SORT_FUNCTIONS[ sort ];
 	if( sortfn ) {
@@ -392,15 +400,21 @@ function fillTBody( tbody, in_use, buildings, sort, ascending ) {
 
 		addTD( tr, building.ticks < Infinity ? String(building.ticks) : '??', 'r' );
 
-		var tickPassedClass = 'r';
-		if (building.ticks < Infinity) {
+		className = null;
+		if (building.ticksLeft < Infinity) {
 			// Not pretty but fast according to:
 			// https://stackoverflow.com/questions/6665997/switch-statement-for-greater-than-less-than
-			if ((building.ticks - building.ticksPassed ) < 2) { tickPassedClass = "red"; } else
-			if ((building.ticks - building.ticksPassed ) < 3) { tickPassedClass = "yellow"; }
+			if( building.ticksLeft < 1 )
+				className = 'red';
+			else if( building.ticksLeft < 2 )
+				className = 'yellow';
 		}
 
-		addTD( tr, building.ticks < Infinity ? String(building.ticks - building.ticksPassed ) : '??', tickPassedClass );
+		cell = addTD( tr,
+			      building.ticksLeft < Infinity ? String(building.ticksLeft) : '??',
+			      'r' );
+		if( className )
+			cell.classList.add( className );
 
 		img = document.createElement("img");
 		img.src = "http://static.pardus.at/img/stdhq/ui_trash.png";
