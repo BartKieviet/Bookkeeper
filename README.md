@@ -7,4 +7,4 @@ This is a rewrite of some of the functionality of the old Firefox extension
 _Pardus Copilot_.  Still under early development, but a prerelease version is
 already available for users:
 
-[install Pardus Bookkeeper from the Chrome Store](https://chrome.google.com/webstore/detail/pardus-copilot/dfelhcfikpiomockabkkcjgfigdalcmk).
+[install Pardus Bookkeeper from the Chrome Store](https://chrome.google.com/webstore/detail/dfelhcfikpiomockabkkcjgfigdalcmk).
