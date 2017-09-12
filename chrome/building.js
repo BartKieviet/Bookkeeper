@@ -14,7 +14,7 @@ function configure() {
 		document.defaultView.addEventListener( 'message', onGameMessage );
 		var script = document.createElement( 'script' );
 		script.type = 'text/javascript';
-		script.textContent = "(function() {var fn=function(){window.postMessage({pardus_copilot:1,\
+		script.textContent = "(function() {var fn=function(){window.postMessage({pardus_bookkeeper:1,\
 		loc:typeof(userloc)=='undefined'?null:userloc,\
 		res_upkeep:typeof(res_upkeep)=='undefined'?null:res_upkeep,\
 		res_production:typeof(res_production)=='undefined'?null:res_production,\
@@ -36,7 +36,7 @@ function configure() {
 function onGameMessage( event ) {
 	var data = event.data;
 
-	if ( !data || data.pardus_copilot != 1 ) {
+	if ( !data || data.pardus_bookkeeper != 1 ) {
 		return;
 	}
 

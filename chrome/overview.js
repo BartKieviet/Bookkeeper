@@ -270,17 +270,17 @@ function showOverviewBuildings( data ) {
 
 	// Build the table and headers
 	container = document.createElement( 'div' );
-	container.id = 'copilot-overview';
+	container.id = 'bookkeeper-overview';
 
 	table = document.createElement( 'table' );
 	thead = document.createElement( 'thead' );
 
 	tr = document.createElement( 'tr' );
-	addTH( tr, 'Location', 'sort', 'copilot-hdr-loc' );
-	addTH( tr, 'Type', 'sort', 'copilot-hdr-type' );
-	addTH( tr, 'Owner', 'sort', 'copilot-hdr-owner' );
-	addTH( tr, 'Lvl', 'sort', 'copilot-hdr-level' );
-	
+	addTH( tr, 'Location', 'sort', 'bookkeeper-hdr-loc' );
+	addTH( tr, 'Type', 'sort', 'bookkeeper-hdr-type' );
+	addTH( tr, 'Owner', 'sort', 'bookkeeper-hdr-owner' );
+	addTH( tr, 'Lvl', 'sort', 'bookkeeper-hdr-level' );
+
 	for( i = 0, end = in_use.length; i < end; i++ ) {
 		ckey = in_use[i];
 		commodity = COMMODITIES[ckey];
@@ -291,10 +291,10 @@ function showOverviewBuildings( data ) {
 		addTH( tr, img, 'c' );
 	}
 
-	addTH( tr, 'Updated', 'sort', 'copilot-hdr-time' );
-	addTH( tr, 'Ticks', 'sort', 'copilot-hdr-ticks' );
-	addTH( tr, 'Ticks left', 'sort', 'copilot-hdr-ticksLeft' );
-	
+	addTH( tr, 'Updated', 'sort', 'bookkeeper-hdr-time' );
+	addTH( tr, 'Ticks', 'sort', 'bookkeeper-hdr-ticks' );
+	addTH( tr, 'Ticks left', 'sort', 'bookkeeper-hdr-ticksLeft' );
+
 	addTH( tr, '' ); // the bin icon column
 	thead.appendChild( tr );
 	thead.addEventListener( 'click', onHeaderClick, false );
@@ -310,18 +310,19 @@ function showOverviewBuildings( data ) {
 	var anchor = document.getElementsByTagName('h1')[0];
 
 	h1 = document.createElement( 'h1' );
-	h1.className = 'copilot';
+	h1.className = 'bookkeeper';
 	img = document.createElement( 'img' );
 	img.src = chrome.extension.getURL( 'icons/24.png' );
+	img.title = 'Pardus Bookkeeper';
 	h1.appendChild( img );
-	h1.appendChild( document.createTextNode('Copilot Overview') );
+	h1.appendChild( document.createTextNode('Bookkeeping') );
 
 	anchor.parentNode.insertBefore( h1, anchor );
 	anchor.parentNode.insertBefore( container, anchor );
 
 	function onHeaderClick( event ) {
 		var target = event.target;
-		if( target.id && target.id.startsWith( 'copilot-hdr-' ) ) {
+		if( target.id && target.id.startsWith( 'bookkeeper-hdr-' ) ) {
 			event.stopPropagation();
 			var newsort = target.id.substr( 12 );
 			if( newsort == sort )
@@ -390,7 +391,7 @@ function fillTBody( tbody, in_use, buildings, sort, ascending ) {
 		tr.appendChild( cell );
 
 		addTD( tr, building.ticks < Infinity ? String(building.ticks) : '??', 'r' );
-		
+
 		var tickPassedClass = 'r';
 		if (building.ticks < Infinity) {
 			// Not pretty but fast according to:
@@ -398,9 +399,9 @@ function fillTBody( tbody, in_use, buildings, sort, ascending ) {
 			if ((building.ticks - building.ticksPassed ) < 2) { tickPassedClass = "red"; } else
 			if ((building.ticks - building.ticksPassed ) < 3) { tickPassedClass = "yellow"; }
 		}
-		
+
 		addTD( tr, building.ticks < Infinity ? String(building.ticks - building.ticksPassed ) : '??', tickPassedClass );
-		
+
 		img = document.createElement("img");
 		img.src = "http://static.pardus.at/img/stdhq/ui_trash.png";
 		img.onclick = function() {
