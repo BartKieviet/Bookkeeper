@@ -15,7 +15,7 @@ function configure() {
 	window.addEventListener( 'message', onMessage, false );
 	var script = doc.createElement( 'script' );
 	script.type = 'text/javascript';
-	script.textContent = "(function() {var fn=function(){window.postMessage({copilot:1,loc:typeof(userloc)=='undefined'?null:userloc},window.location.origin);};if(typeof(addUserFunction)=='function') addUserFunction(fn);fn();})();";
+	script.textContent = "(function() {var fn=function(){window.postMessage({bookkeeper:2,loc:typeof(userloc)=='undefined'?null:userloc},window.location.origin);};if(typeof(addUserFunction)=='function') addUserFunction(fn);fn();})();";
 	doc.body.appendChild(script);
 }
 
@@ -23,7 +23,7 @@ function onMessage( event ) {
 	var element, sector, m, x, y,
 	    data = event.data;
 
-	if( data.copilot != 1 )
+	if( data.bookkeeper != 2 )
 		return;
 
 	event.stopPropagation();

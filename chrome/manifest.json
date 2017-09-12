@@ -9,7 +9,7 @@
 		{
 			"matches": [ "*://*.pardus.at/overview_buildings.php*" ],
 			"js": [ "functions.js", "overview.js" ],
-			"css": [ "copilot.css" ],
+			"css": [ "bookkeeper.css" ],
 			"all_frames": true
 		},
 		{
@@ -21,7 +21,7 @@
 	"description": "User trade interface enhancements for the online game Pardus",
 	"manifest_version": 2,
 	"minimum_chrome_version": "28",
-	"name": "Pardus Copilot",
+	"name": "Pardus Bookkeeper",
 	"permissions": [ "storage", "*://*.pardus.at/*" ],
 	"version": "1.6",
 	"browser_action": {
