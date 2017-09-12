@@ -23,7 +23,7 @@
 	"minimum_chrome_version": "28",
 	"name": "Pardus Bookkeeper",
 	"permissions": [ "storage", "*://*.pardus.at/*" ],
-	"version": "1.6",
+	"version": "1.7",
 	"browser_action": {
 		"default_title": "Trade info",
 		"default_popup": "popup.html"
