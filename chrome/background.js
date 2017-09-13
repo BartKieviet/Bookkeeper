@@ -9,9 +9,8 @@ chrome.runtime.onInstalled.addListener( onInstall );
 
 function onInstall( details ) {
 	// 1.8 is the version when we switched from storage.local to storage.sync
-	// XXX hacking, restore
 	if( details.reason == 'update' &&
-	    details.previousVersion < '1.7.2' )
+	    details.previousVersion < '1.7.1' )
 		migrateV17Storage();
 }
 
@@ -57,18 +56,18 @@ function onInstall( details ) {
 // (e.g. `P142040`).  Each item contains a 14-element array representing:
 //
 //   0 - time (number, Unix timestamp in seconds)
-//   1 - sector_id (number, as per sectorids.js)
+//   1 - sector_id (number, as per Sector.getId)
 //   2 - x (number)
 //   3 - y (number)
-//   4 - type_id (number, as per BUILDING_TYPE_IDS)
-//   5 - level (number, may be NaN if unavailable)
+//   4 - type_id (number, as per Building.getTypeId)
+//   5 - level (number, may be -1 if unavailable)
 //   6 - owner (string)
 //   7-13 - Seven comm dicts for amount, amount_max, amount_min,
 //          res_production, res_upkeep, buy_price, sell_price.
 //          In that order.
 //
-// Commodity dictionaries are stored as arrays of numbers; the first being a
-// commodity ID, the second, the value for that commodity, and so on.
+// Commodity dictionaries are stored as arrays of numbers: the first being a
+// commodity ID; the second, the value for that commodity, and so on.
 
 function migrateV17Storage() {
 	chrome.storage.local.get( [ 'artemisBuildingList',
