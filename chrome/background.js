@@ -8,17 +8,17 @@ chrome.runtime.onInstalled.addListener( onInstall );
 // End of script execution, function definitions below.
 
 function onInstall( details ) {
-	// 1.8 is the version when we switched from storage.local to storage.sync
+	// 1.8.1 is the version when we switched from storage.local to storage.sync
 	if( details.reason == 'update' &&
-	    details.previousVersion < '1.7.1' )
-		migrateV17Storage();
+	    details.previousVersion < '1.8.1' )
+		migrateV18Storage();
 }
 
 // Start a migration from storage.local to storage.sync.  Also migrate the
-// original storage format (v1.7 and previous) to the new, more compact one used
-// in v1.8.
+// original storage format (v1.8 and previous) to the new, more compact one used
+// in v1.9.
 //
-// V1.7 storage format:
+// V1.8 storage format:
 //
 // There are three storage items containing lists of buildings.  The keys are:
 // `artemisBuildingList`, `orionBuildingList`, `pegasusBuildingList`.  Each
@@ -48,7 +48,7 @@ function onInstall( details ) {
 // "comm dict" means a dictionary of commodities: an object whose keys are
 // commodity IDs, and values are numbers.
 //
-// V1.8 storage format:
+// V1.9 storage format:
 //
 // The list item keys are `A`, `O`, `P`.
 //
@@ -69,7 +69,7 @@ function onInstall( details ) {
 // Commodity dictionaries are stored as arrays of numbers: the first being a
 // commodity ID; the second, the value for that commodity, and so on.
 
-function migrateV17Storage() {
+function migrateV18Storage() {
 	chrome.storage.local.get( [ 'artemisBuildingList',
 				    'orionBuildingList',
 				    'pegasusBuildingList' ],
@@ -108,7 +108,7 @@ function migrateV17Storage() {
 			m = rx.exec( key );
 			u = universe_keys[ m[1] ];
 			id = parseInt( m[2] );
-			b = convertV17Building( JSON.parse(buildings[key]) );
+			b = convertV18Building( JSON.parse(buildings[key]) );
 			if( b ) {
 				newitems[ u ].push( id );
 				newitems[ u + id ] = b;
@@ -123,14 +123,14 @@ function migrateV17Storage() {
 			delete newitems[ 'P' ];
 
 		//console.log( 'storing to sync', newitems );
-		chrome.storage.sync.set( newitems, onV18Stored );
+		chrome.storage.sync.set( newitems, onV19Stored );
 	}
 
-	function onV18Stored() {
+	function onV19Stored() {
 		if( chrome.runtime.lastError ) {
 			// Balls. What else to do?  We won't delete local
 			// storage, hopefully another update will migrate it.
-			console.log( 'Bookkeeper ERROR: Cannot migrate V1.7 storage: ' +
+			console.log( 'Bookkeeper ERROR: Cannot migrate V1.8 storage: ' +
 				     chrome.runtime.lastError.message );
 			return;
 		}
@@ -140,10 +140,10 @@ function migrateV17Storage() {
 		// criterion and order for the overview.  But none of those are
 		// really important.
 		chrome.storage.local.clear();
-		//console.log( 'Migrated to V1.8!' );
+		//console.log( 'Migrated to V1.9!' );
 	}
 
-	function convertV17Building( b ) {
+	function convertV18Building( b ) {
 		if( !b )
 			return null;
 
