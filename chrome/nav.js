@@ -39,7 +39,7 @@ function onMessage( event ) {
 		}
 	}
 
-	chrome.storage.local.set({ sector: sector, x: x, y: y });
+	chrome.storage.local.set( { sector: sector, x: x, y: y } );
 }
 
 })( document );

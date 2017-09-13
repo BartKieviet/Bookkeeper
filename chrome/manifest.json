@@ -1,14 +1,20 @@
 {
 	"content_security_policy": "script-src 'self'; object-src 'self'",
+	"background": {
+		"scripts": [ "sector.js", "building.js", "background.js" ],
+		"persistent": false
+	},
 	"content_scripts": [
 		{
 			"matches": [ "*://*.pardus.at/building_trade.php*" ],
-			"js": [ "functions.js", "building.js" ],
+			"js": [ "functions.js", "universe.js", "sector.js",
+				"building.js", "trade.js" ],
 			"all_frames": true
 		},
 		{
 			"matches": [ "*://*.pardus.at/overview_buildings.php*" ],
-			"js": [ "functions.js", "overview.js" ],
+			"js": [ "functions.js", "universe.js", "sector.js",
+				"building.js", "overview.js" ],
 			"css": [ "bookkeeper.css" ],
 			"all_frames": true
 		},
@@ -23,7 +29,7 @@
 	"minimum_chrome_version": "28",
 	"name": "Pardus Bookkeeper",
 	"permissions": [ "storage", "*://*.pardus.at/*" ],
-	"version": "1.7",
+	"version": "1.7.1",
 	"browser_action": {
 		"default_title": "Trade info",
 		"default_popup": "popup.html"

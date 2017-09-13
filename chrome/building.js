@@ -1,239 +1,261 @@
 // -*- js3-indent-level: 8; js3-indent-tabs-mode: t -*-
 
-(function () {
-'use strict';
-//Global variables.
-var configured = false;
-var userloc, res_upkeep, res_production, amount_max, amount_min, buy_price, sell_price, time, amount;
-var universe = getUniverse();
-var buildingList = new Object();
-var buildingListId = universe + "BuildingList";
+var Sector; // defined in sector.js
 
-function configure() {
-	if (!configured) {
-		document.defaultView.addEventListener( 'message', onGameMessage );
-		var script = document.createElement( 'script' );
-		script.type = 'text/javascript';
-		script.textContent = "(function() {var fn=function(){window.postMessage({pardus_bookkeeper:1,\
-		loc:typeof(userloc)=='undefined'?null:userloc,\
-		res_upkeep:typeof(res_upkeep)=='undefined'?null:res_upkeep,\
-		res_production:typeof(res_production)=='undefined'?null:res_production,\
-		amount_max:typeof(amount_max)=='undefined'?null:amount_max,\
-		amount_min:typeof(amount_min)=='undefined'?null:amount_min,\
-		player_buy_price:typeof(player_buy_price)=='undefined'?null:player_buy_price,\
-		player_sell_price:typeof(player_sell_price)=='undefined'?null:player_sell_price,\
-		time:typeof(milliTime)=='undefined'?null:milliTime,\
-		amount:typeof(amount)=='undefined'?null:amount,\
-		},window.location.origin);};if(typeof(addUserFunction)=='function')addUserFunction(fn);fn();})();";
-		document.body.appendChild( script );
-		configured = true;
-		}
-	}
+var Building = (function() {
 
+// The order of this array is important: numeric type IDs kept in chrome.storage
+// depend on the index of each string here. So DO NOT alter the order.  If
+// Pardus ever adds more building types, *append* them to this array then.
 
-// Arrival of a message means the page contents were updated.  The
-// message contains the value of our variables, too.
-function onGameMessage( event ) {
-	var data = event.data;
+var TYPES = [
+	'Alliance Command Station',
+	'Asteroid Mine',
+	'Battleweapons Factory',
+	'Brewery',
+	'Chemical Laboratory',
+	'Clod Generator',
+	'Dark Dome',
+	'Droid Assembly Complex',
+	'Drug Station',
+	'Electronics Facility',
+	'Energy Well',
+	'Fuel Collector',
+	'Gas Collector',
+	'Handweapons Factory',
+	'Leech Nursery',
+	'Medical Laboratory',
+	'Military Outpost',
+	'Nebula Plant',
+	'Neural Laboratory',
+	'Optics Research Center',
+	'Plastics Facility',
+	'Radiation Collector',
+	'Recyclotron',
+	'Robot Factory',
+	'Slave Camp',
+	'Smelting Facility',
+	'Space Farm',
+	'Stim Chip Mill'
+];
+var TYPE_IDS; // lazily initialised in Building.getTypeId
 
-	if ( !data || data.pardus_bookkeeper != 1 ) {
-		return;
-	}
+// Keep in sync with TYPES above.
 
-	userloc = parseInt( data.loc );
-	res_upkeep = data.res_upkeep;
-	res_production = data.res_production;
-	amount_max = data.amount_max;
-	amount_min = data.amount_min;
-	buy_price = data.player_buy_price;
-	sell_price = data.player_sell_price;
-	time = data.time;
-	amount = data.amount;
-}
+var SHORT_TYPES = [
+	'ACS',
+	'AM',
+	'BWF',
+	'Br',
+	'CL',
+	'CG',
+	'DD',
+	'DAC',
+	'DS',
+	'EF',
+	'EW',
+	'FC',
+	'GC',
+	'HWF',
+	'LN',
+	'ML',
+	'MO',
+	'NP',
+	'NL',
+	'ORC',
+	'PF',
+	'RC',
+	'Rcy',
+	'RF',
+	'SC',
+	'Sm',
+	'SF',
+	'SCM'
+];
 
-function Building( sector, x, y, loc, owner, res_upkeep, res_production, amount,
-		   amount_max, amount_min, buy_price, sell_price, time, type, level ) {
-	this.sector = sector;
+function Building( loc, time_secs, sector_id, x, y, type_id, level, owner,
+		   amount, amount_max, amount_min, res_production, res_upkeep,
+		   buy_price, sell_price ) {
+	this.loc = loc;
+	this.time = time_secs;
+	this.sector_id = sector_id;
 	this.x = x;
 	this.y = y;
-	this.loc = loc;
+	this.type_id = type_id;
+	this.level = saneLevel( level );
 	this.owner = owner;
-	this.res_upkeep = res_upkeep;
-	this.res_production = res_production;
 	this.amount = amount;
 	this.amount_max = amount_max;
 	this.amount_min = amount_min;
+	this.res_production = res_production;
+	this.res_upkeep = res_upkeep;
 	this.buy_price = buy_price;
 	this.sell_price = sell_price;
-	this.time = time;
-	this.type = type;
-	this.level = level;
-  /*this.greeting = function() {
-    alert('Hi! I\'m ' + this.name + '.');
-  };*/
 
+	this.type = Building.getTypeName( type_id );
+	this.stype = Building.getTypeShortName( type_id );
+	this.ticks = numberOfTicks( this );
+	this.ticks_passed = ticksPassed( this );
+
+	if( this.ticks < Infinity ) {
+		if( this.ticks > this.ticks_passed )
+			this.ticks_left = this.ticks - this.ticks_passed;
+		else
+			this.ticks_left = 0;
+	}
+	else
+		this.ticks_left = Infinity;
 }
 
-function addTrackerButtons() {
-	// We add track/untrack buttons on the trade screen.
-	var transferButton = findTransferButton();
-
-	function addButton(name,listener) {
-		//Adds button below the quickbuttons.
-		//Initially there were two, I decided a single track/untrack button was more elegant.
-		var new_button = document.createElement("input");
-		new_button.setAttribute('style','width: 175px; height: 35px; margin-left: 3px; margin-right: 3px;');
-		new_button.setAttribute('type','button');
-		new_button.setAttribute('value',name);
-		new_button.setAttribute('id',name+'Button');
-		new_button.addEventListener('click',listener);
-		transferButton.parentNode.appendChild(document.createElement('br'));
-		transferButton.parentNode.appendChild(document.createElement('br'));
-		transferButton.parentNode.appendChild(new_button);
-	}
-
-	//addButton('Clear',clear);
-	chrome.storage.local.get(buildingListId,addTracker)
-	function addTracker(data) {
-		if (checkBuildingSaved(data,userloc)[0]) {
-			saveBuilding();
-			addButton('Untrack',buildingTracker);
-		} else {
-			addButton('Track',buildingTracker);
+Building.getTypeId = function( name ) {
+	if( !TYPE_IDS ) {
+		var i, end;
+		TYPE_IDS = {};
+		for( i = 0, end = TYPES.length; i < end; i++ ) {
+			TYPE_IDS[ TYPES[i] ] = i + 1;
 		}
 	}
 
+	return TYPE_IDS[ name ] || undefined;
 }
 
-/*function clear() {
-	chrome.storage.local.clear();
-}*/
+Building.getTypeName = function( type_id ) {
+	return TYPES[ type_id-1 ] || undefined;
+}
 
-function toggleButton(btn) {
-	if (btn.getAttribute('value') === 'Track') {
-		btn.setAttribute('value','Untrack');
-	}
-	else {
-		btn.setAttribute('value','Track');
+Building.getTypeShortName = function( type_id ) {
+	return SHORT_TYPES[ type_id-1 ] || undefined;
+}
+
+// Create a Building from data fetched by a Pardus page.
+//
+// This adjusts a few parameters to conform to what we need:
+//
+//  * time is assumed to be milliseconds and converted to seconds
+//  * sector is assumed to be a name, and the id is retrieved
+//  * type is assumed to be a name, and the id is retrieved
+
+Building.createFromPardus = function(
+	loc, time, sector, x, y, type, level, owner,
+	amount, amount_max, amount_min, res_production, res_upkeep,
+	buy_price, sell_price ) {
+	return new Building(
+		loc, Math.floor(time/1000), Sector.getId(sector), x, y,
+		Building.getTypeId(type), level, owner, amount, amount_max,
+		amount_min, res_production, res_upkeep, buy_price, sell_price);
+}
+
+// Create a Building from data obtained from storage. `key` is the storage key
+// used to retrieve the building; `a` is data in v1.8 storage format, which
+// means a 14-element array.  See function body for positions.
+//
+// Commodity dictionaries are stored as arrays of numbers.  This function
+// converts them to objects keyed by commodity id.
+
+Building.createFromStorage = function( key, a ) {
+	var loc = parseInt( key.substr(1) );
+	if( isNaN(loc) || !(a instanceof Array) || a.length != 14 )
+		throw 'Invalid storage data :' + JSON.stringify([key, a]);
+
+	return new Building(
+		loc,
+		a[0], // time in seconds
+		a[1], // sector_id
+		a[2], // x
+		a[3], // y
+		a[4], // type_id
+		saneLevel(a[5]), // level
+		a[6], // owner
+		commDict(a[7]), // amount
+		commDict(a[8]), // amount_max
+		commDict(a[9]), // amount_min
+		commDict(a[10]), // res_production
+		commDict(a[11]), // res_upkeep
+		commDict(a[12]), // buy_price
+		commDict(a[13])  // sell_price
+	);
+
+	function commDict( cd ) {
+		var r = {}, i, end;
+		for( i = 0, end = cd.length; i < end; i += 2 )
+			r[ cd[i] ] = cd[ i + 1 ];
+		return r;
 	}
 }
 
-function buildingTracker() {
-	if (this.value === "Track") {
-		chrome.storage.local.get(buildingListId,addBuilding)
+// Create the object that gets sent to storage (14-element array, etc.)
 
-		function addBuilding(data) {
-			//We're adding a building to the tracker here.
-			//So first check if we have a list at all. Not sure if this is really required.
-			if (!data[buildingListId]) {
-				var list = [];
-				list[0] = userloc;
-				buildingList[buildingListId] = list;
-				chrome.storage.local.set(buildingList)
-			} //If we have a list, we add the building if it's not there yet.
-			else {
-				if (!checkBuildingSaved(data,userloc)[0]) {
-					data[buildingListId].push(userloc);
-					chrome.storage.local.set(data);
-				}
+Building.prototype.toStorage = function() {
+	return [
+		this.time,
+		this.sector_id,
+		this.x,
+		this.y,
+		this.type_id,
+		this.level > 0 ? this.level : NaN,
+		this.owner,
+		convertNumericDict( this.amount ),
+		convertNumericDict( this.amount_max ),
+		convertNumericDict( this.amount_min ),
+		convertNumericDict( this.res_production ),
+		convertNumericDict( this.res_upkeep ),
+		convertNumericDict( this.buy_price ),
+		convertNumericDict( this.sell_price )
+	];
 
-			}
-			// You pressed track so you get all the stuffz saved. Owner is not yet there, reserving some space anyway.
-			saveBuilding();
+	function convertNumericDict( d ) {
+		var r = [], key;
+		for( key in d )
+			r.push( parseInt(key), d[key] );
+		return r;
+	}
+}
+
+Building.prototype.getSectorName = function() {
+	return Sector.getName( this.sector_id );
+}
+
+function ticksPassed( building ) {
+	if( !(building.level > 0) )
+		return 0;
+
+	var timeToTick = 6 * 3600 - (building.time - 5100) % (6 * 3600);
+	var timePassed = Math.floor(Date.now()/1000) - building.time;
+
+	var ticksPassed = 0;
+	if (timePassed > timeToTick) {
+		ticksPassed += 1;
+	}
+	ticksPassed += Math.floor(timePassed / (6 * 3600));
+	return ticksPassed;
+}
+
+function numberOfTicks( building ) {
+	if( !(building.level > 0) )
+		return Infinity;
+
+	var minAmount = 9999;
+	var minKey = "0";
+
+	for (var key in building.res_upkeep) {
+		if (building.amount[key]/building.res_upkeep[key] < minAmount) {
+			minAmount = building.amount[key];
+			minKey = key;
 		}
 	}
-
-	else {
-		removeBuilding(userloc,universe);
-	}
-	toggleButton(this);
+	var tickAmount = ((building.level - 1) * 0.4 + 1) * building.res_upkeep[minKey];
+	var ticks = Math.floor(minAmount / tickAmount);
+	return ticks;
 }
 
-function findTransferButton() {
-	// Function finds the transfer button since Pardus sadly gave it
-	// neither ID nor name, so we have to check all input elements for
-	// the value '<- Transfer ->'
-	var inputs = document.getElementsByTagName("input");
-	var transferButton;
-	for (var i = 0; i < inputs.length ; i++) {
-		if (inputs[i].value === "<- Transfer ->"){
-			transferButton = inputs[i];
-		}
-	}
-	return transferButton;
+function saneLevel( level ) {
+	level = parseInt( level );
+	if( isNaN(level) || level < 1 )
+		level = -1;
+	return level;
 }
 
-function parseInfo() {
-	var tds = document.getElementsByTagName("td");
-	for (var i =0; i<tds.length;i++){
-		// so Pardus has this specific color for two TDs, pilot and building owner.
-		if (tds[i].style.color === "rgb(221, 221, 255)"){
-			var nameline = tds[i].firstChild.innerHTML;
-		}
-	}
-	nameline = nameline.split(/'s /);
-	var owner = nameline[0];
-	var type = nameline[1];
-	return [owner, type];
-}
 
-function getLevel() {
-	var perCommodity = new Object();
-	var levelEst = new Object();
-	var level = 0;
+return Building;
 
-	for (var key in amount_max) {
-		var fontList = document.getElementById('baserow'+key).getElementsByTagName("font");
-		perCommodity[key] = parseInt(fontList[fontList.length-1].innerHTML);
-		if (perCommodity[key] > 0) {
-			levelEst[key] = ((((perCommodity[key] / res_production[key]) - 1) / 0.5) + 1);
-		} else {
-			levelEst[key] = ((((-perCommodity[key] / res_upkeep[key]) - 1) / 0.4) + 1);
-			// So thanks to Div we only take the upkeep for level determination.
-			level += levelEst[key];
-		}
-	}
-
-	// The average of the estimated levels is most likely correct.
-	level = Math.round(level / Object.keys(res_upkeep).length);
-
-	// here we double check the level by calculating the upkeep.
-	var levelCheck = 0;
-	for (var key in res_upkeep) {
-		levelCheck += Math.round(res_upkeep[key]*(1+0.4*(level - 1))) + perCommodity[key];
-	}
-
-	if (levelCheck === 0) {
-
-		return level;
-	} else {
-		console.log(level);
-		console.log(levelCheck);
-		console.log(levelEst);
-		console.log(Object.keys(res_upkeep).length);
-		console.log(perCommodity);
-	}
-
-}
-
-function saveBuilding() {
-	// Get the current sector and coords
-	chrome.storage.local.get( ['sector', 'x', 'y'], finishSaveBuilding);
-}
-
-function finishSaveBuilding( cfg_data ) {
-	var buildingData = new Building(
-		cfg_data.sector, cfg_data.x, cfg_data.y,
-		userloc, parseInfo()[0], res_upkeep, res_production,
-		amount, amount_max, amount_min,
-		buy_price, sell_price, time, parseInfo()[1],getLevel() );
-	var buildingId = universe + "Building" + userloc.toString();
-	var items = new Object();
-	items[buildingId] = JSON.stringify(buildingData);
-	//console.log('saveBuilding', items);
-	chrome.storage.local.set(items);
-}
-
-configure();
-addTrackerButtons();
 })();

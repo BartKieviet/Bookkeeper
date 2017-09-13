@@ -1,5 +1,10 @@
 // -*- js3-indent-level: 8; js3-indent-tabs-mode: t -*-
 
+// This is a content script.  It runs on overview_buildings.php.
+
+var Universe; // in universe.js
+var Building; // in building.js
+
 (function (){
 
 // Data taken from Pardus. 'i' is the icon, minus the image pack prefix and the
@@ -113,37 +118,6 @@ var COMMODITIES = {
 
 var COMMODITY_INDICES = Object.keys( COMMODITIES ).sort( compareAsInt );
 
-var BUILDING_SHORTNAMES = {
-	'Alliance Command Station': 'ACS',
-	'Asteroid Mine': 'AM',
-	'Battleweapons Factory': 'BWF',
-	'Brewery': 'Br',
-	'Chemical Laboratory': 'CL',
-	'Clod Generator': 'CG',
-	'Dark Dome': 'DD',
-	'Droid Assembly Complex': 'DAC',
-	'Drug Station': 'DS',
-	'Electronics Facility': 'EF',
-	'Energy Well': 'EW',
-	'Fuel Collector': 'FC',
-	'Gas Collector': 'GC',
-	'Handweapons Factory': 'HWF',
-	'Leech Nursery': 'LN',
-	'Medical Laboratory': 'ML',
-	'Military Outpost': 'MO',
-	'Nebula Plant': 'NP',
-	'Neural Laboratory': 'NL',
-	'Optics Research Center': 'ORC',
-	'Plastics Facility': 'PF',
-	'Radiation Collector': 'RC',
-	'Recyclotron': 'Rcy',
-	'Robot Factory': 'RF',
-	'Slave Camp': 'SC',
-	'Smelting Facility': 'Sm',
-	'Space Farm': 'SF',
-	'Stim Chip Mill': 'SCM'
-};
-
 var WEEKDAYS = [ 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat' ];
 var MONTHS = [ 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
 	       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec' ];
@@ -169,7 +143,7 @@ var BUILDING_SORT_FUNCTIONS = {
 		return a.ticks - b.ticks;
 	},
 	tleft: function( a, b ) {
-		return a.ticksLeft - b.ticksLeft;
+		return a.ticks_left - b.ticks_left;
 	}
 };
 
@@ -178,32 +152,39 @@ function compareAsInt( a, b ) {
 }
 
 var credits_img = "<img src='//static.pardus.at/img/stdhq/credits_16x16.png' alt='Credits' width='16' height='16' style='vertical-align: middle;'>",
-    universe = getUniverse(),
-    buildingListId = universe + "BuildingList",
-    sortCritKey = universe + 'OverviewSortCrit',
-    sortAscKey = universe + 'OverviewSortAsc';
+    universe = Universe.fromDocument( document ),
+    sortCritKey = universe.name + 'OverviewSortCrit',
+    sortAscKey = universe.name + 'OverviewSortAsc';
 
-function showOverview( data ) {
+function showOverview( syncData ) {
 	// Data contains a property whose name we computed and stored in the
 	// buildingListId variable.  Its value is an array of location IDs of
 	// every building tracked.
-	var buildingList = data[ buildingListId ];
+	var buildingList = syncData[ universe.key ];
 
 	if( !buildingList )
 		// No configuration, odd. Do nothing.
 		return;
 
-	var prefix = universe + "Building",
-	    keys = [ sortCritKey, sortAscKey ],
+	chrome.storage.local.get( [sortCritKey, sortAscKey],
+				  showOverviewStep2.bind(null, buildingList) );
+}
+
+function showOverviewStep2( buildingList, data ) {
+	var keys = [],
+	    callback = showOverviewBuildings.bind(
+		    null,
+		    data[sortCritKey],
+		    data[sortAscKey]
+	    ),
 	    i, end;
 
 	// Build an array of storage keys that we'll need to display the overview.
-	for( i = 0, end = buildingList.length; i < end; i++ ) {
-		keys.push( prefix + buildingList[i] );
-	}
+	for( i = 0, end = buildingList.length; i < end; i++ )
+		keys.push( universe.key + buildingList[i] );
 
-	// Query everything in one swoop.
-	chrome.storage.local.get( keys, showOverviewBuildings );
+	// Query the buildings
+	chrome.storage.sync.get( keys, callback );
 }
 
 // Return an array of commodities actually in use by the collection of buildings
@@ -237,31 +218,17 @@ function loadBuildings( data ) {
 	    buildings = [];
 
 	for( key in data ) {
-		b = JSON.parse( data[key] );
-		if( !b.level )
-			b.level = -1;
-		b.stype = BUILDING_SHORTNAMES[ b.type ] || '???';
-		b.ticks = numberOfTicks( b );
-		if( b.ticks < Infinity ) {
-			b.ticksLeft = b.ticks - ticksPassed(b);
-			if( b.ticksLeft < 0 )
-				b.ticksLeft = 0;
-		}
-		else
-			b.ticksLeft = Infinity;
+		b = Building.createFromStorage( key, data[key] );
 		buildings.push( b );
 	}
 
 	return buildings;
 }
 
-function showOverviewBuildings( data ) {
+function showOverviewBuildings( sort, ascending, data ) {
 	var buildings, b, ckey, commodity, container, end, h1, i, img, in_use,
-	    key, table, tbody, thead, tr, sort, ascending;
+	    key, table, tbody, thead, tr;
 
-	// Get the sorting keys
-	sort = data[ sortCritKey ];
-	ascending = data[ sortAscKey ];
 	if( !sort )
 		sort = 'time';
 	if( typeof ascending != 'boolean' )
@@ -328,7 +295,6 @@ function showOverviewBuildings( data ) {
 
 	function onHeaderClick( event ) {
 		var target = event.target;
-		console.log( 'header click', target );
 		if( target.id && target.id.startsWith( 'bookkeeper-hdr-' ) ) {
 			event.stopPropagation();
 			var newsort = target.id.substr( 15 );
@@ -371,8 +337,7 @@ function fillTBody( tbody, in_use, buildings, sort, ascending ) {
 
 		addTD( tr, humanCoords( building ) );
 		cell = addTD( tr, building.stype );
-		if( building.type )
-			cell.title = building.type;
+		cell.title = building.type;
 		addTD( tr, building.owner || 'need update' );
 		addTD( tr, building.level > 0 ? String(building.level) : '??', 'right' );
 
@@ -395,23 +360,23 @@ function fillTBody( tbody, in_use, buildings, sort, ascending ) {
 			}
 		}
 
-		cell = makeTimeTD( building.time );
+		cell = makeTimeTD( building.time * 1000 );
 		tr.appendChild( cell );
 
 		addTD( tr, building.ticks < Infinity ? String(building.ticks) : '??', 'r' );
 
 		className = null;
-		if (building.ticksLeft < Infinity) {
+		if (building.ticks_left < Infinity) {
 			// Not pretty but fast according to:
 			// https://stackoverflow.com/questions/6665997/switch-statement-for-greater-than-less-than
-			if( building.ticksLeft < 1 )
+			if( building.ticks_left < 1 )
 				className = 'red';
-			else if( building.ticksLeft < 2 )
+			else if( building.ticks_left < 2 )
 				className = 'yellow';
 		}
 
 		cell = addTD( tr,
-			      building.ticksLeft < Infinity ? String(building.ticksLeft) : '??',
+			      building.ticks_left < Infinity ? String(building.ticks_left) : '??',
 			      'r' );
 		if( className )
 			cell.classList.add( className );
@@ -467,8 +432,8 @@ function makeTimeTD( timestamp ) {
 }
 
 function humanCoords( building ) {
-	if( building.sector ) {
-		return building.sector + ' [' +
+	if( building.sector_id ) {
+		return building.getSectorName() + ' [' +
 			(typeof building.x == 'number' ? building.x : '?') + ',' +
 			(typeof building.y == 'number' ? building.y : '?') + ']';
 	}
@@ -496,7 +461,7 @@ function addChild( parent, tagname, content, className, id ) {
 	return elt;
 }
 
-chrome.storage.local.get(buildingListId,showOverview);
+chrome.storage.sync.get( universe.key, showOverview );
 
 // To do
 // * Sum all rows of a single column.
