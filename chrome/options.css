@@ -1,0 +1,29 @@
+/* -*- css-indent-offset: 8; indent-tabs-mode: t -*- */
+
+body {
+  min-width: 440px;
+}
+
+body > section {
+	padding-top: 12px;
+}
+body > section:first-child {
+	padding-top: inherit;
+}
+
+button#bookkeeper-clear-button {
+	background-color: #00a;
+	background-image: linear-gradient(#b80000, #b80000 38%, #850000);
+	color: white;
+	text-shadow: #850000 0px 1px 0px;
+}
+
+button#bookkeeper-clear-button:disabled {
+	background-color: #00a;
+	background-image: linear-gradient(#6a4e4e, #6a4e4e 38%, #513535);
+	text-shadow: #513535 0px 1px 0px;
+}
+
+progress#bookkeeper-storage-gauge {
+	width: 100%
+}
