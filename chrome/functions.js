@@ -14,7 +14,6 @@ function removeBuilding( loc, universe, callback ) {
 		data = {};
 		data[ universe.key ] = list;
 
-		console.log( 'removing', universe.key + loc, 'updating', data );
 		chrome.storage.sync.remove( universe.key + loc )
 		chrome.storage.sync.set( data, callback );
 	}

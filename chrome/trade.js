@@ -60,7 +60,7 @@ function onGameMessage( event ) {
 }
 
 function addTrackButton() {
-	// We need to check if the building is tracked.  Request the building
+	// We need to check if the building is tracked.	 Request the building
 	// list from storage, it's probably shorter than the actual building
 	// entry.
 	chrome.storage.sync.get( universe.key, finishAddTrackButton );
@@ -102,7 +102,7 @@ function onTrackButtonClick() {
 	else
 		removeBuilding( userloc, universe, onBuildingUntracked );
 
-	// Don't toggle or enable here.  We'll toggle when Chrome tells us the
+	// Don't toggle or enable here.	 We'll toggle when Chrome tells us the
 	// building is saved (it can fail if we're over quota) or removed.
 }
 
@@ -168,16 +168,17 @@ function getLevel() {
 	}
 
 	if (levelCheck === 0) {
-
 		return level;
-	} else {
-		console.log(level);
-		console.log(levelCheck);
-		console.log(levelEst);
-		console.log(Object.keys(res_upkeep).length);
-		console.log(perCommodity);
 	}
 
+	// else {
+	//	console.log(level);
+	//	console.log(levelCheck);
+	//	console.log(levelEst);
+	//	console.log(Object.keys(res_upkeep).length);
+	//	console.log(perCommodity);
+	//}
+	return -1;
 }
 
 function trackBuilding() {
@@ -192,7 +193,7 @@ function trackBuildingStep2( data ) {
 		// We already had a building list, check again if the building
 		// is on it.  It shouldn't be, we wouldn't be executing this if
 		// it were (we came here from onTrackButtonClick(), which
-		// wouldn't have run if the building were on the list).  But
+		// wouldn't have run if the building were on the list).	 But
 		// another tab may have updated the list since we last
 		// checked...
 		if( buildingList.indexOf( userloc ) == -1 ) {
