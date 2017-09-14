@@ -54,6 +54,14 @@ h1.bookkeeper img {
 	text-align: right;
 }
 
+/* Colours for profit/deficit from the trade log screens */
+#bookkeeper-overview td.lime {
+	color: #8AB797;
+}
+#bookkeeper-overview td.pink {
+	color: #B78A8E;
+}
+
 #bookkeeper-overview td.red {
 	color: red;
 	font-weight: bold;

@@ -8,7 +8,7 @@ var Building; // in building.js
 (function (){
 
 // Data taken from Pardus. 'i' is the icon, minus the image pack prefix and the
-// .png suffix. 'n' is the proper name of a commodity.  These specific ID
+// .png suffix. 'n' is the proper name of a commodity.	These specific ID
 // numbers, and the inconsistent capitalisation of names, should both stay like
 // this exactly (we need to match the game).
 
@@ -316,7 +316,7 @@ function showOverviewBuildings( sort, ascending, data ) {
 }
 
 function fillTBody( tbody, in_use, buildings, sort, ascending ) {
-	var key, building, tr, cell, img, ckey, n, i , end, j, jend, commodity,
+	var key, building, tr, cell, img, ckey, n, s, i , end, j, jend, commodity,
 	    sortfn, fn, className;
 
 	sortfn = BUILDING_SORT_FUNCTIONS[ sort ];
@@ -346,17 +346,25 @@ function fillTBody( tbody, in_use, buildings, sort, ascending ) {
 			commodity = COMMODITIES[ckey];
 
 			// If upkeep we do amount - min, else we do max - amount and make it negative..
-			if( building.res_upkeep[ckey] )
-				n = String( -(building.amount_max[ckey] - building.amount[ckey]) );
-			else if( building.res_production[ckey] )
-				n = String( building.amount[ckey] - building.amount_min[ckey] );
+			if( building.res_upkeep[ckey] ) {
+				n = -(building.amount_max[ckey] - building.amount[ckey]);
+				s = String( n );
+			}
+			else if( building.res_production[ckey] ) {
+				n = building.amount[ckey] - building.amount_min[ckey];
+				s = String( n );
+			}
 			else
-				n = null;
+				s = n = null;
 
-			cell = addTD( tr, n );
-			if( n ) {
+			cell = addTD( tr, s );
+			if( s ) {
 				cell.title = commodity.n;
 				cell.className = 'c';
+				if( n > 0 )
+					cell.classList.add( 'lime' );
+				else if( n < 0 )
+					cell.classList.add( 'pink' );
 			}
 		}
 
