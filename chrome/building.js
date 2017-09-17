@@ -73,6 +73,39 @@ var SHORT_TYPES = [
 	'SCM'
 ];
 
+// Keep in sync with TYPES above.
+var ICONS = [
+	'alliance_command_station',
+	'asteroid_mine',
+	'battleweapons_factory',
+	'brewery',
+	'chemical_laboratory',
+	'clod_generator',
+	'dark_dome',
+	'droid_assembly_complex',
+	'drug_station',
+	'electronics_facility',
+	'energy_well',
+	'fuel_collector',
+	'gas_collector',
+	'handweapons_factory',
+	'leech_nursery',
+	'medical_laboratory',
+	'military_outpost',
+	'nebula_plant',
+	'neural_laboratory',
+	'optics_research_center',
+	'plastics_facility',
+	'radiation_collector',
+	'recyclotron',
+	'robot_factory',
+	'slave_camp',
+	'smelting_facility',
+	'space_farm',
+	'stim_chip_mill'
+];
+var ICON_TYPE_IDS; // lazily initialised in Building.getTypeIdByIcon
+
 function Building( loc, time_secs, sector_id, x, y, type_id, level, owner,
 		   amount, amount_max, amount_min, res_production, res_upkeep,
 		   buy_price, sell_price ) {
@@ -117,6 +150,18 @@ Building.getTypeId = function( name ) {
 	}
 
 	return TYPE_IDS[ name ] || undefined;
+}
+
+Building.getTypeIdByIcon = function( icon ) {
+	if( !ICON_TYPE_IDS ) {
+		var i, end;
+		ICON_TYPE_IDS = {};
+		for( i = 0, end = ICONS.length; i < end; i++ ) {
+			ICON_TYPE_IDS[ ICONS[i] ] = i + 1;
+		}
+	}
+
+	return ICON_TYPE_IDS[ icon ] || undefined;
 }
 
 Building.getTypeName = function( type_id ) {

@@ -2,121 +2,11 @@
 
 // This is a content script.  It runs on overview_buildings.php.
 
-var Universe; // in universe.js
-var Building; // in building.js
+var Universe; // from universe.js
+var Building; // from building.js
+var Commodities; // from commodity.js
 
 (function (){
-
-// Data taken from Pardus. 'i' is the icon, minus the image pack prefix and the
-// .png suffix. 'n' is the proper name of a commodity.	These specific ID
-// numbers, and the inconsistent capitalisation of names, should both stay like
-// this exactly (we need to match the game).
-
-var COMMODITIES = {
-	1: { i: 'food',
-	     n: 'Food' },
-	2: { i: 'energy',
-	     n: 'Energy' },
-	3: { i: 'water',
-	     n: 'Water' },
-	4: { i: 'animal_embryos',
-	     n: 'Animal embryos' },
-	5: { i: 'ore',
-	     n: 'Ore' },
-	6: { i: 'metal',
-	     n: 'Metal' },
-	7: { i: 'electronics',
-	     n: 'Electronics' },
-	8: { i: 'robots',
-	     n: 'Robots' },
-	9: { i: 'heavy-plastics',
-	     n: 'Heavy plastics' },
-	10: { i: 'hand-weapons',
-	      n: 'Hand weapons' },
-	11: { i: 'medicines',
-	      n: 'Medicines' },
-	12: { i: 'nebula-gas',
-	      n: 'Nebula gas' },
-	13: { i: 'chemical-supplies',
-	      n: 'Chemical supplies' },
-	14: { i: 'gem-stones',
-	      n: 'Gem stones' },
-	15: { i: 'liquor',
-	      n: 'Liquor' },
-	16: { i: 'hydrogen-fuel',
-	      n: 'Hydrogen fuel' },
-	17: { i: 'exotic_matter',
-	      n: 'Exotic matter' },
-	18: { i: 'optical_components',
-	      n: 'Optical components' },
-	19: { i: 'radioactive_cells',
-	      n: 'Radioactive cells' },
-	20: { i: 'droid_modules',
-	      n: 'Droid modules' },
-	21: { i: 'biowaste',
-	      n: 'Bio-waste' },
-	22: { i: 'leech_baby',
-	      n: 'Leech baby' },
-	23: { i: 'nutrient_clods',
-	      n: 'Nutrient clods' },
-	24: { i: 'cybernetic_x993_parts',
-	      n: 'Cybernetic X-993 Parts' },
-	25: { i: 'x993_repairdrone',
-	      n: 'X-993 Repair-Drone' },
-	26: { i: 'neural_stimulator',
-	      n: 'Neural Stimulator' },
-	27: { i: 'battleweapon_parts',
-	      n: 'Battleweapon Parts' },
-	28: { i: 'neural_tissue',
-	      n: 'Neural Tissue' },
-	29: { i: 'stim_chip',
-	      n: 'Stim Chip' },
-	30: { i: 'stim_chip_fed',
-	      n: 'Capri Stim' },
-	31: { i: 'stim_chip_emp',
-	      n: 'Crimson Stim' },
-	32: { i: 'stim_chip_uni',
-	      n: 'Amber Stim' },
-	50: { i: 'slaves',
-	      n: 'Slaves' },
-	51: { i: 'drugs',
-	      n: 'Drugs' },
-	100: { i: 'package',
-	       n: 'Package' },
-	101: { i: 'package_faction',
-	       n: 'Faction package' },
-	102: { i: 'explosives',
-	       n: 'Explosives' },
-	103: { i: 'vip',
-	       n: 'VIP' },
-	104: { i: 'christmas_glitter',
-	       n: 'Christmas Glitter' },
-	105: { i: 'explosives_military',
-	       n: 'Military Explosives' },
-	150: { i: 'exotic_crystal',
-	       n: 'Exotic Crystal' },
-	151: { i: 'feral_egg',
-	       n: 'Feral Egg' },
-	201: { i: 'human_intestines',
-	       n: 'Human intestines' },
-	202: { i: 'skaari_limbs',
-	       n: 'Skaari limbs' },
-	203: { i: 'keldon_brains',
-	       n: 'Keldon brains' },
-	204: { i: 'rashkir_bones',
-	       n: 'Rashkir bones' },
-	211: { i: 'jewels_fed',
-	       n: 'Blue Sapphire jewels' },
-	212: { i: 'jewels_emp',
-	       n: 'Ruby jewels' },
-	213: { i: 'jewels_uni',
-	       n: 'Golden Beryl jewels' }
-};
-
-// An array of indices into the catalogue above.  Used to preserve order when
-// traversing.
-
-var COMMODITY_INDICES = Object.keys( COMMODITIES ).sort( compareAsInt );
 
 var WEEKDAYS = [ 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat' ];
 var MONTHS = [ 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -256,7 +146,7 @@ function showOverviewBuildings( sort, ascending, data ) {
 
 	for( i = 0, end = in_use.length; i < end; i++ ) {
 		ckey = in_use[i];
-		commodity = COMMODITIES[ckey];
+		commodity = Commodities.getCommodity( ckey );
 		img = document.createElement( 'img' );
 		img.src = '//static.pardus.at/img/stdhq/res/'
 			+ commodity.i + '.png';
@@ -343,7 +233,7 @@ function fillTBody( tbody, in_use, buildings, sort, ascending ) {
 
 		for( j = 0, jend = in_use.length; j < jend; j++ ) {
 			ckey = in_use[j];
-			commodity = COMMODITIES[ckey];
+			commodity = Commodities.getCommodity( ckey );
 
 			// If upkeep we do amount - min, else we do max - amount and make it negative..
 			if( building.res_upkeep[ckey] ) {

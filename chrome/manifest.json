@@ -8,13 +8,13 @@
 		{
 			"matches": [ "*://*.pardus.at/building_trade.php*" ],
 			"js": [ "functions.js", "universe.js", "sector.js",
-				"building.js", "trade.js" ],
+				"building.js", "commodity.js", "trade.js" ],
 			"all_frames": true
 		},
 		{
 			"matches": [ "*://*.pardus.at/overview_buildings.php*" ],
 			"js": [ "functions.js", "universe.js", "sector.js",
-				"building.js", "overview.js" ],
+				"building.js", "commodity.js", "overview.js" ],
 			"css": [ "bookkeeper.css" ],
 			"all_frames": true
 		},
@@ -22,13 +22,19 @@
 			"matches": [ "*://*.pardus.at/main.php*" ],
 			"js": [ "nav.js" ],
 			"all_frames": true
+		},
+		{
+			"matches": [ "*://*.pardus.at/index_buildings.php*" ],
+			"js": [ "functions.js", "universe.js", "sector.js",
+				"building.js", "commodity.js", "bldgindex.js" ],
+			"all_frames": true
 		}
 	],
 	"description": "User trade interface enhancements for the online game Pardus",
 	"manifest_version": 2,
 	"minimum_chrome_version": "42",
 	"name": "Pardus Bookkeeper",
-	"permissions": [ "storage", "*://*.pardus.at/*" ],
+	"permissions": [ "notifications", "storage" ],
 	"version": "1.9",
 	"browser_action": {
 		"default_title": "Trade info",
@@ -45,5 +51,8 @@
 		"page": "options.html",
 		"chrome_style": true
 	},
-	"web_accessible_resources": [ "icons/24.png" ]
+	"web_accessible_resources": [
+		"icons/24.png",
+		"icons/48.png"
+	]
 }

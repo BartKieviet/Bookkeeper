@@ -4,6 +4,7 @@ var Sector; // from sector.js
 var Building; // from building.js
 
 chrome.runtime.onInstalled.addListener( onInstall );
+chrome.runtime.onMessage.addListener( onMessage );
 
 // End of script execution, function definitions below.
 
@@ -185,4 +186,35 @@ function migrateV18Storage() {
 
 		return r;
 	}
+} // function function migrateV18Storage()
+
+// This is called when a content script asks us to do some work for them.
+
+function onMessage( message, sender, sendResponse ) {
+	var handler;
+
+	//console.log( 'received message', message, sender );
+	handler = OpHandlers[ message.op ];
+	if( handler )
+		return handler( message, sendResponse );
+	return false;
+}
+
+// Op handlers below.
+
+var OpHandlers = {};
+
+OpHandlers.showNotification = function( message ) {
+	var options;
+
+	options = {
+		type: 'basic',
+		title: 'Pardus Bookkeeper',
+		message: message.text,
+		iconUrl: 'icons/48.png'
+	};
+
+	chrome.notifications.create( message.id, options );
+
+	return false;
 }
