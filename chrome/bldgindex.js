@@ -57,7 +57,7 @@ function setup() {
 		null).singleNodeValue;
 	if( !now )
 		return;
-	now = Date.parse( now.textContent ) + 11000; // XXX
+	now = Date.parse( now.textContent );
 	if( isNaN(now) )
 		return;
 	now = Math.floor( now / 1000 );
@@ -236,7 +236,6 @@ function parseInfoTd( entry, td ) {
 	if( !td )
 		return false;
 
-	// XXX
 	entry.new_amount = {};
 
 	// The "automatic info" table contains up to 4 tables, each of a single
