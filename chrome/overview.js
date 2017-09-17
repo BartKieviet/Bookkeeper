@@ -361,8 +361,4 @@ function addChild( parent, tagname, content, className, id ) {
 
 chrome.storage.sync.get( universe.key, showOverview );
 
-// To do
-// * Sum all rows of a single column.
-// * Add option to allow own buildings to be added.
-
 })();
