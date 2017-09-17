@@ -9,10 +9,26 @@ chrome.runtime.onMessage.addListener( onMessage );
 // End of script execution, function definitions below.
 
 function onInstall( details ) {
-	// 1.8.1 is the version when we switched from storage.local to storage.sync
-	if( details.reason == 'update' &&
-	    details.previousVersion < '1.8.1' )
-		migrateV18Storage();
+	var v, maj, min, patch;
+	if( details.reason == 'update' ) {
+		parseVersion( details.previousVersion );
+
+		// 1.8.1 is the version when we switched from storage.local to storage.sync
+		if( maj < 1 ||
+		    (maj === 1 && min < 8) ||
+		    (maj === 1 && min === 8 && patch < 1) ) {
+			migrateV18Storage();
+		}
+	}
+
+	function parseVersion( v ) {
+		v = v.split( '.' ).map( function(n) { return parseInt(n); });
+		while( v.length < 3 )
+			v.push( 0 );
+		maj = v[0];
+		min = v[1];
+		patch = v[2];
+	}
 }
 
 // Start a migration from storage.local to storage.sync.  Also migrate the
