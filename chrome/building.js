@@ -185,7 +185,7 @@ Building.createFromPardus = function(
 	amount, amount_max, amount_min, res_production, res_upkeep,
 	buy_price, sell_price ) {
 	return new Building(
-		loc, Math.floor(time/1000), Sector.getId(sector), x, y,
+		loc, Math.floor(time/1000) /*<- this breaks my heart Vic*/, Sector.getId(sector), x, y,
 		Building.getTypeId(type), level, owner, amount, amount_max,
 		amount_min, res_production, res_upkeep, buy_price, sell_price);
 }

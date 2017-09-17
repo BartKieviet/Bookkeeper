@@ -7,13 +7,13 @@
 	"content_scripts": [
 		{
 			"matches": [ "*://*.pardus.at/building_trade.php*" ],
-			"js": [ "functions.js", "universe.js", "sector.js",
+			"js": [ "functions.js", "sector.js",
 				"building.js", "commodity.js", "trade.js" ],
 			"all_frames": true
 		},
 		{
 			"matches": [ "*://*.pardus.at/overview_buildings.php*" ],
-			"js": [ "functions.js", "universe.js", "sector.js",
+			"js": [ "functions.js", "sector.js",
 				"building.js", "commodity.js", "overview.js" ],
 			"css": [ "bookkeeper.css" ],
 			"all_frames": true
@@ -25,13 +25,13 @@
 		},
 		{
 			"matches": [ "*://*.pardus.at/index_buildings.php*" ],
-			"js": [ "functions.js", "universe.js", "sector.js",
+			"js": [ "functions.js", "sector.js",
 				"building.js", "commodity.js", "bldgindex.js" ],
 			"all_frames": true
 		},
 		{
-			"matches": ["*://*.pardus.at/building_trade_settings.php*"],
-			"js": ["building.js","buildingtradesettings.js",
+			"matches": [ "*://*.pardus.at/building_trade_settings.php*" ],
+			"js": [ "functions.js", "building.js", "buildingtradesettings.js" ],
 			"all_frames": true
 		}
 	],
