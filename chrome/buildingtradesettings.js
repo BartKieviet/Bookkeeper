@@ -18,6 +18,7 @@
 			buildingAmount_min[key] = parseInt( inputs[i].value );			
 		}
 	}
+	//This should be sent to the building once I know how.
 	console.log( buildingAmount_min );
 	console.log( buildingAmount_max );
 	

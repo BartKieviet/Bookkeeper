@@ -363,41 +363,50 @@ function addOwnBuildings () {
 
 	var ownBuildingTable = document.getElementById( "mToggle" ).parentNode.parentNode.parentNode;
 	if (ownBuildingTable) {
-		var ownBuildingData = ownBuildingTable.getElementsByTagName( "table" ); // 4 tables per building giving us our data.
-		var ownNumberOfBuildings = (ownBuildingData.length - 1) / 4;
-		// We got 4 <a> tags per building. Plus one from the modules (+)
-		var ownBuildingLinkList = ownBuildingTable.getElementsByTagName("a");
-		var offset = 1;
-		var tableoffset = 0;
-
+		var ownNumberOfBuildings = ownBuildingTable.children.length - 1;
+		// We got 4 <a> tags per building. Plus one from the modules (+) - most likely MOs will screw this up too.
+		
 		for (var i = 0; i < ownNumberOfBuildings ; i ++) {
-			var firstLink = ownBuildingLinkList[4 * ( i ) + offset ];
 			
-			if (firstLink.innerHTML === "Trading Outpost") {
-				//TOs don't play by the rules.
-				offset -= 1;
-				tableoffset = -4;
+			var firstLink = ownBuildingTable.children[i+1].getElementsByTagName("a")[0];
+
+			if (firstLink.textContent === "Trading Outpost") {
+				//TOs don't play by the rules. - most likely MOs will screw this up too.
 				continue;
 			} else {
-				console.log();
-			/*
+				var ownBuildingData = ownBuildingTable.children[i+1].getElementsByTagName( "table" );
+				//var ownBuildingLocation = ownBuildingData.children[i+1].getElementsByTagName( "td" )[1].split(/[: ,]/g);
+				var ownBuildingLocation = ownBuildingTable.children[i+1].getElementsByTagName( "td" )[1].textContent.split(/[: ,]/g);
+				
+				var ownBuildingAmount = {};
+
+				for (var tableNumber = 3; tableNumber < 5; tableNumber++) {
+					//3 and 4 are upkeep and stock.
+					var stock_img = ownBuildingData[tableNumber].getElementsByTagName("img");
+					for (var j = 0; j < stock_img.length ; j++) {
+						var key = Commodities.getId(stock_img[j].src.split(/[./]/g)[8]);
+						// var key = Commodities.getId(stock_img[j].alt.toLowerCase().replace(/ /g,"_"));
+						var value = stock_img[j].parentNode.textContent.split( " " )[1];
+						ownBuildingAmount[key] = value;
+					}
+				}
+			
 				var building = Building.createFromPardus (
 				firstLink.href.split("=")[1], //loc, 
 				Date.now(), //time, 
-				sector, 
-				x, 
-				y, 
-				firstLink.innerHTML, //type, 
-				ownBuildingData[5*i + tableoffset].textContent, //level, 
+				ownBuildingLocation[0], //sector, 
+				ownBuildingLocation[2], //x, 
+				ownBuildingLocation[3], //y, 
+				firstLink.textContent, //type, 
+				ownBuildingData[0].textContent, //level, 
 				"You", //owner,
-				amount, 
-				amount_max, 
-				amount_min, 
-				res_production, 
-				res_upkeep,
-				buy_price, 
-				sell_price ) ;
-			*/
+				ownBuildingAmount, //amount, 
+				{}, //amount_max, 
+				{}, //amount_min, 
+				{}, //res_production, 
+				{}, //res_upkeep,
+				{}, //buy_price, 
+				{} ); //sell_price ) ;
 				//items[ buildingId ] = building.toStorage();
 				//chrome.storage.sync.set( items, callback );
 			}
