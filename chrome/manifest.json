@@ -53,6 +53,9 @@
 	},
 	"web_accessible_resources": [
 		"icons/24.png",
-		"icons/48.png"
+		"icons/48.png",
+		"icons/minus.svg",
+		"icons/mingray.svg",
+		"icons/plus.svg"
 	]
 }

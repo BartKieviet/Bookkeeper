@@ -71,3 +71,22 @@ h1.bookkeeper img {
 	color: yellow;
 	font-weight: bold;
 }
+
+#bookkeeper-overview a.bookeeper-addrmv-small {
+	margin-left: 4px;
+}
+
+a.bookeeper-addrmv-small {
+	display: inline-block;
+	border: none;
+	margin: 0;
+	padding: 0;
+	background: url('chrome-extension://__MSG_@@extension_id__/icons/mingray.svg');
+	width: 14px;
+	height: 14px;
+	cursor: pointer;
+}
+
+a.bookeeper-addrmv-small:hover {
+	background: url('chrome-extension://__MSG_@@extension_id__/icons/minus.svg');
+}

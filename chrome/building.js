@@ -228,6 +228,32 @@ Building.createFromStorage = function( key, a ) {
 	}
 }
 
+Building.removeStorage = function( loc, ukey, callback ) {
+	loc = parseInt( loc );
+	if( isNaN(loc) )
+		return;
+
+	chrome.storage.sync.get( ukey, removeBuildingListEntry );
+
+	function removeBuildingListEntry( data ) {
+		var list, index;
+
+		list = data[ ukey ];
+		index = list.indexOf( loc );
+		if( index === -1 )
+			removeBuildingData();
+		else {
+			list.splice( index, 1 );
+			chrome.storage.sync.set( data, removeBuildingData );
+		}
+	}
+
+	function removeBuildingData() {
+		chrome.storage.sync.remove( ukey + loc, callback )
+	}
+}
+
+
 // Create the object that gets sent to storage (14-element array, etc.)
 
 Building.prototype.toStorage = function() {
@@ -258,6 +284,10 @@ Building.prototype.toStorage = function() {
 
 Building.prototype.getSectorName = function() {
 	return Sector.getName( this.sector_id );
+}
+
+Building.prototype.removeStorage = function( ukey, callback ) {
+	Building.removeStorage( this.loc, ukey, callback );
 }
 
 function ticksPassed( building ) {

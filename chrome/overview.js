@@ -207,7 +207,7 @@ function showOverviewBuildings( sort, ascending, data ) {
 
 function fillTBody( tbody, in_use, buildings, sort, ascending ) {
 	var key, building, tr, cell, img, ckey, n, s, i , end, j, jend, commodity,
-	    sortfn, fn, className;
+	    sortfn, fn, className, deleteIconUri;
 
 	sortfn = BUILDING_SORT_FUNCTIONS[ sort ];
 	if( sortfn ) {
@@ -220,6 +220,8 @@ function fillTBody( tbody, in_use, buildings, sort, ascending ) {
 
 	while( tbody.hasChildNodes() )
 		tbody.removeChild( tbody.firstChild );
+
+	deleteIconUri = chrome.extension.getURL('icons/minusbw.svg');
 
 	for( i = 0, end = buildings.length; i < end; i++ ) {
 		building = buildings[ i ];
@@ -279,15 +281,38 @@ function fillTBody( tbody, in_use, buildings, sort, ascending ) {
 		if( className )
 			cell.classList.add( className );
 
-		img = document.createElement("img");
-		img.src = "http://static.pardus.at/img/stdhq/ui_trash.png";
-		img.onclick = function() {
-			removeBuilding( building.loc, universe );
-			tr.style.display = "none";
-		};
-		addTD( tr, img );
+		addTD( tr, makeRemoveButton(building.loc) );
 
 		tbody.appendChild( tr );
+	}
+}
+
+function makeRemoveButton( loc ) {
+	var button;
+
+	button = document.createElement( 'a' );
+	button.className = 'bookeeper-addrmv-small';
+	button.dataset.bookkeperLoc = loc;
+	button.addEventListener( 'click', onRemoveClick );
+
+	return button;
+}
+
+function onRemoveClick( event ) {
+	var target, loc;
+
+	target = event.target;
+	loc = target.dataset.bookkeperLoc;
+	if( !loc )
+		return;
+
+	Building.removeStorage( loc, universe.key, removeRow );
+
+	function removeRow() {
+		var tr = target.parentElement;
+		while( tr.tagName != 'TR' )
+			tr = tr.parentElement;
+		tr.remove();
 	}
 }
 
