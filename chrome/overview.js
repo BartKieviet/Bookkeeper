@@ -386,10 +386,52 @@ function addChild( parent, tagname, content, className, id ) {
 	return elt;
 }
 
-chrome.storage.sync.get( universe.key, showOverview );
+function addOwnBuildings () {
+	var ownBuildingTable = document.getElementById( "mToggle" ).parentNode.parentNode.parentNode;
+	if (ownBuildingTable) {
+		var ownBuildingData = ownBuildingTable.getElementsByTagName( "table" ); // 4 tables per building giving us our data.
+		var ownNumberOfBuildings = (ownBuildingData.length - 1) / 4;
+		// We got 4 <a> tags per building. Plus one from the modules (+)
+		var ownBuildingLinkList = ownBuildingTable.getElementsByTagName("a");
+		var offset = 1;
+		var tableoffset = 0;
 
-// To do
-// * Sum all rows of a single column.
-// * Add option to allow own buildings to be added.
+		for (var i = 0; i < ownNumberOfBuildings ; i ++) {
+			var firstLink = ownBuildingLinkList[4 * ( i ) + offset ];
+
+			if (firstLink.innerHTML === "Trading Outpost") {
+				//TOs don't play by the rules.
+				offset -= 1;
+				tableoffset = -4;
+				continue;
+			} else {
+				console.log();
+			/*
+				var building = Building.createFromPardus (
+				firstLink.href.split("=")[1], //loc,
+				Date.now(), //time,
+				sector,
+				x,
+				y,
+				firstLink.innerHTML, //type,
+				ownBuildingData[5*i + tableoffset].textContent, //level,
+				"You", //owner,
+				amount,
+				amount_max,
+				amount_min,
+				res_production,
+				res_upkeep,
+				buy_price,
+				sell_price ) ;
+			*/
+				//items[ buildingId ] = building.toStorage();
+				//chrome.storage.sync.set( items, callback );
+			}
+		}
+	}
+}
+
+//addOwnBuildings();
+chrome.storage.sync.get( universe.key, showOverview );
 
 })();
