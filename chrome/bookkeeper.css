@@ -76,15 +76,25 @@ h1.bookkeeper img {
 	margin-left: 4px;
 }
 
+a.bookeeper-addbut,
 a.bookeeper-addrmv-small {
 	display: inline-block;
 	border: none;
 	margin: 0;
 	padding: 0;
+	cursor: pointer;
+}
+
+a.bookeeper-addbut {
+	background: url('chrome-extension://__MSG_@@extension_id__/icons/plus.svg');
+	width: 24px;
+	height: 24px;
+}
+
+a.bookeeper-addrmv-small {
 	background: url('chrome-extension://__MSG_@@extension_id__/icons/mingray.svg');
 	width: 14px;
 	height: 14px;
-	cursor: pointer;
 }
 
 a.bookeeper-addrmv-small:hover {

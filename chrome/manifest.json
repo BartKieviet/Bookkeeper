@@ -27,6 +27,7 @@
 			"matches": [ "*://*.pardus.at/index_buildings.php*" ],
 			"js": [ "functions.js", "universe.js", "sector.js",
 				"building.js", "commodity.js", "bldgindex.js" ],
+			"css": [ "bookkeeper.css" ],
 			"all_frames": true
 		}
 	],

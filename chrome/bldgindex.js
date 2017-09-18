@@ -9,6 +9,7 @@ var Universe,    // from universe.js
 
 // Regular expressions, XPath expressions and other stuff we use repeatedly.
 var IMGRX = /([^/]*)\.png$/,
+    COORDSRX = /\[(\d+),(\d+)\]/,
     OWNERRX = /^sendmsg\('(.*)'\)$/,
     AMTRX = /^\s*×\s*(\d+)/,
     CREDICONRX = /.*\/credits\.png$/,
@@ -21,7 +22,7 @@ var IMGRX = /([^/]*)\.png$/,
     };
 
 // These are initialised in setup() and the callbacks triggered from there.
-var universe, sectorId, sectorName, now, updateCount;
+var universe, sectorId, sector, now, pageData;
 
 setup();
 
@@ -29,7 +30,7 @@ setup();
 
 function setup() {
 	var sectorrx = /^(.*) Building Index$/,
-	    h1, m;
+	    h1, m, buildingsTable, entries, i, end, entry, keys;
 
 	universe = Universe.fromDocument( document );
 
@@ -44,10 +45,10 @@ function setup() {
 	m = sectorrx.exec( h1.textContent );
 	if( !m )
 		return;
-	sectorName = m[1];
-	sectorId = Sector.getId( sectorName );
+	sectorId = Sector.getId( m[1] );
 	if( !sectorId )
 		return;
+	sector = Sector.createFromId( sectorId );
 
 	// Get the timestamp.  This will be in the same TD that contains the H1
 	// header, inside a SPAN of class 'cached', inside a DIV.
@@ -62,139 +63,106 @@ function setup() {
 		return;
 	now = Math.floor( now / 1000 );
 
-	// Fetch all buildings in storage.  This kinda sucks but, there is no
-	// other way: we don't have tile IDs here.
-	//
-	// XXX - At some point we'll have to come up with a way to resolve
-	// sector coords to tile IDs, and then we'll get away with just querying
-	// the relevant IDs.  Remember to write about this in a GitHub issue.
-	chrome.storage.sync.get( universe.key, onBuildingList );
-}
+	// Find the table with the buildings. We look for a table with a TH
+	// "Automatic Info"
+	buildingsTable = document.evaluate(
+		'//table[tbody/tr/th[text() = "Automatic Info"]]', document,
+		null, XPathResult.ANY_UNORDERED_NODE_TYPE,
+		null).singleNodeValue;
+	if( !buildingsTable )
+		return;
 
-function onBuildingList( data ) {
-	var k = universe.key;
-	var keys = data[ k ].map( function( loc ) { return k + loc; } );
+	// Phew. We're all set now. Go.
+	entries = parsePage( buildingsTable );
+
+	if( entries.length < 2 )
+		return;
+
+	// Now add our UI.
+	// The first entry is the row with the table headers.
+	addBookkeeperHeader( entries.shift() );
+	// The rest are rows. This adds the extra TD and a button for trackable
+	// buildings (a reference to which is added to the entry).
+	addBookkeeperRowCells( entries );
+
+	// Now build the global pageData object.  This is an object keyed by
+	// location IDs, containing entries of trackable buildings in the page.
+	// While we're at it, construct the array of keys to query storage for.
+
+	pageData = {};
+	keys = [];
+	for( i = 0, end = entries.length; i < end; i++ ) {
+		entry = entries[ i ];
+		if( entry.trackable ) {
+			pageData[ entry.loc ] = entry;
+			keys.push( universe.key + entry.loc );
+		}
+	}
+
+	// Finally, fetch the trackable buildings from storage.  We're not done
+	// yet, of course; buildings that are already tracked will need more
+	// work.  But we're done in this function.
+
 	chrome.storage.sync.get( keys, onBuildingData );
 }
 
-function onBuildingData( data ) {
-	var buildings = [], key, building, entries, updates, message;
+function parsePage( buildingsTable ) {
+	var entries, xpr, trh, tr, idx, building, entry;
 
-	for( key in data ) {
-		building = Building.createFromStorage(key, data[key])
-		if( building.sector_id === sectorId )
-			buildings[ coordsToIndex(building.x, building.y) ] = building;
-	}
-
-	entries = parsePage( buildings );
-	updateCount = entries.length;
-	if( updateCount === 0 )
-		return;
-
-	updates = computeUpdates( entries );
-	chrome.storage.sync.set( updates, notifyUpdated );
-}
-
-function computeUpdates( entries ) {
-	var updates, i, end, entry, building;
-
-	updates = {};
-
-	for( i = 0, end = entries.length; i < end; i++ ) {
-		entry = entries[ i ];
-		building = entry.building;
-		//var x = building.toStorage();
-
-		building.type_id = entry.type_id;
-		building.owner = entry.owner;
-		building.time = now;
-		Object.assign( entry.building.amount, entry.new_amount );
-		if( entry.new_buy_price )
-			Object.assign( entry.building.buy_price, entry.new_buy_price );
-		if( entry.new_sell_price )
-			Object.assign( entry.building.sell_price, entry.new_sell_price );
-
-		updates[ universe.key + building.loc ] = building.toStorage();
-	}
-
-	return updates;
-}
-
-function notifyUpdated() {
-	var op, text;
-
-	if( updateCount === 1 )
-		text = 'Updated 1 building';
-	else
-		text = 'Updated ' + updateCount + ' buildings';
-	text += ' in ' + sectorName;
-
-	op = {
-		op: 'showNotification',
-		text: text
-	}
-
-	chrome.runtime.sendMessage( op );
-}
-
-// We convert x,y to a single number, so we can index things faster.  This
-// relies on pardus never adding a sector wider than 10,000 tiles. Ha.
-function coordsToIndex( x, y ) {
-	return y*10000 + x;
-}
-
-function parsePage( buildings ) {
-	var coordsRx, entries, xpr, tr, m, idx, building, entry;
-
-	coordsRx = /^markField\('y(\d+)x(\d+)'\)$/;
 	entries = [];
+
+	// Find the TR with the headers
+	tr = document.evaluate(
+		'./tbody/tr[th]', buildingsTable, null,
+		XPathResult.FIRST_ORDERED_NODE_TYPE,
+		null).singleNodeValue;
+	if( !tr )
+		return entries;
+
+	// Iterate over all TRs, fetching
 	xpr = document.evaluate(
-		'//tr[starts-with(@onmouseover,"markField(\'")]', document, null,
+		'./tbody/tr', buildingsTable, null,
 		XPathResult.UNORDERED_NODE_ITERATOR_TYPE, null);
 
 	while( (tr = xpr.iterateNext()) !== null ) {
-		m = coordsRx.exec( tr.getAttribute('onmouseover') );
-		if( m ) {
-			idx = coordsToIndex( parseInt(m[2]), parseInt(m[1]) );
-			building = buildings[idx];
-			if( building && building.time < now ) {
-				entry = trToEntry( tr, building );
-				if( entry )
-					entries.push( entry );
-				else
-					// For now we want to know if the
-					// extension is rejecting some
-					// listings...
-					console.log( 'Bookkeeper: rejected building at ' +
-						     building.x + ',' + building.y );
-			}
-		}
+		entry = trToEntry( tr );
+		if( entry )
+			entries.push( entry );
 	}
 
 	return entries;
 }
 
 function trToEntry( tr, building ) {
-	var entry, xpr, imgtd, coordtd, ownertd, infotd;
+	var entry, xpr, imgtd, coordtd, ownertd, infotd, x, y;
 
+	// This may not get all its attributes, but the JS engine is happier if
+	// we declare the object's final form upfront.
 	entry = {
 		tr: tr,
-		building: building,
-		type_id: undefined,
-		owner: undefined,
-		new_amount: undefined,
-		new_buy_price: undefined,
-		new_sell_price: undefined
-	};
+		trackable: false,
+		tracked: false,
+		x: -1,
+		y: -1,
+		loc: -1,
+		type_id: -1,
+		owner: '',
+		buying: undefined,
+		selling: undefined,
+		ui: undefined,
+		building: undefined
+	}
 
 	xpr = TDS_XPATH.evaluate( tr, XPathResult.ORDERED_NODE_ITERATOR_TYPE, null );
 	if( parseIconTd(entry, xpr.iterateNext()) &&
-	    xpr.iterateNext() && // skip coords, we already have those
+	    parseCoordTd(entry, xpr.iterateNext()) &&
 	    parseOwnerTd(entry, xpr.iterateNext()) &&
-	    parseInfoTd(entry, xpr.iterateNext()) )
+	    parseInfoTd(entry, xpr.iterateNext()) ) {
+		entry.trackable = true;
 		return entry;
+	}
 
-	return null;
+	return entry;
 }
 
 function parseIconTd( entry, td ) {
@@ -217,13 +185,30 @@ function parseIconTd( entry, td ) {
 	return true;
 }
 
+function parseCoordTd( entry, td ) {
+	var m, x, y;
+	if( !td )
+		return false;
+
+	m = COORDSRX.exec( td.textContent );
+	if( !m )
+		return false;
+
+	entry.x = parseInt(m[1]);
+	entry.y = parseInt(m[2]);
+	entry.loc = sector.getLocation( entry.x, entry.y );
+
+	return true;
+}
+
 function parseOwnerTd( entry, td ) {
 	var a, m;
 	if( !td )
 		return false;
 
 	a = td.firstElementChild;
-	if( !a || a.tagName !== 'A' || !a.href.startsWith("javascript:sendmsg(") )
+	if( !a || a.tagName !== 'A' ||
+	    !a.href.startsWith("javascript:sendmsg(") )
 		return false;
 
 	entry.owner = a.textContent.trim();
@@ -235,8 +220,6 @@ function parseInfoTd( entry, td ) {
 
 	if( !td )
 		return false;
-
-	entry.new_amount = {};
 
 	// The "automatic info" table contains up to 4 tables, each of a single
 	// row.  We identify the rows by the label in the first cell: selling,
@@ -257,50 +240,18 @@ function parseInfoTd( entry, td ) {
 }
 
 function parseSellTDs( entry, firstTD ) {
-	var row, key, min;
-
-	row = parseCommoditiesRow( firstTD );
+	var row = parseCommoditiesRow( firstTD );
 	if( !row )
 		return false;
-
-	// If a building is *selling* N of a thing, it means that it has N above
-	// its minimum for the thing.
-	for( key in row.amount ) {
-		min = entry.building.amount_min[ key ];
-		if( typeof min != 'number' )
-			return false;
-		entry.new_amount[ key ] = min + row.amount[ key ];
-	}
-
-	// Note the inversion: the buildings we're updating have a "buy price"
-	// which is the price for which the trader could buy commodities from
-	// the building.  This is actually the "sell" price here: the price for
-	// which the building sells commodities.
-	entry.new_buy_price = row.price;
+	entry.selling = row;
 	return true;
 }
 
 function parseBuyTDs( entry, firstTD ) {
-	var row, key, max;
-
-	row = parseCommoditiesRow( firstTD );
+	var row = parseCommoditiesRow( firstTD );
 	if( !row )
 		return false;
-
-	// If a building is *buying* N of a thing, it means that it has N below
-	// its maximum for the thing.
-	for( key in row.amount ) {
-		max = entry.building.amount_max[ key ];
-		if( typeof max != 'number' )
-			return false;
-		entry.new_amount[ key ] = max - row.amount[ key ];
-	}
-
-	// Note the inversion: the buildings we're updating have a "sell price"
-	// which is the price for which the trader could sell commodities to the
-	// building.  This is actually the "buy" price here: the price for which
-	// the building buys commodities.
-	entry.new_sell_price = row.price;
+	entry.buying = row;
 	return true;
 }
 
@@ -367,6 +318,136 @@ function parseCommodityTd( r, td ) {
 	r.amount[ id ] = amount;
 	r.price[ id ] = price;
 	return true;
+}
+
+function addBookkeeperHeader( entry ) {
+	var td = document.createElement( 'th' );
+	td.textContent = 'BK';
+	entry.tr.appendChild( td );
+}
+
+function addBookkeeperRowCells( entries ) {
+	var i, end, entry, td, a;
+
+	for( i = 0, end = entries.length; i < end; i++ ) {
+		entry = entries[ i ];
+		td = document.createElement( 'td' );
+
+		if( entry.trackable ) {
+			a = document.createElement( 'a' );
+			a.className = 'bookeeper-addbut';
+			a.dataset.bookkeeperLoc = entry.loc;
+			td.appendChild( a );
+			entry.ui = a;
+		}
+
+		entry.tr.appendChild( td );
+	}
+}
+
+function onBuildingData( data ) {
+	var key, building, entry, updates, updateCount;
+
+	updates = {};
+	updateCount = 0;
+
+	for( key in data ) {
+		building = Building.createFromStorage( key, data[key] );
+		entry = pageData[ building.loc ];
+		entry.tracked = true;
+		entry.building = building;
+		if( building.time < now ) {
+			updates[ key ] = entry;
+			updateCount++;
+		}
+	}
+
+	updates = computeUpdates( updates );
+
+	if( updateCount > 0 )
+		chrome.storage.sync.set( updates, notifyUpdated );
+
+	function notifyUpdated() {
+		var op, text;
+
+		if( updateCount === 1 )
+			text = 'Updated 1 building';
+		else
+			text = 'Updated ' + updateCount + ' buildings';
+		text += ' in ' + sector.name;
+
+		op = {
+			op: 'showNotification',
+			text: text
+		}
+
+		chrome.runtime.sendMessage( op );
+	}
+}
+
+function computeUpdates( updates ) {
+	var r, key, entry;
+
+	r = {}
+	for( key in updates ) {
+		entry = updates[key];
+		updateBuildingFromEntry( entry );
+		r[ key ] = entry.building.toStorage();
+	}
+
+	return r;
+}
+
+function updateBuildingFromEntry( entry ) {
+	var building, key, n, m;
+
+	building = entry.building;
+
+	building.type_id = entry.type_id;
+	building.owner = entry.owner;
+	building.time = now;
+
+	if( entry.selling ) {
+		for( key in entry.selling ) {
+
+			// If a building is *selling* N of a thing, it means
+			// that it has N above its minimum for the thing.
+
+			m = building.amount_min[ key ];
+			if( typeof m === 'number' ) {
+				n = entry.selling.amount[ key ];
+				building.amount[ key ] = m + n;
+			}
+		}
+
+		// Note the inversion: entry.selling contains the prices for
+		// which the building sells commodities.  These are the prices
+		// for which a trader would BUY from the building, and are
+		// stored as such in our persistent data.
+
+		Object.assign( building.buy_price, entry.selling.price );
+	}
+
+	if( entry.buying ) {
+		for( key in entry.selling ) {
+
+			// If a building is *buying* N of a thing, it means that
+			// it has N below its maximum for the thing.
+
+			m = building.amount_max[ key ];
+			if( typeof m === 'number' ) {
+				n = entry.selling.amount[ key ];
+				building.amount[ key ] = m - n;
+			}
+		}
+
+		// Note the inversion: entry.buying contains the prices for
+		// which the building buys commodities.  These are the prices
+		// for which a trader would SELL to the building, and are stored
+		// as such in our persistent data.
+
+		Object.assign( building.sell_price, entry.buying.price );
+	}
 }
 
 })();

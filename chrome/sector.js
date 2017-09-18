@@ -446,11 +446,17 @@ Sector.getName = function( sector_id ) {
 }
 
 Sector.createFromId = function( id ) {
-	return new Sector( Sector.getData(id) );
+	var data = Sector.getData( id );
+	return data ? new Sector( data ) : null;
 }
 
 Sector.createFromName = function( name ) {
-	return new Sector( Sector.getData(Sector.getId(name)) );
+	var id = Sector.getId( name );
+	return id ? Sector.createFromId(id) : null;
+}
+
+Sector.prototype.getId = function() {
+	return Sector.getId( this.name );
 }
 
 Sector.prototype.getLocation = function( x, y ) {
