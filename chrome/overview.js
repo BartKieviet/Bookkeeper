@@ -399,7 +399,7 @@ function addOwnBuildings () {
 				
 				ownBuildingDataList[i] = new Building ();
 				
-				// This below checks if we have the building, if so update, if not add.
+				// I used create from pardus before, but I wanted to change only these values. That code has been deleted because it also didn't work.
 				var ownBuildingId = universe.key + loc;
 				ownBuildingDataList[i][ "loc" ] = loc; //loc, 
 				ownBuildingDataList[i][ "time" ] = Math.floor(Date.now()/1000); //time,
@@ -441,7 +441,7 @@ function addOwnBuildings () {
 					// building [key] = savedBuilding [key];
 				// }
 			// }
-			chrome.storage.sync.set ( storeItems );
+			// chrome.storage.sync.set ( storeItems ); <-- commented out to save your data.
 			chrome.storage.sync.get ( null, function (result) { console.log ( result ) } );
 		}
 	}
