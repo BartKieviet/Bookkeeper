@@ -557,14 +557,12 @@ function trackBuilding( entry ) {
 		if( index === -1 )
 			list.push( entry.loc );
 		data[ universe.key + entry.loc ] = entry.building.toStorage();
-		console.log( 'storing', data );
 		chrome.storage.sync.set( data, onAdded );
 	}
 
 	function onAdded() {
 		entry.tracked = true;
 		entry.ui.className = 'bookkeeper-rembut';
-		console.log( 'tracked', entry );
 	}
 }
 
@@ -579,7 +577,6 @@ function untrackBuilding( entry ) {
 		// so in that case we'll just re-add it.
 		entry.tracked = false;
 		entry.ui.className = 'bookkeeper-addbut';
-		console.log( 'untracked', entry );
 	}
 }
 
