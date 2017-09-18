@@ -335,8 +335,9 @@ function addBookkeeperRowCells( entries ) {
 
 		if( entry.trackable ) {
 			a = document.createElement( 'a' );
-			a.className = 'bookeeper-addbut';
+			a.className = 'bookkeeper-addbut';
 			a.dataset.bookkeeperLoc = entry.loc;
+			a.addEventListener( 'click', onAddRemClick, false );
 			td.appendChild( a );
 			entry.ui = a;
 		}
@@ -356,6 +357,7 @@ function onBuildingData( data ) {
 		entry = pageData[ building.loc ];
 		entry.tracked = true;
 		entry.building = building;
+		entry.ui.className = 'bookkeeper-rembut';
 		if( building.time < now ) {
 			updates[ key ] = entry;
 			updateCount++;
@@ -408,7 +410,7 @@ function updateBuildingFromEntry( entry ) {
 	building.time = now;
 
 	if( entry.selling ) {
-		for( key in entry.selling ) {
+		for( key in entry.selling.amount ) {
 
 			// If a building is *selling* N of a thing, it means
 			// that it has N above its minimum for the thing.
@@ -429,14 +431,14 @@ function updateBuildingFromEntry( entry ) {
 	}
 
 	if( entry.buying ) {
-		for( key in entry.selling ) {
+		for( key in entry.buying.amount ) {
 
 			// If a building is *buying* N of a thing, it means that
 			// it has N below its maximum for the thing.
 
 			m = building.amount_max[ key ];
 			if( typeof m === 'number' ) {
-				n = entry.selling.amount[ key ];
+				n = entry.buying.amount[ key ];
 				building.amount[ key ] = m - n;
 			}
 		}
@@ -447,6 +449,137 @@ function updateBuildingFromEntry( entry ) {
 		// as such in our persistent data.
 
 		Object.assign( building.sell_price, entry.buying.price );
+	}
+}
+
+// When the user asks us to track a building from this page, we kinda have a
+// problem, because we don't have all the information we have from the trade
+// screen.  Specifically, we don't have the building level, maxes and mins,
+// production and upkeep, and full prices.  But we'll do a best effort.
+
+function inferBuildingFromEntry( entry ) {
+	var key, n, amount, amount_max, amount_min, buy_price, sell_price,
+	    res_production, res_upkeep;
+
+	amount = {};
+	amount_max = {};
+	amount_min = {};
+	res_production = {};
+	res_upkeep = {};
+
+	if( entry.selling ) {
+		// If a building is *selling* N of a thing, we'll assume it has
+		// N and its minimum is zero.
+		for( key in entry.selling.amount ) {
+			n = entry.selling.amount[ key ];
+			amount[ key ] = n;
+			amount_min[ key ] = 0;
+
+			// We assume this is building production.  We have no
+			// idea how much it produces per tick, but we need to
+			// fill something here so that overview paints the
+			// amount positive.
+			res_production[ key ] = 9;
+		}
+
+		// As per updateBuildingFromEntry(), this sets the *buy* prices.
+		buy_price = entry.selling.price;
+	}
+	else
+		buy_price = {};
+
+	if( entry.buying ) {
+		// If a building is *buying* N of a thing, we'll assume it has
+		// zero and its maximum is N.
+		for( key in entry.buying.amount ) {
+			n = entry.buying.amount[ key ];
+			amount[ key ] = 0;
+			amount_max[ key ] = n;
+
+			// We assume this is building upkeep.  We have no idea
+			// how much it consumes per tick, but we need to fill
+			// something here so that overview paints the amount
+			// pink and negative.
+			res_upkeep[ key ] = 9;
+		}
+
+		// As per updateBuildingFromEntry(), this sets the *sell*
+		// prices.
+		sell_price = entry.buying.price;
+	}
+	else sell_price = {};
+
+	return new Building(
+		entry.loc,
+		now,
+		sectorId,
+		entry.x,
+		entry.y,
+		entry.type_id,
+		-1, // level
+		entry.owner,
+		amount,
+		amount_max,
+		amount_min,
+		res_production,
+		res_upkeep,
+		buy_price,
+		sell_price
+	);
+}
+
+function onAddRemClick( event ) {
+	var target, loc, entry;
+
+	target = event.target;
+	loc = target.dataset.bookkeeperLoc;
+	if( !loc )
+		return;
+
+	event.preventDefault();
+	entry = pageData[ loc ];
+	if( entry.tracked )
+		untrackBuilding( entry );
+	else
+		trackBuilding( entry );
+}
+
+function trackBuilding( entry ) {
+	if( !entry.building )
+		entry.building = inferBuildingFromEntry( entry );
+
+	chrome.storage.sync.get( universe.key, onBuildingList );
+
+	function onBuildingList( data ) {
+		var list, index;
+		list = data[ universe.key ];
+		index = list.indexOf( entry.loc );
+		if( index === -1 )
+			list.push( entry.loc );
+		data[ universe.key + entry.loc ] = entry.building.toStorage();
+		console.log( 'storing', data );
+		chrome.storage.sync.set( data, onAdded );
+	}
+
+	function onAdded() {
+		entry.tracked = true;
+		entry.ui.className = 'bookkeeper-rembut';
+		console.log( 'tracked', entry );
+	}
+}
+
+function untrackBuilding( entry ) {
+	entry.building.removeStorage( universe.key, onRemoved );
+
+	function onRemoved() {
+		// Note we DON'T remove entry.building, even though it isn't
+		// stored any more.  This is because, if the user clicks the
+		// button again, we already have the building, likely with
+		// better data than inferBuildingFromEntry() can come up with,
+		// so in that case we'll just re-add it.
+		entry.tracked = false;
+		entry.ui.className = 'bookkeeper-addbut';
+		console.log( 'untracked', entry );
 	}
 }
 

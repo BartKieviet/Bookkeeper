@@ -72,12 +72,14 @@ h1.bookkeeper img {
 	font-weight: bold;
 }
 
-#bookkeeper-overview a.bookeeper-addrmv-small {
+#bookkeeper-overview a.bookkeeper-addrmv-small {
 	margin-left: 4px;
 }
 
-a.bookeeper-addbut,
-a.bookeeper-addrmv-small {
+a.bookkeeper-addbut,
+a.bookkeeper-rembut,
+a.bookkeeper-addbut-small,
+a.bookkeeper-rembut-small {
 	display: inline-block;
 	border: none;
 	margin: 0;
@@ -85,18 +87,28 @@ a.bookeeper-addrmv-small {
 	cursor: pointer;
 }
 
-a.bookeeper-addbut {
-	background: url('chrome-extension://__MSG_@@extension_id__/icons/plus.svg');
+a.bookkeeper-addbut, a.bookkeeper-rembut {
 	width: 24px;
 	height: 24px;
 }
 
-a.bookeeper-addrmv-small {
-	background: url('chrome-extension://__MSG_@@extension_id__/icons/mingray.svg');
+a.bookkeeper-addbut-small, a.bookkeeper-rembut-small {
 	width: 14px;
 	height: 14px;
 }
 
-a.bookeeper-addrmv-small:hover {
+a.bookkeeper-addbut, a.bookkeeper-addbut-small {
+	background: url('chrome-extension://__MSG_@@extension_id__/icons/plusgray.svg');
+}
+
+a.bookkeeper-addbut:hover, a.bookkeeper-addbut-small:hover {
+	background: url('chrome-extension://__MSG_@@extension_id__/icons/plus.svg');
+}
+
+a.bookkeeper-rembut, a.bookkeeper-rembut-small {
+	background: url('chrome-extension://__MSG_@@extension_id__/icons/mingray.svg');
+}
+
+a.bookkeeper-rembut:hover, a.bookkeeper-rembut-small:hover {
 	background: url('chrome-extension://__MSG_@@extension_id__/icons/minus.svg');
 }

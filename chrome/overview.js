@@ -291,7 +291,7 @@ function makeRemoveButton( loc ) {
 	var button;
 
 	button = document.createElement( 'a' );
-	button.className = 'bookeeper-addrmv-small';
+	button.className = 'bookkeeper-rembut-small';
 	button.dataset.bookkeperLoc = loc;
 	button.addEventListener( 'click', onRemoveClick );
 
@@ -305,6 +305,8 @@ function onRemoveClick( event ) {
 	loc = target.dataset.bookkeperLoc;
 	if( !loc )
 		return;
+
+	event.preventDefault();
 
 	Building.removeStorage( loc, universe.key, removeRow );
 
