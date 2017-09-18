@@ -98,7 +98,7 @@ function onTrackButtonClick() {
 	this.disabled = true;
 
 	if( this.value == "Track" )
-		trackBuilding();
+		chrome.storage.sync.get( universe.key, trackBuilding );
 	else
 		removeBuilding( userloc, universe, onBuildingUntracked );
 
@@ -171,21 +171,10 @@ function getLevel() {
 		return level;
 	}
 
-	// else {
-	//	console.log(level);
-	//	console.log(levelCheck);
-	//	console.log(levelEst);
-	//	console.log(Object.keys(res_upkeep).length);
-	//	console.log(perCommodity);
-	//}
 	return -1;
 }
 
-function trackBuilding() {
-	chrome.storage.sync.get( universe.key, trackBuildingStep2 );
-}
-
-function trackBuildingStep2( data ) {
+function trackBuilding( data ) {
 	var buildingList = data[ universe.key ],
 	    storeItems = {};
 

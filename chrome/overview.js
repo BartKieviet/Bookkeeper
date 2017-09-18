@@ -116,6 +116,7 @@ function loadBuildings( data ) {
 }
 
 function showOverviewBuildings( sort, ascending, data ) {
+		
 	var buildings, b, ckey, commodity, container, end, h1, i, img, in_use,
 	    key, table, tbody, thead, tr;
 
@@ -128,6 +129,7 @@ function showOverviewBuildings( sort, ascending, data ) {
 
 	// Parse each building.
 	buildings = loadBuildings( data );
+	console.log ( buildings );
 	data = null; // don't need this anymore, may be garbage collected
 	in_use = getCommoditiesInUse( buildings );
 
@@ -364,16 +366,21 @@ function addOwnBuildings () {
 	var ownBuildingTable = document.getElementById( "mToggle" ).parentNode.parentNode.parentNode;
 	if (ownBuildingTable) {
 		var ownNumberOfBuildings = ownBuildingTable.children.length - 1;
-		// We got 4 <a> tags per building. Plus one from the modules (+) - most likely MOs will screw this up too.
-		
+		var ownBuildingDataList = [];
+		var storeItems = {};
+
+
 		for (var i = 0; i < ownNumberOfBuildings ; i ++) {
-			
+
 			var firstLink = ownBuildingTable.children[i+1].getElementsByTagName("a")[0];
+
+			console.log(firstLink.textContent);
 
 			if (firstLink.textContent === "Trading Outpost") {
 				//TOs don't play by the rules. - most likely MOs will screw this up too.
 				continue;
 			} else {
+				var loc = parseInt(firstLink.href.split("=")[1]);
 				var ownBuildingData = ownBuildingTable.children[i+1].getElementsByTagName( "table" );
 				//var ownBuildingLocation = ownBuildingData.children[i+1].getElementsByTagName( "td" )[1].split(/[: ,]/g);
 				var ownBuildingLocation = ownBuildingTable.children[i+1].getElementsByTagName( "td" )[1].textContent.split(/[: ,]/g);
@@ -385,34 +392,62 @@ function addOwnBuildings () {
 					var stock_img = ownBuildingData[tableNumber].getElementsByTagName("img");
 					for (var j = 0; j < stock_img.length ; j++) {
 						var key = Commodities.getId(stock_img[j].src.split(/[./]/g)[8]);
-						// var key = Commodities.getId(stock_img[j].alt.toLowerCase().replace(/ /g,"_"));
 						var value = stock_img[j].parentNode.textContent.split( " " )[1];
 						ownBuildingAmount[key] = value;
 					}
 				}
-			
-				var building = Building.createFromPardus (
-				firstLink.href.split("=")[1], //loc, 
-				Date.now(), //time, 
-				ownBuildingLocation[0], //sector, 
-				ownBuildingLocation[2], //x, 
-				ownBuildingLocation[3], //y, 
-				firstLink.textContent, //type, 
-				ownBuildingData[0].textContent, //level, 
-				"You", //owner,
-				ownBuildingAmount, //amount, 
-				{}, //amount_max, 
-				{}, //amount_min, 
-				{}, //res_production, 
-				{}, //res_upkeep,
-				{}, //buy_price, 
-				{} ); //sell_price ) ;
-				//items[ buildingId ] = building.toStorage();
-				//chrome.storage.sync.set( items, callback );
+				
+				ownBuildingDataList[i] = new Building ();
+				
+				// This below checks if we have the building, if so update, if not add.
+				var ownBuildingId = universe.key + loc;
+				ownBuildingDataList[i][ "loc" ] = loc; //loc, 
+				ownBuildingDataList[i][ "time" ] = Math.floor(Date.now()/1000); //time,
+				ownBuildingDataList[i][ "sector_id" ] = Sector.getId(ownBuildingLocation[0]); //sector, 
+				ownBuildingDataList[i][ "x" ] = parseInt(ownBuildingLocation[2]); //x, 
+				ownBuildingDataList[i][ "y" ] = parseInt(ownBuildingLocation[3]); //y, 
+				ownBuildingDataList[i][ "type" ] = firstLink.textContent; //type, 
+				ownBuildingDataList[i][ "level" ] = parseInt(ownBuildingData[0].textContent); //level, 
+				ownBuildingDataList[i][ "owner" ] = "You"; //owner,
+				ownBuildingDataList[i][ "amount" ] = ownBuildingAmount; //amount,
+				storeItems [ ownBuildingId ] = ownBuildingDataList[i].toStorage();
+		
+				// items[ ownBuildingId ] = building.toStorage();
+				// chrome.storage.sync.set( items, callback );
 			}
+		}
+		
+		chrome.storage.sync.get ( universe.key, finishAddBuildings );
+		function finishAddBuildings ( data ) {
+			var savedBuilding = {};
+			// most of this is double from trade.js, but I cannot be bothered.
+			var buildingList = data[ universe.key ];
+
+			if (buildingList) {
+				console.log(buildingList);
+				if( buildingList.indexOf( loc ) === -1 ) {
+					buildingList.push( loc )
+				} else {
+					chrome.storage.sync.get ( ownBuildingId , function (result) { savedBuilding = result } );
+					savedBuilding = Building.createFromStorage( ownBuildingId, savedBuilding );
+				}
+				storeItems[ universe.key ] = buildingList;							
+			} else {
+				storeItems[ universe.key ] = [ userloc ];
+			}
+				
+			// if (savedBuilding != {}) {
+				// for (var key in savedBuilding) {
+					// building [key] = savedBuilding [key];
+				// }
+			// }
+			chrome.storage.sync.set ( storeItems );
+			chrome.storage.sync.get ( null, function (result) { console.log ( result ) } );
 		}
 	}
 }
+
+
 
 addOwnBuildings();
 chrome.storage.sync.get( universe.key, showOverview );
