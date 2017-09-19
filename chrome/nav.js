@@ -16,15 +16,18 @@ var BLDGTILE_XPATH = document.createExpression(
 // will be ""navAjax(142080)"; if it's disabled, it will be "nav(142080)".
 var TILEID_RX = /^nav(?:Ajax)?\((\d+)\)$/;
 
-var bldgTileCache = {};
-var userloc;
+var bldgTileCache, ticksToggle, ticksEnabled, userloc;
 
-configure();
+chrome.storage.local.get( 'navticks', configure );
 
-// End of execution; content script returns here.  Below are function
-// definitions.
+// End of content script execution.
 
-function configure() {
+function configure( data ) {
+	var cargoBox, ui, e, ctr, ctd, tr, td;
+
+	ticksEnabled = ( data.navticks === true );
+	bldgTileCache = {};
+
 	// Insert a bit of script to execute in the page's context and
 	// send us what we need. And add a listener to receive the call.
 	window.addEventListener( 'message', onMessage, false );
@@ -32,6 +35,60 @@ function configure() {
 	script.type = 'text/javascript';
 	script.textContent = "(function() {var fn=function(){window.postMessage({bookkeeper:2,loc:typeof(userloc)=='undefined'?null:userloc},window.location.origin);};if(typeof(addUserFunction)=='function') addUserFunction(fn);fn();})();";
 	document.body.appendChild(script);
+
+	// Find the Cargo box and append our UI to it.
+	cargoBox = document.getElementById( 'cargo_content' );
+	if ( !cargoBox )
+		return;
+
+	ui = document.createElement( 'div' );
+	ui.id = 'bookkeeper-ui';
+	e = document.createElement( 'img' );
+	e.title = 'Pardus Bookkeeper';
+	e.src = chrome.extension.getURL( 'icons/16.png' );
+	ui.appendChild( e );
+	e = document.createElement( 'button' );
+	e.id = 'bookkeeper-navticks-switch';
+	e.textContent = 'TICKS';
+	e.addEventListener( 'click', onToggleTicks, false );
+	ticksToggle = e;
+	ui.appendChild( e );
+
+	// Wish we could insert directly in the cargo box, but partial refresh
+	// does nasty things to it.
+
+	ctd = cargoBox.parentElement;
+	ctr = ctd.parentElement;
+	tr = document.createElement( 'tr' );
+	td = document.createElement( 'td' );
+	td.style.cssText = ctd.style.cssText;
+	td.appendChild( ui );
+	tr.appendChild( td );
+	ctr.parentElement.insertBefore( tr, ctr.nextElementSibling );
+
+	updateTicksToggle();
+}
+
+function updateTicksToggle() {
+	if ( ticksEnabled )
+		ticksToggle.classList.add( 'on' );
+	else
+		ticksToggle.classList.remove( 'on' );
+}
+
+function onToggleTicks() {
+	ticksEnabled = !ticksEnabled;
+	ticksToggle.disabled = true;
+	chrome.storage.local.set( { 'navticks': ticksEnabled }, onSaved );
+
+	function onSaved() {
+		updateTicksToggle();
+		if ( ticksEnabled )
+			showTicks();
+		else
+			hideTicks();
+		ticksToggle.disabled = false;
+	}
 }
 
 // This is called when the page loads, and again whenever a partial refresh
@@ -65,17 +122,15 @@ function onMessage( event ) {
 	chrome.storage.local.set( { sector: sector, x: x, y: y } );
 
 	// This is needed.
-	displayNavArea();
+	if ( ticksEnabled )
+		showTicks();
 }
 
-function displayNavArea() {
+function showTicks() {
 	var navTable, ukey, newCache, needed, needTicksDisplay, xpr,
 	    a, onclkstr, m, loc, td, cached, i, end, op;
 
-	// Yes, Pardus is a mess.
-	navTable = document.getElementById( 'navareatransition' );
-	if ( !navTable )
-		navTable = document.getElementById( 'navarea' );
+	navTable = getNavArea();
 	if ( !navTable )
 		return;
 
@@ -130,7 +185,7 @@ function displayNavArea() {
 
 	for ( i = 0, end = needTicksDisplay.length; i < end; i++ ) {
 		cached = needTicksDisplay[ i ];
-		addTicksDisplay( cached.td, cached.ticks );
+		addTickThingies( cached.td, cached.ticks );
 	}
 
 	if ( needed.length === 0 )
@@ -152,11 +207,11 @@ function onHaveTicks( r ) {
 		ticks = r[ key ];
 		cached = bldgTileCache[ key ];
 		cached.ticks = ticks;
-		addTicksDisplay( cached.td, ticks );
+		addTickThingies( cached.td, ticks );
 	}
 }
 
-function addTicksDisplay( td, ticks ) {
+function addTickThingies( td, ticks ) {
 	var elt = document.createElement( 'div' );
 	elt.className = 'bookkeeper-ticks';
 	if ( ticks === 0 )
@@ -165,6 +220,21 @@ function addTicksDisplay( td, ticks ) {
 		elt.classList.add( 'yellow' );
 	elt.textContent = ticks;
 	td.appendChild( elt );
+}
+
+function hideTicks() {
+	var elts = getNavArea().getElementsByClassName( 'bookkeeper-ticks' );
+	while ( elts.length > 0 )
+		elts[0].remove();
+	bldgTileCache = {};
+}
+
+function getNavArea() {
+	// Yes, Pardus is a mess.
+	var navTable = document.getElementById( 'navareatransition' );
+	if ( !navTable )
+		navTable = document.getElementById( 'navarea' );
+	return navTable;
 }
 
 })();

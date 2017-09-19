@@ -1,11 +1,35 @@
 /* A shorter stylesheet for the nav screen, so we don't inject all the rules
 that other pages use. */
 
+div#bookkeeper-ui {
+    margin-top: 10px;
+    text-align: center;
+}
+
+div#bookkeeper-ui > img {
+	vertical-align: text-bottom;
+}
+div#bookkeeper-ui button {
+	padding: 1px 4px;
+	margin: 0 4px;
+	font: Helvetica, Arial, sans-serif;
+	font-size: 10px;
+	font-weight: 800;
+}
+div#bookkeeper-ui button:focus {
+	outline: none;
+}
+div#bookkeeper-ui button.on {
+	background: #00ddc2;
+	color: #00001c;
+	border-style: inset;
+}
+
 /* This styles Pardus' own TDs because we need an absolute positioning context
-   for the little indicators we add.  Hopefully won't break anything, */
+   for the little indicators we add.  Hopefully won't break anything. */
 td.navBuilding { position: relative; }
 
-/* Text in a circle. Or oval, sausage-like thingie, if it's a long text. */
+/* Text in a circle.  Or oval, sausage-like thingie, if it's a long text. */
 div.bookkeeper-ticks {
 	position: absolute;
 	bottom: 0;

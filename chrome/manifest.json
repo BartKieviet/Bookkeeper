@@ -59,6 +59,7 @@
 		"chrome_style": true
 	},
 	"web_accessible_resources": [
+		"icons/16.png",
 		"icons/24.png",
 		"icons/48.png",
 		"icons/minus.svg",
