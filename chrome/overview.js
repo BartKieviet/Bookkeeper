@@ -441,9 +441,8 @@ function addOwnBuildings( buildingList, callback ) {
 	for ( i = 0; i < ownNumberOfBuildings; i++ ) {
 		var firstLink = ownBuildingTable.children[i+1].getElementsByTagName("a")[0];
 
-		if (firstLink.textContent === "Trading Outpost") {
-			//TOs don't play by the rules. - most likely MOs will
-			//screw this up too.
+		if (firstLink.textContent === "Trading Outpost" || firstLink.textContent === "Military Outpost") {
+			//TOs and MOs don't play by the rules.
 			continue;
 		}
 		else {
