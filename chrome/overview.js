@@ -52,15 +52,43 @@ function showOverview( syncData ) {
 	// every building tracked.
 	var buildingList = syncData[ universe.key ];
 
-	if( !buildingList )
-		// No configuration, odd. Do nothing.
-		return;
+	if( !buildingList ) {
+		// No buildings yet?
+		buildingList = [];
+	}
 
-	chrome.storage.local.get( [sortCritKey, sortAscKey],
-				  showOverviewStep2.bind(null, buildingList) );
+	// Note for K:
+	//
+	// The bind() method of Function creates a new function that, when
+	// called, has its `this` keyword set to the provided value, with a
+	// given sequence of arguments preceding any provided when the new
+	// function is called.
+	//
+	// See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/bind
+	//
+	// So the actual function that will be executed when addOwnBuildings
+	// returns is one that will call showOverviewStep2 passing buildingList
+	// as its first parameter (and with `this` set to null then, too, but we
+	// don't care about that).
+	//
+	// We need to do this because buildingList is a *local* variable here,
+	// which would ordinarily be destroyed as soon as this function returns.
+	// And we have no idea when addOwnBuildings will call its callback --
+	// may be long after we're dead.  Keeping a reference this way keeps the
+	// variable alive.
+	//
+	// We could avoid these shenanigans, and maybe should, by just declaring
+	// buildingList global, so all our callbacks can share it.
+
+	addOwnBuildings( buildingList, showOverviewStep2.bind(null, buildingList) );
 }
 
 function showOverviewStep2( buildingList, data ) {
+	chrome.storage.local.get( [sortCritKey, sortAscKey],
+				  showOverviewStep3.bind(null, buildingList) );
+}
+
+function showOverviewStep3( buildingList, data ) {
 	var keys = [],
 	    callback = showOverviewBuildings.bind(
 		    null,
@@ -116,7 +144,7 @@ function loadBuildings( data ) {
 }
 
 function showOverviewBuildings( sort, ascending, data ) {
-		
+
 	var buildings, b, ckey, commodity, container, end, h1, i, img, in_use,
 	    key, table, tbody, thead, tr;
 
@@ -129,7 +157,6 @@ function showOverviewBuildings( sort, ascending, data ) {
 
 	// Parse each building.
 	buildings = loadBuildings( data );
-	console.log ( buildings );
 	data = null; // don't need this anymore, may be garbage collected
 	in_use = getCommoditiesInUse( buildings );
 
@@ -361,95 +388,173 @@ function addChild( parent, tagname, content, className, id ) {
 	return elt;
 }
 
-function addOwnBuildings () {
+// This used to fetch the building list from storage.  However, that's the first
+// thing that the script does, so we avoid the second query by calling this from
+// `showOverview()`, waay above.
+//
+// Also, this may change the list, so we want the rest of the overview stuff to
+// wait until we're done.  So we take a callback.  We call back before we return
+// (or arrange for chrome to call it back, if we need to store stuff).  The
+// callback receives the (possibly updated) buildingList, so stuff above may
+// resume.
 
-	var ownBuildingTable = document.getElementById( "mToggle" ).parentNode.parentNode.parentNode;
-	if (ownBuildingTable) {
-		var ownNumberOfBuildings = ownBuildingTable.children.length - 1;
-		var ownBuildingDataList = [];
-		var storeItems = {};
+function addOwnBuildings( buildingList, callback ) {
+	var ownBuildingTable, ownNumberOfBuildings, ownBuildings, i, end, building, m;
 
+	ownBuildingTable = document.getElementById( "mToggle" ).parentNode.parentNode.parentNode;
+	if ( !ownBuildingTable ) {
+		// Nothing to do, proceed.
+		onFinished();
+		return;
+	}
 
-		for (var i = 0; i < ownNumberOfBuildings ; i ++) {
+	ownNumberOfBuildings = ownBuildingTable.children.length - 1;
+	ownBuildings = [];
 
-			var firstLink = ownBuildingTable.children[i+1].getElementsByTagName("a")[0];
+	for ( i = 0; i < ownNumberOfBuildings; i++ ) {
+		var firstLink = ownBuildingTable.children[i+1].getElementsByTagName("a")[0];
 
-			console.log(firstLink.textContent);
-
-			if (firstLink.textContent === "Trading Outpost") {
-				//TOs don't play by the rules. - most likely MOs will screw this up too.
-				continue;
-			} else {
-				var loc = parseInt(firstLink.href.split("=")[1]);
-				var ownBuildingData = ownBuildingTable.children[i+1].getElementsByTagName( "table" );
-				//var ownBuildingLocation = ownBuildingData.children[i+1].getElementsByTagName( "td" )[1].split(/[: ,]/g);
-				var ownBuildingLocation = ownBuildingTable.children[i+1].getElementsByTagName( "td" )[1].textContent.split(/[: ,]/g);
-				
-				var ownBuildingAmount = {};
-
-				for (var tableNumber = 3; tableNumber < 5; tableNumber++) {
-					//3 and 4 are upkeep and stock.
-					var stock_img = ownBuildingData[tableNumber].getElementsByTagName("img");
-					for (var j = 0; j < stock_img.length ; j++) {
-						var key = Commodities.getId(stock_img[j].src.split(/[./]/g)[8]);
-						var value = stock_img[j].parentNode.textContent.split( " " )[1];
-						ownBuildingAmount[key] = value;
-					}
-				}
-				
-				ownBuildingDataList[i] = new Building ();
-				
-				// I used create from pardus before, but I wanted to change only these values. That code has been deleted because it also didn't work.
-				var ownBuildingId = universe.key + loc;
-				ownBuildingDataList[i][ "loc" ] = loc; //loc, 
-				ownBuildingDataList[i][ "time" ] = Math.floor(Date.now()/1000); //time,
-				ownBuildingDataList[i][ "sector_id" ] = Sector.getId(ownBuildingLocation[0]); //sector, 
-				ownBuildingDataList[i][ "x" ] = parseInt(ownBuildingLocation[2]); //x, 
-				ownBuildingDataList[i][ "y" ] = parseInt(ownBuildingLocation[3]); //y, 
-				ownBuildingDataList[i][ "type" ] = firstLink.textContent; //type, 
-				ownBuildingDataList[i][ "level" ] = parseInt(ownBuildingData[0].textContent); //level, 
-				ownBuildingDataList[i][ "owner" ] = "You"; //owner,
-				ownBuildingDataList[i][ "amount" ] = ownBuildingAmount; //amount,
-				storeItems [ ownBuildingId ] = ownBuildingDataList[i].toStorage();
-		
-				// items[ ownBuildingId ] = building.toStorage();
-				// chrome.storage.sync.set( items, callback );
-			}
+		if (firstLink.textContent === "Trading Outpost") {
+			//TOs don't play by the rules. - most likely MOs will
+			//screw this up too.
+			continue;
 		}
-		
-		chrome.storage.sync.get ( universe.key, finishAddBuildings );
-		function finishAddBuildings ( data ) {
-			var savedBuilding = {};
-			// most of this is double from trade.js, but I cannot be bothered.
-			var buildingList = data[ universe.key ];
+		else {
+			// Some of this parsing is a bit flaky.  I see for
+			// instance the original code expected an
+			// ownBuildingLocation array with the sector name at
+			// index 0, x at index 2, y at index 3.  However, that
+			// failed for me because i have buildings in Cor Caroli,
+			// which was getting split as "Cor" and "Caroli" by
+			// split(/[: ,]/g).
 
-			if (buildingList) {
-				console.log(buildingList);
-				if( buildingList.indexOf( loc ) === -1 ) {
-					buildingList.push( loc )
-				} else {
-					chrome.storage.sync.get ( ownBuildingId , function (result) { savedBuilding = result } );
-					savedBuilding = Building.createFromStorage( ownBuildingId, savedBuilding );
+			var loc = parseInt(firstLink.href.split("=")[1]);
+			var ownBuildingData = ownBuildingTable.children[i+1].getElementsByTagName( "table" );
+
+			// The expression
+			//   ownBuildingTable.children[i+1].getElementsByTagName('td')[1].textContent
+			// evaluates to something like "Cor Caroli: 7,28".
+			m = /(.*): (\d+),(\d)/.exec(
+				ownBuildingTable.children[i+1].getElementsByTagName('td')[1].textContent );
+			var sectorName = m[1];
+			var x = m[2];
+			var y = m[3]
+
+			var ownBuildingAmount = {};
+			for (var tableNumber = 3; tableNumber < 5; tableNumber++) {
+				//3 and 4 are upkeep and stock.
+				var stock_img = ownBuildingData[tableNumber].getElementsByTagName("img");
+				for (var j = 0; j < stock_img.length ; j++) {
+					var key = Commodities.getId(stock_img[j].src.split(/[./]/g)[8]);
+					var value = stock_img[j].parentNode.textContent.split( " " )[1];
+					ownBuildingAmount[key] = value;
 				}
-				storeItems[ universe.key ] = buildingList;							
-			} else {
-				storeItems[ universe.key ] = [ userloc ];
 			}
-				
-			// if (savedBuilding != {}) {
-				// for (var key in savedBuilding) {
-					// building [key] = savedBuilding [key];
-				// }
-			// }
-			// chrome.storage.sync.set ( storeItems ); <-- commented out to save your data.
-			chrome.storage.sync.get ( null, function (result) { console.log ( result ) } );
+
+			// This used to create a building calling new Building()
+			// with an empty parameter list.  But that's a bit of a
+			// waste, we can skip the empty initialisation by just
+			// giving it the values it should have.
+
+			// DO NOTE: from my experience in blgdindex.js,
+			// res_production and res_upkeep *must* be set; they are
+			// used by the overview table render code to decide if
+			// an amount should be coloured lime, or pink and
+			// negative.
+
+			// ALSO NOTE: I have a building with miscellaneous
+			// trinkets stored in it (drugs, crystals, whatever).
+			// All these are getting added to building.amount, which
+			// is very weird and wrong.  I think what needs be done
+			// is:
+			//
+			// 1. Parse the Upkeep and Production columns first and
+			//    get res_production and res_upkeep from them.
+			//
+			// 2. Parse the Commodities column, but only add
+			//    commodities mentioned in either Production or
+			//    Upkeep.
+			//
+			// Parsing a building should probably be a separate
+			// function, it's already complicated and will probably
+			// get even more.
+
+			building = new Building(
+				loc, // loc,
+				Math.floor(Date.now()/1000), // time,
+				Sector.getId(sectorName), //sector_id,
+				parseInt(x), //x,
+				parseInt(y), //y,
+				Building.getTypeId(firstLink.textContent), //type_id,
+				parseInt(ownBuildingData[0].textContent), //level,
+				"You", //owner,
+				ownBuildingAmount, //amount,
+				{}, // amount_max
+				{}, // amount_min
+				{}, // res_production
+				{}, // res_upkeep
+				{}, // buy_price
+				{} // sell_price
+			);
+
+			ownBuildings.push( building );
 		}
+	}
+
+	if ( ownBuildings.length === 0 ) {
+		// bloke had only TOs or something?
+		onFinished();
+		return;
+	}
+
+	console.log( 'ownBuildings', ownBuildings );
+
+	// Code below used to be finishAddBuildings, run when the building list
+	// was available. But now we already have the list, so just fall through
+	// executing.
+
+	// We track if we actually made changes to the building list.  Because
+	// if we didn't, we don't actually need to store it again.
+	var updatedBuildingList = false;
+
+	// Add the new IDs to the building list.
+	for ( i = 0, end = ownBuildings.length; i < end; i++ ) {
+		building = ownBuildings[ i ];
+		if ( buildingList.indexOf(building.loc) === -1 ) {
+			buildingList.push( building.loc );
+			updatedBuildingList = true;
+		}
+	}
+
+	console.log( 'buildingList', buildingList, updatedBuildingList );
+
+	// Compute the data to store.
+	var storeData = {};
+
+	if ( updatedBuildingList )
+		storeData[ universe.key ] = buildingList;
+
+	for ( i = 0, end = ownBuildings.length; i < end; i++ ) {
+		building = ownBuildings[ i ];
+		storeData[ universe.key + building.loc ] = building.toStorage();
+	}
+
+	console.log( 'storeData', storeData );
+
+	// Finally, store everything we need to store.  If you need to comment
+	// out this line, for debugging, insert a call to onFinished() in its
+	// place.  This is needed so that the rest of the overview code gets a
+	// chance to run.
+
+	chrome.storage.sync.set( storeData, onFinished );
+	// onFinished();
+
+	function onFinished() {
+		// Call back with the possibly updated building list
+		callback( buildingList );
 	}
 }
 
-
-
-addOwnBuildings();
 chrome.storage.sync.get( universe.key, showOverview );
 
 })();
