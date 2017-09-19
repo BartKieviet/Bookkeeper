@@ -1,0 +1,29 @@
+/* A shorter stylesheet for the nav screen, so we don't inject all the rules
+that other pages use. */
+
+/* This styles Pardus' own TDs because we need an absolute positioning context
+   for the little indicators we add.  Hopefully won't break anything, */
+td.navBuilding { position: relative; }
+
+/* Text in a circle. Or oval, sausage-like thingie, if it's a long text. */
+div.bookkeeper-ticks {
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	min-width: 10px;
+	height: 10px;
+	line-height: 10px;
+
+	background: #060;
+	border-radius: 9px; /* 10px/2 + 2px padding + 2px border */
+	border: 2px solid #a1a1af;
+	color: #fff;
+	font-size: 12px;
+	font-weight: bold;
+	padding: 2px;
+	text-align: center;
+	cursor: default;
+}
+
+div.bookkeeper-ticks.yellow { background: #f90 }
+div.bookkeeper-ticks.red { background: #900 }
