@@ -42,12 +42,9 @@ function storeBuilding ( data ) {
 }
 
 function getBuildingData ( buildingAmount_min, buildingAmount_max, storeData, building ) {
-	console.log( building );
 	var newBuilding = Building.createFromStorage ( buildingID, building [ buildingID ] );
-	console.log( newBuilding );
 	newBuilding [ "amount_max" ] = buildingAmount_max;
 	newBuilding [ "amount_min" ] = buildingAmount_min;
-	console.log( newBuilding );
 	storeData[ buildingID ] = newBuilding.toStorage();
 	chrome.storage.sync.set( storeData );
 }

@@ -235,8 +235,6 @@ Building.getTypeShortName = function( type_id ) {
 }
 
 Building.getResUpkeep = function ( type ) {
-	console.log ( type );
-	console.log ( UPKEEP [ type ] );
 	return UPKEEP [ type ] || undefined;
 	
 }
