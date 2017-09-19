@@ -8,7 +8,7 @@ Enhancements to the trading user interface of the online
 game [Pardus](http://www.pardus.at/).
 
 This is a rewrite of some of the functionality of the old Firefox extension
-_Pardus Copilot_.  Still under early development, but a prerelease version is
-already available for users:
+_Pardus Copilot_.  Still under development, but already usable:
 
-[install Pardus Bookkeeper from the Chrome Store](https://chrome.google.com/webstore/detail/dfelhcfikpiomockabkkcjgfigdalcmk).
+* [Install Pardus Bookkeeper for Google Chrome](https://chrome.google.com/webstore/detail/dfelhcfikpiomockabkkcjgfigdalcmk)
+* [Install Pardus Bookkeeper for Firefox](https://addons.mozilla.org/addon/pardus-bookkeeper/)
