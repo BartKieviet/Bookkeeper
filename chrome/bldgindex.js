@@ -29,8 +29,8 @@ setup();
 // Script execution ends here.  Function definitions below.
 
 function setup() {
-	var sectorrx = /^(.*) Building Index$/,
-	    h1, m, buildingsTable, entries, i, end, entry, keys;
+	var h1, m, buildingsTable, entries,
+	    i, end, entry, keys;
 
 	universe = Universe.fromDocument( document );
 
@@ -42,7 +42,7 @@ function setup() {
 		null).singleNodeValue;
 	if( !h1 )
 		return;
-	m = sectorrx.exec( h1.textContent );
+	m = /^(.*) Building Index$/.exec( h1.textContent );
 	if( !m )
 		return;
 	sectorId = Sector.getId( m[1] );
@@ -52,13 +52,26 @@ function setup() {
 
 	// Get the timestamp.  This will be in the same TD that contains the H1
 	// header, inside a SPAN of class 'cached', inside a DIV.
+
 	now = document.evaluate(
 		'//td[h1[contains(text(),"Building Index")]]/div/span[@class="cached"]',
 		document, null, XPathResult.FIRST_ORDERED_NODE_TYPE,
 		null).singleNodeValue;
 	if( !now )
 		return;
-	now = Date.parse( now.textContent );
+	// Pardus' timestamp format *in this page* is
+	// "Tue Sep 19 19:41:39 GMT 2017"
+	m = /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) (\d?\d) (\d?\d):(\d\d):(\d\d) GMT (\d\d\d\d)/.exec( now.textContent );
+	if ( !m )
+		return;
+	now = Date.UTC(
+		m[6], // year
+		MONTHS.indexOf(m[1]), // month - yes inefficient search, bleh
+		m[2], // day
+		m[3], // hour
+		m[4], // minute
+		m[5] // second
+	);
 	if( isNaN(now) )
 		return;
 	now = Math.floor( now / 1000 );

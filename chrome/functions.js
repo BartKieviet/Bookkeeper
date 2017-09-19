@@ -45,3 +45,7 @@ Universe.fromDocument = function( doc ) {
 return Universe;
 
 })();
+
+var WEEKDAYS = [ 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat' ];
+var MONTHS = [ 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+	       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec' ];

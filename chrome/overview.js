@@ -8,10 +8,6 @@ var Commodities; // from commodity.js
 
 (function (){
 
-var WEEKDAYS = [ 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat' ];
-var MONTHS = [ 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-	       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec' ];
-
 var BUILDING_SORT_FUNCTIONS = {
 	loc: function( a, b ) {
 		// XXX - is this enough? Should we sort by (sector, y, x) instead?
