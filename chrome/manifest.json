@@ -66,5 +66,11 @@
 		"icons/mingray.svg",
 		"icons/plus.svg",
 		"icons/plusgray.svg"
-	]
+	],
+	"applications": {
+		"gecko": {
+			"id": "{47ae433e-161e-4c83-9cc0-12b3bc94e05b}",
+			"strict_min_version": "53.0"
+		}
+	}
 }
