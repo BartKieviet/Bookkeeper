@@ -106,6 +106,68 @@ var ICONS = [
 ];
 var ICON_TYPE_IDS; // lazily initialised in Building.getTypeIdByIcon
 
+var UPKEEP = {
+	'Alliance Command Station': {},
+	'Asteroid Mine': {'1': 1, '2': 1, '3': 1},
+	'Battleweapons Factory': {'1': 1,  '2': 2, '3':1, '6': 3, '7': 3, '18': 4},
+	'Brewery': {'1': 2, '2': 2, '3': 2, '13': 4},
+	'Chemical Laboratory': {},
+	'Clod Generator': {},
+	'Dark Dome': {},
+	'Droid Assembly Complex': {},
+	'Drug Station': {},
+	'Electronics Facility': {'1': 1, '2': 4, '3':1, '6': 3, '9': 2},
+	'Energy Well': {},
+	'Fuel Collector': {},
+	'Gas Collector': {},
+	'Handweapons Factory': {},
+	'Leech Nursery': {},
+	'Medical Laboratory': {},
+	'Military Outpost': {},
+	'Nebula Plant': {},
+	'Neural Laboratory': {},
+	'Optics Research Center': {},
+	'Plastics Facility': {},
+	'Radiation Collector': {'1': 1, '2': 3, '3': 1},
+	'Recyclotron': {},
+	'Robot Factory': {},
+	'Slave Camp': {},
+	'Smelting Facility': {},
+	'Space Farm': {},
+	'Stim Chip Mill': {}
+}
+
+var PRODUCTION = {
+	'Alliance Command Station': {},
+	'Asteroid Mine': {'5': 9, '14': 2},
+	'Battleweapons Factory': {'27' :2},
+	'Brewery': {},
+	'Chemical Laboratory': {},
+	'Clod Generator': {},
+	'Dark Dome': {},
+	'Droid Assembly Complex': {},
+	'Drug Station': {},
+	'Electronics Facility': {'7': 6},
+	'Energy Well': {},
+	'Fuel Collector': {},
+	'Gas Collector': {},
+	'Handweapons Factory': {},
+	'Leech Nursery': {},
+	'Medical Laboratory': {},
+	'Military Outpost': {},
+	'Nebula Plant': {},
+	'Neural Laboratory': {},
+	'Optics Research Center': {},
+	'Plastics Facility': {},
+	'Radiation Collector': {'19': 6},
+	'Recyclotron': {},
+	'Robot Factory': {},
+	'Slave Camp': {},
+	'Smelting Facility': {},
+	'Space Farm': {},
+	'Stim Chip Mill': {},
+}	
+
 function Building( loc, time_secs, sector_id, x, y, type_id, level, owner,
 		   amount, amount_max, amount_min, res_production, res_upkeep,
 		   buy_price, sell_price ) {
@@ -120,12 +182,12 @@ function Building( loc, time_secs, sector_id, x, y, type_id, level, owner,
 	this.amount = amount;
 	this.amount_max = amount_max;
 	this.amount_min = amount_min;
-	this.res_production = res_production;
-	this.res_upkeep = res_upkeep;
 	this.buy_price = buy_price;
 	this.sell_price = sell_price;
 
 	this.type = Building.getTypeName( type_id );
+	this.res_production = Building.getResProduction( this.type ); //res_production;
+	this.res_upkeep = Building.getResUpkeep ( this.type ); //res_upkeep;
 	this.stype = Building.getTypeShortName( type_id );
 	this.ticks = numberOfTicks( this );
 	this.ticks_passed = ticksPassed( this );
@@ -172,6 +234,16 @@ Building.getTypeShortName = function( type_id ) {
 	return SHORT_TYPES[ type_id-1 ] || undefined;
 }
 
+Building.getResUpkeep = function ( type ) {
+	console.log ( type );
+	console.log ( UPKEEP [ type ] );
+	return UPKEEP [ type ] || undefined;
+	
+}
+
+Building.getResProduction = function ( type ) {
+	return PRODUCTION [ type ] || undefined;
+}
 // Create a Building from data fetched by a Pardus page.
 //
 // This adjusts a few parameters to conform to what we need:
