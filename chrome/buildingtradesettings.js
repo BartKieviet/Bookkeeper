@@ -1,9 +1,7 @@
 (function (){
-	
-function storeBuilding ( data ) {
-	
-	var buildingList = data [ universe.key ]; 
-
+	//chrome.storage.sync.get ( null, function (result) { console.log ( result ) } );
+	var universe = Universe.fromDocument ( document );
+	var buildingID = universe.key + document.location.search.split("=")[1];
 	var buildingAmount_max = {};
 	var buildingAmount_min = {};
 	var key = "";
@@ -20,38 +18,8 @@ function storeBuilding ( data ) {
 			buildingAmount_min[key] = parseInt( inputs[i].value );
 		}
 	}
+	//This should be sent to the building once I know how.
+	console.log( buildingAmount_min );
+	console.log( buildingAmount_max );
 
-	var storeData = {};
-
-	// Add the new IDs to the building list.
-	if ( !buildingList ) {
-		buildingList[ universe.key ] = [];
-	}
-	if ( buildingList.indexOf( loc ) === -1 ) {
-		buildingList.push( loc );
-		storeData[ universe.key ] = buildingList;
-		var building = new Building();
-		building[ loc ] = loc;
-		building[ amount_max ] = buildingAmount_max;
-		building[ amount_min ] = buildingAmount_min;
-		storeData[ buildingID ] = building.toStorage();
-		chrome.storage.sync.set( storeData );
-	} else { 
-		chrome.storage.sync.get ( buildingID , getBuildingData.bind(null, buildingAmount_min, buildingAmount_max , storeData ) );
-	}
-}
-
-function getBuildingData ( buildingAmount_min, buildingAmount_max, storeData, building ) {
-	var newBuilding = Building.createFromStorage ( buildingID, building [ buildingID ] );
-	newBuilding [ "amount_max" ] = buildingAmount_max;
-	newBuilding [ "amount_min" ] = buildingAmount_min;
-	storeData[ buildingID ] = newBuilding.toStorage();
-	chrome.storage.sync.set( storeData );
-}
-	
-var universe = Universe.fromDocument ( document );
-var loc = parseInt(document.location.search.split("=")[1]);
-var buildingID = universe.key + loc;
-
-chrome.storage.sync.get ( universe.key , storeBuilding ); 
 })();
