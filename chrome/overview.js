@@ -590,7 +590,7 @@ function addOwnBuildings( buildingList, callback ) {
 			storeData[ universe.key + building.loc ] = building.toStorage();
 		}
 
-		console.log( 'storeData', storeData );
+		//console.log( 'storeData', storeData );
 
 		// Finally, store everything we need to store.  If you need to comment
 		// out this line, for debugging, insert a call to onFinished() in its

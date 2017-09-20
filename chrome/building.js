@@ -133,7 +133,7 @@ var UPKEEP = {
 	'Robot Factory': {},
 	'Slave Camp': {},
 	'Smelting Facility': {},
-	'Space Farm': {},
+	'Space Farm': {'2': 4, '4': 5},
 	'Stim Chip Mill': {}
 }
 
@@ -164,7 +164,7 @@ var PRODUCTION = {
 	'Robot Factory': {},
 	'Slave Camp': {},
 	'Smelting Facility': {},
-	'Space Farm': {},
+	'Space Farm': {'1': 8, '3': 2, '21': 1},
 	'Stim Chip Mill': {},
 }	
 
@@ -186,8 +186,15 @@ function Building( loc, time_secs, sector_id, x, y, type_id, level, owner,
 	this.sell_price = sell_price;
 
 	this.type = Building.getTypeName( type_id );
-	this.res_production = Building.getResProduction( this.type ); //res_production;
-	this.res_upkeep = Building.getResUpkeep ( this.type ); //res_upkeep;
+	// Bypass untill we have UPKEEP and PRODUCTION populated.
+	if (Object.keys(Building.getResProduction( this.type ) ).length === 0 ) {
+		this.res_production = res_production;
+		this.res_upkeep = res_upkeep;		
+	} else { 
+		this.res_production = Building.getResProduction( this.type ); 
+		this.res_upkeep = Building.getResUpkeep ( this.type ); //res_upkeep;
+	}
+	
 	this.stype = Building.getTypeShortName( type_id );
 	this.ticks = numberOfTicks( this );
 	this.ticks_passed = ticksPassed( this );
