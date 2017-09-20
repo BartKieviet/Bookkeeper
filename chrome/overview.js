@@ -446,12 +446,10 @@ function addOwnBuildings( buildingList, callback ) {
 	for ( i = 0; i < ownNumberOfBuildings; i++ ) {
 		var firstLink = ownBuildingTable.children[i+1].getElementsByTagName("a")[0];
 
-		if (firstLink.textContent === "Trading Outpost") {
-			//TOs don't play by the rules. - most likely MOs will
-			//screw this up too.
+		if (firstLink.textContent === "Trading Outpost" || firstLink.textContent === "Military Outpost") {
+			//TOs and MOs don't play by the rules.
 			continue;
-		}
-		else {
+		} else {
 			// Some of this parsing is a bit flaky.  I see for
 			// instance the original code expected an
 			// ownBuildingLocation array with the sector name at
@@ -539,47 +537,74 @@ function addOwnBuildings( buildingList, callback ) {
 		return;
 	}
 
-	console.log( 'ownBuildings', ownBuildings );
+//	console.log( 'ownBuildings', ownBuildings );
 
 	// Code below used to be finishAddBuildings, run when the building list
 	// was available. But now we already have the list, so just fall through
 	// executing.
+	var ownBuildingList = [];
+	for (var i = 0; i < ownBuildings.length ; i++) {
+		ownBuildingList.push ( universe.key + ownBuildings[i].loc );
+	}
+
+	chrome.storage.sync.get ( ownBuildingList, finishAddBuildings.bind(null, ownBuildings, buildingList));
+	function finishAddBuildings ( ownBuildings, buildingList, buildingData) {
 
 	// We track if we actually made changes to the building list.  Because
 	// if we didn't, we don't actually need to store it again.
-	var updatedBuildingList = false;
+		var buildings = {};
 
-	// Add the new IDs to the building list.
-	for ( i = 0, end = ownBuildings.length; i < end; i++ ) {
-		building = ownBuildings[ i ];
-		if ( buildingList.indexOf(building.loc) === -1 ) {
-			buildingList.push( building.loc );
-			updatedBuildingList = true;
+		for (var key in buildingData) {
+			buildings [ key ] = Building.createFromStorage(key, buildingData[ key ] );
 		}
+		
+		var updatedBuildingList = false;
+
+		// Add the new IDs to the building list.
+		for ( i = 0, end = ownBuildings.length; i < end; i++ ) {
+
+			if ( buildingList.indexOf(ownBuildings[ i ].loc) === -1 ) {
+				buildingList.push( ownBuildings[ i ].loc );
+				updatedBuildingList = true;
+			} else {
+				var keylist = {	"amount_max":0,
+								"amount_min":0,
+								"res_production":0,
+								"res_upkeep":0,
+								"buy_price":0,
+								"sell_price":0 
+								}
+
+				for (var key in keylist) {
+					ownBuildings[ i ][ key ] = buildings [ universe.key + ownBuildings[ i ].loc ] [ key ]; 
+				}
+			}
+		}
+
+		//console.log( 'buildingList', buildingList, updatedBuildingList );
+		// Compute the data to store.
+		var storeData = {};
+
+		if ( updatedBuildingList ) {
+			storeData[ universe.key ] = buildingList;
+		}
+
+		for ( i = 0, end = ownBuildings.length; i < end; i++ ) {
+			building = ownBuildings[ i ];
+			
+			storeData[ universe.key + building.loc ] = building.toStorage();
+		}
+
+		//console.log( 'storeData', storeData );
+
+		// Finally, store everything we need to store.  If you need to comment
+		// out this line, for debugging, insert a call to onFinished() in its
+		// place.  This is needed so that the rest of the overview code gets a
+		// chance to run.
+
+		chrome.storage.sync.set( storeData, onFinished );
+		// onFinished();
 	}
-
-	console.log( 'buildingList', buildingList, updatedBuildingList );
-
-	// Compute the data to store.
-	var storeData = {};
-
-	if ( updatedBuildingList )
-		storeData[ universe.key ] = buildingList;
-
-	for ( i = 0, end = ownBuildings.length; i < end; i++ ) {
-		building = ownBuildings[ i ];
-		storeData[ universe.key + building.loc ] = building.toStorage();
-	}
-
-	console.log( 'storeData', storeData );
-
-	// Finally, store everything we need to store.  If you need to comment
-	// out this line, for debugging, insert a call to onFinished() in its
-	// place.  This is needed so that the rest of the overview code gets a
-	// chance to run.
-
-	chrome.storage.sync.set( storeData, onFinished );
-	// onFinished();
 
 	function onFinished() {
 		// Call back with the possibly updated building list
