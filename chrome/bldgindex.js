@@ -353,8 +353,12 @@ function addBookkeeperRowCells( entries ) {
 			toggle = ToggleMaker.make();
 			input = toggle.firstElementChild;
 			input.dataset.bookkeeperLoc = entry.loc;
-			input.addEventListener( 'input', onToggle, false );
 			td.appendChild( toggle );
+
+			// Wanted this to be 'input' not 'click' but that
+			// doesn't seem to work in chrome...
+			input.addEventListener( 'click', onToggle, false );
+
 			entry.ui = input;
 		}
 
