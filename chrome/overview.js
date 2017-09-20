@@ -5,6 +5,7 @@
 var Universe; // from universe.js
 var Building; // from building.js
 var Commodities; // from commodity.js
+var CalendarNames; // from functions.js
 
 (function (){
 
@@ -351,7 +352,7 @@ function makeTimeTD( timestamp ) {
 	// If the date is old, we just display the day and month.
 	// 432000000 is the number of milliseconds in five days.
 	if( now - timestamp > 432000000 ) {
-		s = MONTHS[ t.getMonth() ] + ' ' + t.getDate();
+		s = CalendarNames.MONTHS[ t.getMonth() ] + ' ' + t.getDate();
 	}
 	else {
 		now = new Date( now );
@@ -363,7 +364,7 @@ function makeTimeTD( timestamp ) {
 			  + ':' + twoDigits( t.getSeconds() );
 		else
 			// Show weekday and time.
-			s = WEEKDAYS[ t.getDay() ] + ' '
+			s = CalendarNames.WEEKDAYS[ t.getDay() ] + ' '
 			  + twoDigits( t.getHours() )
 			  + ':' + twoDigits( t.getMinutes() );
 	}
