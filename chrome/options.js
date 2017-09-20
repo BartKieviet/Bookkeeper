@@ -8,7 +8,18 @@ function onDOMContentLoaded() {
 	version_span.textContent = chrome.runtime.getManifest().version;
 
 	clear_button.addEventListener( 'click', onClearClick, false );
-	beginUsageDisplayChore();
+
+	if ( typeof chrome.storage.sync.getBytesInUse === 'function' ||
+	     typeof chrome.storage.sync.MAX_ITEMS === 'number' ||
+	     typeof chrome.storage.sync.QUOTA_BYTES === 'number' )
+		beginUsageDisplayChore();
+
+
+	// Else we're on Firefox or something else that doesn't support Chrome's
+	// full storage API.  We won't even try, let's just hide the whole
+	// thing.
+	document.getElementById( 'bookkeeper-storage-gauge' ).
+		parentElement.remove();
 }
 
 function beginUsageDisplayChore() {

@@ -72,6 +72,18 @@ h1.bookkeeper img {
 	font-weight: bold;
 }
 
+#bookkeeper-overview img.bookkeeper-small-button {
+	margin-left: 5px;
+}
+
+.bookkeeper-small-button {
+	width: 16px;
+	height: 16px;
+	padding: 0;
+	margin: 0;
+	border: none;
+	cursor: pointer;
+}
 
 /* Toggle switches
    Adapted from https://www.w3schools.com/howto/howto_css_switch.asp */

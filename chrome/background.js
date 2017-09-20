@@ -249,7 +249,8 @@ OpHandlers.queryTicksLeft = function( message, sendResponse ) {
 		r = {};
 		for ( key in data ) {
 			building = Building.createFromStorage( key, data[key] );
-			if ( building.ticks_left >= 0 )
+			if ( building.ticks_left >= 0 &&
+			     building.ticks_left < Infinity )
 				r[ building.loc ] = building.ticks_left;
 		}
 
