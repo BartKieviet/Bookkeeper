@@ -21,6 +21,7 @@
 		{
 			"matches": [ "*://*.pardus.at/main.php*" ],
 			"js": [ "nav.js" ],
+			"css": [ "nav.css" ],
 			"all_frames": true
 		},
 		{
@@ -28,7 +29,7 @@
 			"js": [ "functions.js", "sector.js", "building.js",
 				"commodity.js", "bldgindex.js" ],
 			"css": [ "bookkeeper.css" ],
-			"all_frames": true
+			"all_frames": false
 		},
 		{
 			"matches": [ "*://*.pardus.at/building_trade_settings.php*" ],
@@ -58,6 +59,7 @@
 		"chrome_style": true
 	},
 	"web_accessible_resources": [
+		"icons/16.png",
 		"icons/24.png",
 		"icons/48.png",
 		"icons/minus.svg",

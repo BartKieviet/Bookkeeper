@@ -5,6 +5,8 @@ var Universe,    // from universe.js
     Building,    // from building.js
     Commodities; // from commodity.js
 
+var CalendarNames, ToggleMaker; // from functions.js
+
 (function() {
 
 // Regular expressions, XPath expressions and other stuff we use repeatedly.
@@ -29,8 +31,8 @@ setup();
 // Script execution ends here.  Function definitions below.
 
 function setup() {
-	var sectorrx = /^(.*) Building Index$/,
-	    h1, m, buildingsTable, entries, i, end, entry, keys;
+	var h1, m, buildingsTable, entries,
+	    i, end, entry, keys;
 
 	universe = Universe.fromDocument( document );
 
@@ -42,7 +44,7 @@ function setup() {
 		null).singleNodeValue;
 	if( !h1 )
 		return;
-	m = sectorrx.exec( h1.textContent );
+	m = /^(.*) Building Index$/.exec( h1.textContent );
 	if( !m )
 		return;
 	sectorId = Sector.getId( m[1] );
@@ -52,13 +54,27 @@ function setup() {
 
 	// Get the timestamp.  This will be in the same TD that contains the H1
 	// header, inside a SPAN of class 'cached', inside a DIV.
+
 	now = document.evaluate(
 		'//td[h1[contains(text(),"Building Index")]]/div/span[@class="cached"]',
 		document, null, XPathResult.FIRST_ORDERED_NODE_TYPE,
 		null).singleNodeValue;
 	if( !now )
 		return;
-	now = Date.parse( now.textContent );
+	// Pardus' timestamp format *in this page* is
+	// "Tue Sep 19 19:41:39 GMT 2017"
+	m = /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) (\d?\d) (\d?\d):(\d\d):(\d\d) GMT (\d\d\d\d)/.exec( now.textContent );
+	if ( !m )
+		return;
+	now = Date.UTC(
+		m[6], // year
+		// month - yes inefficient search, bleh
+		CalendarNames.MONTHS.indexOf(m[1]),
+		m[2], // day
+		m[3], // hour
+		m[4], // minute
+		m[5]  // second
+	);
 	if( isNaN(now) )
 		return;
 	now = Math.floor( now / 1000 );
@@ -327,19 +343,19 @@ function addBookkeeperHeader( entry ) {
 }
 
 function addBookkeeperRowCells( entries ) {
-	var i, end, entry, td, a;
+	var i, end, entry, td, toggle, input, src;
 
 	for( i = 0, end = entries.length; i < end; i++ ) {
 		entry = entries[ i ];
 		td = document.createElement( 'td' );
 
-		if( entry.trackable ) {
-			a = document.createElement( 'a' );
-			a.className = 'bookkeeper-addbut';
-			a.dataset.bookkeeperLoc = entry.loc;
-			a.addEventListener( 'click', onAddRemClick, false );
-			td.appendChild( a );
-			entry.ui = a;
+		if ( entry.trackable ) {
+			toggle = ToggleMaker.make();
+			input = toggle.firstElementChild;
+			input.dataset.bookkeeperLoc = entry.loc;
+			input.addEventListener( 'input', onToggle, false );
+			td.appendChild( toggle );
+			entry.ui = input;
 		}
 
 		entry.tr.appendChild( td );
@@ -357,7 +373,7 @@ function onBuildingData( data ) {
 		entry = pageData[ building.loc ];
 		entry.tracked = true;
 		entry.building = building;
-		entry.ui.className = 'bookkeeper-rembut';
+		entry.ui.checked = true;
 		if( building.time < now ) {
 			updates[ key ] = entry;
 			updateCount++;
@@ -528,17 +544,19 @@ function inferBuildingFromEntry( entry ) {
 	);
 }
 
-function onAddRemClick( event ) {
+function onToggle( event ) {
 	var target, loc, entry;
 
 	target = event.target;
 	loc = target.dataset.bookkeeperLoc;
-	if( !loc )
+	if ( !loc )
 		return;
 
-	event.preventDefault();
 	entry = pageData[ loc ];
-	if( entry.tracked )
+	if ( entry.tracked === target.checked )
+		return;
+
+	if ( entry.tracked )
 		untrackBuilding( entry );
 	else
 		trackBuilding( entry );
@@ -562,7 +580,7 @@ function trackBuilding( entry ) {
 
 	function onAdded() {
 		entry.tracked = true;
-		entry.ui.className = 'bookkeeper-rembut';
+		entry.ui.checked = true;
 	}
 }
 
@@ -576,7 +594,7 @@ function untrackBuilding( entry ) {
 		// better data than inferBuildingFromEntry() can come up with,
 		// so in that case we'll just re-add it.
 		entry.tracked = false;
-		entry.ui.className = 'bookkeeper-addbut';
+		entry.ui.checked = false;
 	}
 }
 

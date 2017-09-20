@@ -234,3 +234,26 @@ OpHandlers.showNotification = function( message ) {
 
 	return false;
 }
+
+OpHandlers.queryTicksLeft = function( message, sendResponse ) {
+	var keys;
+
+	keys = message.ids.map( function(id) { return message.ukey + id; } );
+	chrome.storage.sync.get( keys, onData );
+
+	return true;
+
+	function onData( data ) {
+		var key, building, r;
+
+		r = {};
+		for ( key in data ) {
+			building = Building.createFromStorage( key, data[key] );
+			if ( building.ticks_left >= 0 &&
+			     building.ticks_left < Infinity )
+				r[ building.loc ] = building.ticks_left;
+		}
+
+		sendResponse( r );
+	}
+}

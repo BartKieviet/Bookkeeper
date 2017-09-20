@@ -5,12 +5,9 @@
 var Universe; // from universe.js
 var Building; // from building.js
 var Commodities; // from commodity.js
+var CalendarNames; // from functions.js
 
 (function (){
-
-var WEEKDAYS = [ 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat' ];
-var MONTHS = [ 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-	       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec' ];
 
 var BUILDING_SORT_FUNCTIONS = {
 	loc: function( a, b ) {
@@ -44,7 +41,9 @@ function compareAsInt( a, b ) {
 var credits_img = "<img src='//static.pardus.at/img/stdhq/credits_16x16.png' alt='Credits' width='16' height='16' style='vertical-align: middle;'>",
     universe = Universe.fromDocument( document ),
     sortCritKey = universe.name + 'OverviewSortCrit',
-    sortAscKey = universe.name + 'OverviewSortAsc';
+    sortAscKey = universe.name + 'OverviewSortAsc',
+    grayIconSrc = chrome.extension.getURL( 'icons/mingray.svg' ),
+    iconSrc = chrome.extension.getURL( 'icons/minus.svg' );
 
 function showOverview( syncData ) {
 	// Data contains a property whose name we computed and stored in the
@@ -319,13 +318,19 @@ function fillTBody( tbody, in_use, buildings, sort, ascending ) {
 function makeRemoveButton( loc ) {
 	var button;
 
-	button = document.createElement( 'a' );
-	button.className = 'bookkeeper-rembut-small';
+	button = document.createElement( 'img' );
+	button.className = 'bookkeeper-small-button';
+	button.src = grayIconSrc;
 	button.dataset.bookkeperLoc = loc;
 	button.addEventListener( 'click', onRemoveClick );
+	button.addEventListener( 'mouseover', onRemoveMouseOver );
+	button.addEventListener( 'mouseout', onRemoveMouseOut );
 
 	return button;
 }
+
+function onRemoveMouseOver( event ) { event.target.src = iconSrc; }
+function onRemoveMouseOut( event ) { event.target.src = grayIconSrc; }
 
 function onRemoveClick( event ) {
 	var target, loc;
@@ -355,7 +360,7 @@ function makeTimeTD( timestamp ) {
 	// If the date is old, we just display the day and month.
 	// 432000000 is the number of milliseconds in five days.
 	if( now - timestamp > 432000000 ) {
-		s = MONTHS[ t.getMonth() ] + ' ' + t.getDate();
+		s = CalendarNames.MONTHS[ t.getMonth() ] + ' ' + t.getDate();
 	}
 	else {
 		now = new Date( now );
@@ -367,7 +372,7 @@ function makeTimeTD( timestamp ) {
 			  + ':' + twoDigits( t.getSeconds() );
 		else
 			// Show weekday and time.
-			s = WEEKDAYS[ t.getDay() ] + ' '
+			s = CalendarNames.WEEKDAYS[ t.getDay() ] + ' '
 			  + twoDigits( t.getHours() )
 			  + ':' + twoDigits( t.getMinutes() );
 	}
