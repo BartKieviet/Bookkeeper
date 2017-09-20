@@ -41,7 +41,9 @@ function compareAsInt( a, b ) {
 var credits_img = "<img src='//static.pardus.at/img/stdhq/credits_16x16.png' alt='Credits' width='16' height='16' style='vertical-align: middle;'>",
     universe = Universe.fromDocument( document ),
     sortCritKey = universe.name + 'OverviewSortCrit',
-    sortAscKey = universe.name + 'OverviewSortAsc';
+    sortAscKey = universe.name + 'OverviewSortAsc',
+    grayIconSrc = chrome.extension.getURL( 'icons/mingray.svg' ),
+    iconSrc = chrome.extension.getURL( 'icons/minus.svg' );
 
 function showOverview( syncData ) {
 	// Data contains a property whose name we computed and stored in the
@@ -316,13 +318,19 @@ function fillTBody( tbody, in_use, buildings, sort, ascending ) {
 function makeRemoveButton( loc ) {
 	var button;
 
-	button = document.createElement( 'a' );
-	button.className = 'bookkeeper-rembut-small';
+	button = document.createElement( 'img' );
+	button.className = 'bookkeeper-small-button';
+	button.src = grayIconSrc;
 	button.dataset.bookkeperLoc = loc;
 	button.addEventListener( 'click', onRemoveClick );
+	button.addEventListener( 'mouseover', onRemoveMouseOver );
+	button.addEventListener( 'mouseout', onRemoveMouseOut );
 
 	return button;
 }
+
+function onRemoveMouseOver( event ) { event.target.src = iconSrc; }
+function onRemoveMouseOut( event ) { event.target.src = grayIconSrc; }
 
 function onRemoveClick( event ) {
 	var target, loc;
