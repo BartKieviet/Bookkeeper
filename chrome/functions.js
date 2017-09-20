@@ -1,6 +1,4 @@
-// -*- js3-indent-level: 8; js3-indent-tabs-mode: t -*-
-
-// Contains functions used in both files.
+// Functions used in multiple files.
 
 function removeBuilding( loc, universe, callback ) {
 	//chrome.storage.local.get(null,function(result){console.log(result)});
@@ -46,6 +44,46 @@ return Universe;
 
 })();
 
-var WEEKDAYS = [ 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat' ];
-var MONTHS = [ 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-	       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec' ];
+var CalendarNames = {
+	WEEKDAYS: [
+		'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'
+	],
+	MONTHS: [
+		'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+		'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+	]
+};
+
+var ToggleMaker = (function() {
+
+function makeToggleSwitch( switchClass, sliderClass, square ) {
+	var container, input, slider;
+
+	container = document.createElement( 'label' );
+	input = document.createElement( 'input' );
+	slider = document.createElement( 'span' );
+
+	container.className = switchClass;
+	input.type = 'checkbox';
+	slider.className = sliderClass;
+	if ( !square )
+		slider.classList.add( 'bookkeeper-round' );
+
+	container.appendChild( input );
+	container.appendChild( slider );
+
+	return container;
+}
+
+return {
+	make: function() {
+		return makeToggleSwitch(
+			'bookkeeper-switch', 'bookkeeper-slider' );
+	},
+	makeSmall: function() {
+		return makeToggleSwitch(
+			'bookkeeper-switch-small', 'bookkeeper-slider-small' );
+	}
+};
+
+})();

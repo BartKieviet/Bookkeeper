@@ -5,6 +5,8 @@ var Universe,    // from universe.js
     Building,    // from building.js
     Commodities; // from commodity.js
 
+var CalendarNames, ToggleMaker; // from functions.js
+
 (function() {
 
 // Regular expressions, XPath expressions and other stuff we use repeatedly.
@@ -66,11 +68,12 @@ function setup() {
 		return;
 	now = Date.UTC(
 		m[6], // year
-		MONTHS.indexOf(m[1]), // month - yes inefficient search, bleh
+		// month - yes inefficient search, bleh
+		CalendarNames.MONTHS.indexOf(m[1]),
 		m[2], // day
 		m[3], // hour
 		m[4], // minute
-		m[5] // second
+		m[5]  // second
 	);
 	if( isNaN(now) )
 		return;
@@ -340,19 +343,19 @@ function addBookkeeperHeader( entry ) {
 }
 
 function addBookkeeperRowCells( entries ) {
-	var i, end, entry, td, a;
+	var i, end, entry, td, toggle, input, src;
 
 	for( i = 0, end = entries.length; i < end; i++ ) {
 		entry = entries[ i ];
 		td = document.createElement( 'td' );
 
-		if( entry.trackable ) {
-			a = document.createElement( 'a' );
-			a.className = 'bookkeeper-addbut';
-			a.dataset.bookkeeperLoc = entry.loc;
-			a.addEventListener( 'click', onAddRemClick, false );
-			td.appendChild( a );
-			entry.ui = a;
+		if ( entry.trackable ) {
+			toggle = ToggleMaker.make();
+			input = toggle.firstElementChild;
+			input.dataset.bookkeeperLoc = entry.loc;
+			input.addEventListener( 'input', onToggle, false );
+			td.appendChild( toggle );
+			entry.ui = input;
 		}
 
 		entry.tr.appendChild( td );
@@ -370,7 +373,7 @@ function onBuildingData( data ) {
 		entry = pageData[ building.loc ];
 		entry.tracked = true;
 		entry.building = building;
-		entry.ui.className = 'bookkeeper-rembut';
+		entry.ui.checked = true;
 		if( building.time < now ) {
 			updates[ key ] = entry;
 			updateCount++;
@@ -541,17 +544,19 @@ function inferBuildingFromEntry( entry ) {
 	);
 }
 
-function onAddRemClick( event ) {
+function onToggle( event ) {
 	var target, loc, entry;
 
 	target = event.target;
 	loc = target.dataset.bookkeeperLoc;
-	if( !loc )
+	if ( !loc )
 		return;
 
-	event.preventDefault();
 	entry = pageData[ loc ];
-	if( entry.tracked )
+	if ( entry.tracked === target.checked )
+		return;
+
+	if ( entry.tracked )
 		untrackBuilding( entry );
 	else
 		trackBuilding( entry );
@@ -575,7 +580,7 @@ function trackBuilding( entry ) {
 
 	function onAdded() {
 		entry.tracked = true;
-		entry.ui.className = 'bookkeeper-rembut';
+		entry.ui.checked = true;
 	}
 }
 
@@ -589,7 +594,7 @@ function untrackBuilding( entry ) {
 		// better data than inferBuildingFromEntry() can come up with,
 		// so in that case we'll just re-add it.
 		entry.tracked = false;
-		entry.ui.className = 'bookkeeper-addbut';
+		entry.ui.checked = false;
 	}
 }
 
