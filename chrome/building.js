@@ -166,7 +166,7 @@ var PRODUCTION = {
 	'Smelting Facility': {},
 	'Space Farm': {'1': 8, '3': 2, '21': 1},
 	'Stim Chip Mill': {},
-}	
+}
 
 function Building( loc, time_secs, sector_id, x, y, type_id, level, owner,
 		   amount, amount_max, amount_min, res_production, res_upkeep,
@@ -189,12 +189,12 @@ function Building( loc, time_secs, sector_id, x, y, type_id, level, owner,
 	// Bypass untill we have UPKEEP and PRODUCTION populated.
 	if (Object.keys(Building.getResProduction( this.type ) ).length === 0 ) {
 		this.res_production = res_production;
-		this.res_upkeep = res_upkeep;		
-	} else { 
-		this.res_production = Building.getResProduction( this.type ); 
+		this.res_upkeep = res_upkeep;
+	} else {
+		this.res_production = Building.getResProduction( this.type );
 		this.res_upkeep = Building.getResUpkeep ( this.type ); //res_upkeep;
 	}
-	
+
 	this.stype = Building.getTypeShortName( type_id );
 	this.ticks = numberOfTicks( this );
 	this.ticks_passed = ticksPassed( this );
@@ -243,7 +243,7 @@ Building.getTypeShortName = function( type_id ) {
 
 Building.getResUpkeep = function ( type ) {
 	return UPKEEP [ type ] || undefined;
-	
+
 }
 
 Building.getResProduction = function ( type ) {
@@ -384,21 +384,21 @@ function ticksPassed( building ) {
 }
 
 function numberOfTicks( building ) {
+	var lowest, key, base, tickAmount, ticks;
+
 	if( !(building.level > 0) )
 		return Infinity;
 
-	var minAmount = 9999;
-	var minKey = "0";
-
-	for (var key in building.res_upkeep) {
-		if (building.amount[key]/building.res_upkeep[key] < minAmount) {
-			minAmount = building.amount[key];
-			minKey = key;
-		}
+	lowest = Infinity;
+	for ( key in building.res_upkeep ) {
+		base = building.res_upkeep[ key ];
+		tickAmount = Math.round( base * ( 1 + 0.4 * (building.level - 1) ) );
+		ticks = Math.floor( building.amount[key] / tickAmount );
+		if ( ticks < lowest )
+			lowest = ticks;
 	}
-	var tickAmount = ((building.level - 1) * 0.4 + 1) * building.res_upkeep[minKey];
-	var ticks = Math.floor(minAmount / tickAmount);
-	return ticks;
+
+	return lowest;
 }
 
 function saneLevel( level ) {
