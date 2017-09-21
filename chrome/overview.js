@@ -79,9 +79,7 @@ function showOverview( syncData ) {
 	// We could avoid these shenanigans, and maybe should, by just declaring
 	// buildingList global, so all our callbacks can share it.
 
-	// Skip this for now.
-	//addOwnBuildings( buildingList, showOverviewStep2.bind(null, buildingList) );
-	showOverviewStep2( buildingList );
+	addOwnBuildings( buildingList, showOverviewStep2.bind(null, buildingList) );
 }
 
 function showOverviewStep2( buildingList ) {
