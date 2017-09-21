@@ -79,10 +79,12 @@ function showOverview( syncData ) {
 	// We could avoid these shenanigans, and maybe should, by just declaring
 	// buildingList global, so all our callbacks can share it.
 
-	addOwnBuildings( buildingList, showOverviewStep2.bind(null, buildingList) );
+	// Skip this for now.
+	//addOwnBuildings( buildingList, showOverviewStep2.bind(null, buildingList) );
+	showOverviewStep2( buildingList );
 }
 
-function showOverviewStep2( buildingList, data ) {
+function showOverviewStep2( buildingList ) {
 	chrome.storage.local.get( [sortCritKey, sortAscKey],
 				  showOverviewStep3.bind(null, buildingList) );
 }
@@ -557,7 +559,7 @@ function addOwnBuildings( buildingList, callback ) {
 		for (var key in buildingData) {
 			buildings [ key ] = Building.createFromStorage(key, buildingData[ key ] );
 		}
-		
+
 		var updatedBuildingList = false;
 
 		// Add the new IDs to the building list.
@@ -572,11 +574,11 @@ function addOwnBuildings( buildingList, callback ) {
 								"res_production":0,
 								"res_upkeep":0,
 								"buy_price":0,
-								"sell_price":0 
+								"sell_price":0
 								}
 
 				for (var key in keylist) {
-					ownBuildings[ i ][ key ] = buildings [ universe.key + ownBuildings[ i ].loc ] [ key ]; 
+					ownBuildings[ i ][ key ] = buildings [ universe.key + ownBuildings[ i ].loc ] [ key ];
 				}
 			}
 		}
@@ -591,7 +593,7 @@ function addOwnBuildings( buildingList, callback ) {
 
 		for ( i = 0, end = ownBuildings.length; i < end; i++ ) {
 			building = ownBuildings[ i ];
-			
+
 			storeData[ universe.key + building.loc ] = building.toStorage();
 		}
 

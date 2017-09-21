@@ -186,6 +186,9 @@ function Building( loc, time_secs, sector_id, x, y, type_id, level, owner,
 	this.sell_price = sell_price;
 
 	this.type = Building.getTypeName( type_id );
+
+	/* DISABLED TIL WE GET A CHANCE TO DO THIS PROPERLY
+
 	// Bypass untill we have UPKEEP and PRODUCTION populated.
 	if (Object.keys(Building.getResProduction( this.type ) ).length === 0 ) {
 		this.res_production = res_production;
@@ -194,6 +197,10 @@ function Building( loc, time_secs, sector_id, x, y, type_id, level, owner,
 		this.res_production = Building.getResProduction( this.type );
 		this.res_upkeep = Building.getResUpkeep ( this.type ); //res_upkeep;
 	}
+	*/
+
+	this.res_production = res_production;
+	this.res_upkeep = res_upkeep;
 
 	this.stype = Building.getTypeShortName( type_id );
 	this.ticks = numberOfTicks( this );

@@ -30,11 +30,6 @@
 				"commodity.js", "bldgindex.js" ],
 			"css": [ "bookkeeper.css" ],
 			"all_frames": false
-		},
-		{
-			"matches": [ "*://*.pardus.at/building_trade_settings.php*" ],
-			"js": [ "functions.js", "building.js", "buildingtradesettings.js" ],
-			"all_frames": true
 		}
 	],
 	"description": "User trade interface enhancements for the online game Pardus",
