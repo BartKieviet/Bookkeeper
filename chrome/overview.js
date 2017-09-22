@@ -236,7 +236,11 @@ function showOverviewBuildings( sort, ascending, data ) {
 function fillTBody( tbody, in_use, buildings, sort, ascending ) {
 	var key, building, tr, cell, img, ckey, n, s, i , end, j, jend, commodity,
 	    sortfn, fn, className, deleteIconUri;
-
+	
+	var sums = [];
+	sums.length = in_use.length;
+	sums.fill(0);
+	
 	sortfn = BUILDING_SORT_FUNCTIONS[ sort ];
 	if( sortfn ) {
 		if( ascending )
@@ -286,6 +290,9 @@ function fillTBody( tbody, in_use, buildings, sort, ascending ) {
 				else if( n < 0 )
 					cell.classList.add( 'pink' );
 			}
+			if (n !== null && !isNaN(n)) {
+				sums [j] += parseInt(n);
+			}
 		}
 
 		cell = makeTimeTD( building.time * 1000 );
@@ -313,6 +320,26 @@ function fillTBody( tbody, in_use, buildings, sort, ascending ) {
 
 		tbody.appendChild( tr );
 	}
+	
+	// Sum row.
+	tr = document.createElement( 'tr' );
+	addTD ( tr, "Total:" );
+	tr.firstChild.setAttribute("colspan", "4");
+	tr.firstChild.setAttribute("align", "right");
+	for( i = 0; i < sums.length; i++ ) {
+		cell = addTD ( tr, sums [i].toString() );
+		cell.className = 'c';
+		if( sums [i].toString() > 0 ) {
+			cell.classList.add( 'lime' );
+		}
+		else if( sums [i].toString() < 0 ) {
+			cell.classList.add( 'pink' );
+		}
+	}
+	addTD ( tr, "" );
+	tr.lastChild.setAttribute("colspan", "4");
+	tbody.appendChild( tr )
+	
 }
 
 function makeRemoveButton( loc ) {
