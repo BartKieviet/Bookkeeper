@@ -8,35 +8,35 @@ var Building = (function() {
 // the building image, without the image pack prefix and the '.png' suffix.
 
 var CATALOGUE = [
-	, // index 0 is not used
-	{ n: 'Alliance Command Station', s: 'ACS', i: 'alliance_command_station' },
-	{ n: 'Asteroid Mine', s: 'AM', i: 'asteroid_mine' },
-	{ n: 'Battleweapons Factory', s: 'BWF', i: 'battleweapons_factory' },
-	{ n: 'Brewery', s: 'Br', i: 'brewery' },
-	{ n: 'Chemical Laboratory', s: 'CL', i: 'chemical_laboratory' },
-	{ n: 'Clod Generator', s: 'CG', i: 'clod_generator' },
-	{ n: 'Dark Dome', s: 'DD', i: 'dark_dome' },
-	{ n: 'Droid Assembly Complex', s: 'DAC', i: 'droid_assembly_complex'	},
-	{ n: 'Drug Station', s: 'DS', i: 'drug_station' },
-	{ n: 'Electronics Facility', s: 'EF', i: 'electronics_facility' },
-	{ n: 'Energy Well', s: 'EW', i: 'energy_well' },
-	{ n: 'Fuel Collector', s: 'FC', i: 'fuel_collector' },
-	{ n: 'Gas Collector', s: 'GC', i: 'gas_collector' },
-	{ n: 'Handweapons Factory', s: 'HWF', i: 'handweapons_factory' },
-	{ n: 'Leech Nursery', s: 'LN', i: 'leech_nursery' },
-	{ n: 'Medical Laboratory', s: 'ML', i: 'medical_laboratory' },
-	{ n: 'Military Outpost', s: 'MO', i: 'military_outpost' },
-	{ n: 'Nebula Plant', s: 'NP', i: 'nebula_plant' },
-	{ n: 'Neural Laboratory', s: 'NL', i: 'neural_laboratory' },
-	{ n: 'Optics Research Center', s: 'ORC', i: 'optics_research_center' },
-	{ n: 'Plastics Facility', s: 'PF', i: 'plastics_facility' },
-	{ n: 'Radiation Collector', s: 'RC', i: 'radiation_collector' },
-	{ n: 'Recyclotron', s: 'Rcy', i: 'recyclotron' },
-	{ n: 'Robot Factory', s: 'RF', i: 'robot_factory' },
-	{ n: 'Slave Camp', s: 'SC', i: 'slave_camp' },
-	{ n: 'Smelting Facility', s: 'Sm', i: 'smelting_facility' },
-	{ n: 'Space Farm', s: 'SF', i: 'space_farm' },
-	{ n: 'Stim Chip Mill', s: 'SCM', i: 'stim_chip_mill' }
+	, // id=0 is not in use
+	{ n:"Alliance Command Station", s:"ACS", i:"alliance_command_station", u:[2,19] },
+	{ n:"Asteroid Mine", s:"AM", i:"asteroid_mine", u:[1,2,3] },
+	{ n:"Battleweapons Factory", s:"BWF", i:"battleweapons_factory", u:[1,2,3,6,7,18] },
+	{ n:"Brewery", s:"Br", i:"brewery", u:[1,2,3,13] },
+	{ n:"Chemical Laboratory", s:"CL", i:"chemical_laboratory", u:[1,2,3] },
+	{ n:"Clod Generator", s:"CG", i:"clod_generator", u:[2,13,21] },
+	{ n:"Dark Dome", s:"DD", i:"dark_dome", u:[2,50] },
+	{ n:"Droid Assembly Complex", s:"DAC", i:"droid_assembly_complex", u:[1,2,3,8,19] },
+	{ n:"Drug Station", s:"DS", i:"drug_station", u:[1,2,3,17,50] },
+	{ n:"Electronics Facility", s:"EF", i:"electronics_facility", u:[1,2,3,6,9] },
+	{ n:"Energy Well", s:"EW", i:"energy_well", u:[1,3] },
+	{ n:"Fuel Collector", s:"FC", i:"fuel_collector", u:[2,13] },
+	{ n:"Gas Collector", s:"GC", i:"gas_collector", u:[1,2,3] },
+	{ n:"Handweapons Factory", s:"HWF", i:"handweapons_factory", u:[1,2,3,7,9,18] },
+	{ n:"Leech Nursery", s:"LN", i:"leech_nursery", u:[1,2,3,19,23] },
+	{ n:"Medical Laboratory", s:"ML", i:"medical_laboratory", u:[1,2,3,12] },
+	{ n:"Military Outpost", s:"MO", i:"military_outpost", u:[2,16,19] },
+	{ n:"Nebula Plant", s:"NP", i:"nebula_plant", u:[1,3,17] },
+	{ n:"Neural Laboratory", s:"NL", i:"neural_laboratory", u:[1,2,3,4,11] },
+	{ n:"Optics Research Center", s:"ORC", i:"optics_research_center", u:[1,2,3,14] },
+	{ n:"Plastics Facility", s:"PF", i:"plastics_facility", u:[1,2,3,12,13] },
+	{ n:"Radiation Collector", s:"RC", i:"radiation_collector", u:[1,2,3] },
+	{ n:"Recyclotron", s:"Rcy", i:"recyclotron", u:[2,13,21] },
+	{ n:"Robot Factory", s:"RF", i:"robot_factory", u:[1,2,3,6,7,18] },
+	{ n:"Slave Camp", s:"SC", i:"slave_camp", u:[1,2,3,11,15] },
+	{ n:"Smelting Facility", s:"Sm", i:"smelting_facility", u:[1,2,3,5] },
+	{ n:"Space Farm", s:"SF", i:"space_farm", u:[2,4] },
+	{ n:"Stim Chip Mill", s:"SCM", i:"stim_chip_mill", u:[1,3,7,17,28] }
 ];
 
 // Lazily initialised by the getTypeId and getTypeIdByIcon.
@@ -95,8 +95,8 @@ Building.getTypeId = function( name ) {
 Building.getTypeIdByIcon = function( icon ) {
 	if ( ICON_IDS === undefined ) {
 		ICON_IDS = CATALOGUE.reduce(
-			function( icon_ids, id ) {
-				icon_ids[ NAME_IDS[id].i ] = id;
+			function( icon_ids, data, id ) {
+				icon_ids[ data.i ] = id;
 				return icon_ids;
 			},
 			{}
@@ -114,6 +114,11 @@ Building.getTypeName = function( typeId ) {
 Building.getTypeShortName = function( typeId ) {
 	var t = Building.getType( typeId );
 	return t !== undefined ? t.s : undefined;
+}
+
+Building.getUpkeepCommodities = function( typeId ) {
+	var t = Building.getType( typeId );
+	return t !== undefined ? t.u : undefined;
 }
 
 // Create a Building from data obtained from storage. `key` is the storage key
@@ -180,6 +185,14 @@ Building.prototype.getTypeShortName = function() {
 	return Building.getTypeShortName( this.typeId );
 }
 
+Building.prototype.getUpkeepCommodities = function() {
+	return Building.getUpkeepCommodities( this.typeId );
+}
+
+Building.prototype.isUpkeep = function( commodityId ) {
+	return this.getUpkeepCommodities().indexOf( commodityId ) !== -1;
+}
+
 Building.prototype.storageKey = function( universeKey ) {
 	return universeKey + this.loc;
 }
@@ -212,21 +225,25 @@ Building.prototype.toStorage = function() {
 
 // Return an array of commodity ids for commodities that appear in either
 // this.toBuy or this.forSale.
+//
+// XXX - should this be moved to overview.js?
 
 Building.prototype.getCommoditiesInUse = function() {
-	// NOTE: It is an assumption that there won't be commodities appearing
-	// under both forSale and toBuy.  If that assumption becomes void at
-	// some point (e.g. for TOs maybe?), then we need a special case here.
-	var r = [];
+	var seen = [], r = [];
 
 	if ( this.toBuy )
-		this.toBuy.forEach( pushr );
+		this.toBuy.forEach( pushc );
 	if ( this.forSale )
-		this.forSale.forEach( pushr );
+		this.forSale.forEach( pushc );
+	return r.sort( compare );
 
-	return r;
-
-	function pushr( v, i ) { r.push(i); }
+	function pushc( v, i ) {
+		if ( !seen[ i ] ) {
+			seen[ i ] = true;
+			r.push( i );
+		}
+	}
+	function compare( a, b ) { return a - b; }
 }
 
 Building.prototype.removeStorage = function( ukey, callback ) {

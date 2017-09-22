@@ -41,7 +41,7 @@ var credits_img = "<img src='//static.pardus.at/img/stdhq/credits_16x16.png' alt
 var buildingList; // fetched from storage eventually
 var ownEntries = parseOwnBuildings();
 
-console.log( 'ownEntries', ownEntries );
+// console.log( 'ownEntries', ownEntries );
 
 // Start the ball.
 chrome.storage.sync.get( universe.key, showOverview );
@@ -227,17 +227,16 @@ function fillTBody( tbody, in_use, buildings, sort, ascending ) {
 		for ( j = 0, jend = in_use.length; j < jend; j++ ) {
 			ckey = in_use[j];
 			commodity = Commodities.getCommodity( ckey );
+			s = null;
 
-			if ( building.toBuy[ckey] !== undefined ) {
+			if ( building.isUpkeep(ckey) && building.toBuy[ckey] !== undefined ) {
 				n = -building.toBuy[ckey];
 				s = String( n );
 			}
 			else if ( building.forSale[ckey] !== undefined ) {
 				n = building.forSale[ckey];
+				s = String( n );
 			}
-			else
-				// Should never happen
-				s = n = null;
 
 			cell = addTD( tr, s );
 			if ( s !== null ) {
@@ -368,13 +367,11 @@ function getCommoditiesInUse( buildings ) {
 	);
 
 
-	return Object.keys( inUse ).map( toInt ).sort( compareAsInt );
+	return Object.keys( inUse ).map( toInt ).sort( compare );
 
 	function markInUse( id ) { inUse[ id ] = true; }
 	function toInt( id ) { return parseInt(id); }
-	function compareAsInt( a, b ) {
-		return parseInt(a) - parseInt(b);
-	}
+	function compare( a, b ) { return a - b; }
 }
 
 function humanCoords( building ) {
@@ -601,7 +598,7 @@ function finishAddBuildings( callback, buildingData ) {
 		storedBuildings[ stored.loc ] = stored;
 	}
 
-	console.log( 'storedBuildings', storedBuildings );
+	// console.log( 'storedBuildings', storedBuildings );
 
 	toStore = [];
 	for ( i = 0, end = ownEntries.length; i < end; i++ ) {
@@ -629,8 +626,6 @@ function finishAddBuildings( callback, buildingData ) {
 			toStore.push( stored );
 		}
 		else {
-			console.log( 'creating', own );
-
 			// Create a new building.  In this case, the only data
 			// we can add is what we already have.
 			b = new Building(
@@ -658,7 +653,7 @@ function finishAddBuildings( callback, buildingData ) {
 		storeData[ universe.key + b.loc ] = b.toStorage();
 	}
 
-	console.log( 'storeData', storeData );
+	//console.log( 'storeData', storeData );
 
 	// Finally, store everything we need to store.  If you need to comment
 	// out this line, for debugging, insert a call to callback() in its
