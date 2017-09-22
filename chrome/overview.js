@@ -499,9 +499,12 @@ function addOwnBuildings( buildingList, callback ) {
 
 			var ownBuildingAmount = {};
 			// Set default values in ownBuildingAmount to 0
-			ownBuildingAmount[ Object.keys(Building.getResUpkeep( firstLink.textContent )) ] = 0;
-			ownBuildingAmount[ Object.keys(Building.getResProduction( firstLink.textContent )) ] = 0;
-			
+			for (key in Building.getResUpkeep( firstLink.textContent )) {
+				ownBuildingAmount[ key ] = 0;
+			}
+			for (key in Building.getResProduction( firstLink.textContent )) { 
+				ownBuildingAmount[ key ] = 0;
+			}
 			
 			for (var tableNumber = 3; tableNumber < 5; tableNumber++) {
 				//3 and 4 are upkeep and stock.
