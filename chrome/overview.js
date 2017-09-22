@@ -498,16 +498,25 @@ function addOwnBuildings( buildingList, callback ) {
 			var y = m[3]
 
 			var ownBuildingAmount = {};
+			// Set default values in ownBuildingAmount to 0
+			ownBuildingAmount[ Object.keys(Building.getResUpkeep( firstLink.textContent )) ] = 0;
+			ownBuildingAmount[ Object.keys(Building.getResProduction( firstLink.textContent )) ] = 0;
+			
+			
 			for (var tableNumber = 3; tableNumber < 5; tableNumber++) {
 				//3 and 4 are upkeep and stock.
 				var stock_img = ownBuildingData[tableNumber].getElementsByTagName("img");
 				for (var j = 0; j < stock_img.length ; j++) {
 					var key = Commodities.getId(stock_img[j].src.split(/[./]/g)[8]);
 					var value = stock_img[j].parentNode.textContent.split( " " )[1];
-					ownBuildingAmount[key] = value;
+					
+					// If you store stuff in your building not related to upkeep/production we don't care.
+					if (key in Building.getResProduction ( firstLink.textContent ) || key in Building.getResUpkeep ( firstLink.textContent ) ) {
+						ownBuildingAmount[key] = value;
+					}
 				}
 			}
-
+					
 			// This used to create a building calling new Building()
 			// with an empty parameter list.  But that's a bit of a
 			// waste, we can skip the empty initialisation by just
