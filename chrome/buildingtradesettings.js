@@ -1,57 +1,55 @@
-(function (){
-	
-function storeBuilding ( data ) {
-	
-	var buildingList = data [ universe.key ]; 
+// This is a content script. It runs on building_trade_settings.php?object=<id>
+//
+// It extracts maximums and minimums for this building.  It could get more
+// things (type and amount, thus forSale and toBuy), but we don't need that: the
+// building will only be updated if it is already in storage, and in that case
+// it will have those things already (or will get them from overview.js).
 
-	var buildingAmount_max = {};
-	var buildingAmount_min = {};
-	var key = "";
-	var inputs = document.getElementsByTagName( "input" );
+var universe = Universe.fromDocument( document );
+var loc = parseInt( document.location.search.split('=')[1] );
+var buildingID;
 
-	for ( var i = 0; i < inputs.length ; i++ ) {
-		if (inputs[i].name.indexOf ("amount_max") != -1) {
-			key = inputs[i].name.split( "_" )[0];
-			buildingAmount_max[key] = parseInt( inputs[i].value );
-		}
-
-		if (inputs[i].name.indexOf ("amount_min") != -1) {
-			key = inputs[i].name.split( "_" )[0];
-			buildingAmount_min[key] = parseInt( inputs[i].value );
-		}
-	}
-
-	var storeData = {};
-
-	// Add the new IDs to the building list.
-	if ( !buildingList ) {
-		buildingList[ universe.key ] = [];
-	}
-	if ( buildingList.indexOf( loc ) === -1 ) {
-		buildingList.push( loc );
-		storeData[ universe.key ] = buildingList;
-		var building = new Building();
-		building[ loc ] = loc;
-		building[ amount_max ] = buildingAmount_max;
-		building[ amount_min ] = buildingAmount_min;
-		storeData[ buildingID ] = building.toStorage();
-		chrome.storage.sync.set( storeData );
-	} else { 
-		chrome.storage.sync.get ( buildingID , getBuildingData.bind(null, buildingAmount_min, buildingAmount_max , storeData ) );
-	}
+if ( loc !== null ) {
+	buildingID = universe.key + loc;
+	chrome.storage.sync.get( buildingID, storeBuilding );
 }
 
-function getBuildingData ( buildingAmount_min, buildingAmount_max, storeData, building ) {
-	var newBuilding = Building.createFromStorage ( buildingID, building [ buildingID ] );
-	newBuilding [ "amount_max" ] = buildingAmount_max;
-	newBuilding [ "amount_min" ] = buildingAmount_min;
-	storeData[ buildingID ] = newBuilding.toStorage();
-	chrome.storage.sync.set( storeData );
-}
-	
-var universe = Universe.fromDocument ( document );
-var loc = parseInt(document.location.search.split("=")[1]);
-var buildingID = universe.key + loc;
+// End of script execution.
 
-chrome.storage.sync.get ( universe.key , storeBuilding ); 
-})();
+function buildingLoc() {
+	var m = /object=(\d+)/.exec( document.location.search );
+	if ( !m )
+		return null;
+	return parseInt( m[1] );
+}
+
+function storeBuilding( data ) {
+	var elements, i, end, id, c, input, m, val, building;
+
+	if ( !data[buildingID] )
+		return;
+	building = Building.createFromStorage( buildingID, data[buildingID] );
+
+	elements = document.forms.tradesettings.elements;
+	for ( i = 0, end = elements.length; i < end; i++ ) {
+		input = elements[ i ];
+		m = /^(\d+)_(amount_max|amount_min)$/.exec( input.name );
+		if ( !m )
+			continue;
+		id = parseInt( m[1] );
+		val = parseInt( input.value );
+		if ( isNaN(val) )
+			// Bail out, who knows what's in this form and we don't
+			// want corrupt data.
+			return;
+
+		if ( m[2] === 'amount_max' )
+			building.maximum[ id ] = val;
+		else
+			building.minimum[ id ] = val;
+	}
+
+	data = {};
+	data[ buildingID ] = building.toStorage();
+	chrome.storage.sync.set( data );
+}

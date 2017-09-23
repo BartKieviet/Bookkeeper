@@ -1,9 +1,12 @@
-(function() {
-    'use strict';
+'use strict';
 
 var universe = Universe.fromDocument ( document );
 var configured = false;
 var userloc, time, shipSpace, buildingSpace;
+
+configure();
+
+// End of script execution.
 
 function configure() {
 	if (!configured) {
@@ -11,13 +14,13 @@ function configure() {
 		var script = document.createElement( 'script' );
 		script.type = 'text/javascript';
 		var s = "\
-	(function() {var fn=function(){window.postMessage({pardus_bookkeeper:1,\
-	loc:typeof(userloc)=='undefined'?null:userloc,\
-	time:typeof(milliTime)=='undefined'?null:milliTime,\
-	ship_space:typeof(ship_space)=='undefined'?null:ship_space,\
-	obj_space:typeof(obj_space)=='undefined'?null:obj_space,\
-	},window.location.origin);};\
-	if(typeof(addUserFunction)=='function')addUserFunction(fn);fn();})();";
+(function() {var fn=function(){window.postMessage({pardus_bookkeeper:3,\
+loc:typeof(userloc)=='undefined'?null:userloc,\
+time:typeof(milliTime)=='undefined'?null:milliTime,\
+ship_space:typeof(ship_space)=='undefined'?null:ship_space,\
+obj_space:typeof(obj_space)=='undefined'?null:obj_space,\
+},window.location.origin);};\
+if(typeof(addUserFunction)=='function')addUserFunction(fn);fn();})();";
 		script.textContent = s;
 		document.body.appendChild( script );
 		configured = true;
@@ -29,7 +32,7 @@ function configure() {
 function onGameMessage( event ) {
 	var data = event.data;
 
-	if ( !data || data.pardus_bookkeeper != 1 ) {
+	if ( !data || data.pardus_bookkeeper != 3 ) {
 		return;
 	}
 
@@ -37,13 +40,14 @@ function onGameMessage( event ) {
 	time = data.time;
 	shipSpace = parseInt ( data.ship_space );
 	buildingSpace = parseInt ( data.obj_space );
-	
+
 	//configured, let's get started.
 	chrome.storage.sync.get( universe.key + userloc, addButton );
 }
 
 function addButton ( buildingData ) {
 	var building = Building.createFromStorage ( universe.key + userloc , buildingData [ universe.key + userloc ]);
+<<<<<<< HEAD
 	
 	//check if building has min/maxes comes here - later.
 	if (true) {
@@ -55,34 +59,70 @@ function addButton ( buildingData ) {
 		document.getElementsByName('trade_ship')[0].parentNode.appendChild(document.createElement('br'));
 		document.getElementsByName('trade_ship')[0].parentNode.appendChild(document.createElement('br'));
 		document.getElementsByName('trade_ship')[0].parentNode.appendChild(new_button);
+=======
+	console.log(building);
+
+	if ( building.hasMinMax() ) {
+		var new_button = document.getElementsByName("trade_ship")[0].cloneNode(false);
+		new_button.type = 'button';
+		new_button.textContent = 'Auto Sell Buy';
+		//new_button.name = 'Auto'; do we need this?
+		new_button.addEventListener( 'click', auto_sell_buy.bind(null, building) );
+		var node = document.getElementsByName('trade_ship')[0].parentNode;
+		node.appendChild(document.createElement('br'));
+		node.appendChild(document.createElement('br'));
+		node.appendChild(new_button);
+>>>>>>> 350026d4e75e11054574ada719ebdefa083a00d6
 	}
 }
 
-function auto_sell_buy( res_upkeep, res_production, amount_min, amount_max ) {
+function auto_sell_buy( building ) {
 	var amount = {};
 	var key, resNode;
 	var ship_amount = {};
-	
+
+	// See comment in the definition of makeDictionary, in building.js, for
+	// the meaning of this.  If we didn't do this, then instead of the
+	// "for(key in minDict)" loops below, we would use
+	// "building.minimum.forEach()" instead.
+	//
+	// Which probably would be better anyway, but I'll leave it like this so
+	// it's easier to understand what's going on here.
+	var minDict = Building.makeDictionary( building.minimum );
+
 	//checking for both ship and building how much we have. This can probably be quicker.
-	for (key in res_upkeep) {
-		resNode = document.getElementById( "stock_" + key );
-		if (!resNode) {
-			amount [ key ] = 0;
-		} else {
-			amount [ key ] = resNode.parentNode.previousSibling.textContent;
+
+	// This will iterate over all the commodity ids for which we have
+	// minimums (and maximums, if we have one we always have the other).
+	// Since those are lifted from the tradesettings screen, we know these
+	// are exactly the upkeep/production commodities; whatever other junk
+	// the owner is storing in their building won't have an entry here.
+
+	for ( key in minDict ) {
+
+		// Now we check if commodity id `key` is part of the upkeep for
+		// this kind of building.  If it isn't, then it is production,
+		// guaranteed.
+
+		// (at least until we start dealiing with TOs lololol)
+
+		if ( building.isUpkeep(key) ) {
+			resNode = document.getElementById( "stock_" + key );
+			if (!resNode) {
+				amount [ key ] = 0;
+			} else {
+				amount [ key ] = resNode.parentNode.previousSibling.textContent;
+			}
 		}
-	}
-	
-	for (key in res_production) {
-		resNode = document.getElementById( "comm_" + key );
-		if (!resNode) {
-			amount [ key ] = 0;
-		} else {
-			amount [ key ] = resNode.parentNode.previousSibling.textContent;
+		else {
+			resNode = document.getElementById( "comm_" + key );
+			if (!resNode) {
+				amount [ key ] = 0;
+			} else {
+				amount [ key ] = resNode.parentNode.previousSibling.textContent;
+			}
 		}
-	}
-	
-	for (key in res_upkeep) {
+
 		resNode = document.getElementById( "ship_" + key );
 		if (!resNode) {
 			ship_amount [ key ] = 0;
@@ -90,44 +130,40 @@ function auto_sell_buy( res_upkeep, res_production, amount_min, amount_max ) {
 			ship_amount [ key ] = resNode.parentNode.previousSibling.textContent;
 		}
 	}
-	
-	for (key in res_production) {
-		resNode = document.getElementById( "ship_" + key );
-		if (!resNode) {
-			ship_amount [ key ] = 0;
-		} else {
-			ship_amount [ key ] = resNode.parentNode.previousSibling.textContent;
-		}
-	}
-	
+
+	console.log( 'amount', amount );
+
 	// now fill in the forms.
 	var value;
-	for (key in res_upkeep) {
-		if (ship_amount [ key ] > 0) {
-			if (ship_amount [ key ] < amount_max[ key ] - amount [ key ]) {
-				value = ship_amount [ key ];
-			} else {
-				value = amount_max[ key ] - amount [ key ];
+	for ( key in minDict ) {
+		if ( building.isUpkeep(key) ) {
+			if (ship_amount [ key ] > 0) {
+				if (ship_amount [ key ] < building.maximum[ key ] - amount [ key ]) {
+					value = ship_amount [ key ];
+				} else {
+					value = building.maximum[ key ] - amount [ key ];
+				}
+				resNode = document.getElementById( "ship_" + key );
+				resNode.value = value;
 			}
-			resNode = document.getElementById( "ship_" + key );
-			resNode.value = value;
+		}
+		else {
+			if (amount [ key ] > 0) {
+				if (amount [ key ] < building.minimum[ key ]) {
+					value = 0;
+				} else {
+					value = amount[ key ] - building.minimum[ key ];
+				}
+				resNode = document.getElementById( "comm_" + key );
+				resNode.value = value;
+			}
 		}
 	}
-	
-	for (key in res_production) {
-		if (amount [ key ] > 0) {
-			if (amount [ key ] < amount_min[ key ]) {
-				value = 0;
-			} else {
-				value = amount[ key ] - amount_min [ key ];
-			}
-			resNode = document.getElementById( "comm_" + key );
-			resNode.value = value;
-		}
-	}
+
+	// We really need the "preview" checkbox here... as a user, I never let
+	// auto sell submit the form like this, without a chance to review :")
 
 	document.getElementsByName("trade_ship")[0].click();
-
 }
 
 /*
@@ -147,6 +183,3 @@ function buy_all_prod() {
 	}
 	document.getElementsByName("trade_ship")[0].click();
 }*/
-
-configure();
-})();
