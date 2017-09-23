@@ -60,7 +60,7 @@ function setup() {
 	);
 	if ( isNaN(now) )
 		return;
-	now = Building.now();
+	now = Building.seconds( now );
 
 	// Find the table with the buildings. We look for a table with a TH
 	// "Automatic Info"

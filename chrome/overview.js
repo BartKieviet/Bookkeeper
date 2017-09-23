@@ -196,9 +196,12 @@ function showOverviewBuildings( sort, ascending, data ) {
 	}
 }
 
-function fillTBody( tbody, in_use, buildings, sort, ascending ) {
+function fillTBody( tbody, inUse, buildings, sort, ascending ) {
 	var key, building, tr, cell, img, ckey, n, s, i , end, j, jend, commodity,
-	    sortfn, fn, className, deleteIconUri, ticks, now;
+	    sortfn, fn, className, deleteIconUri, ticks, now, sums;
+
+	sums = new Array( inUse.length );
+	sums.fill( 0 );
 
 	sortfn = BUILDING_SORT_FUNCTIONS[ sort ];
 	if ( sortfn ) {
@@ -225,8 +228,8 @@ function fillTBody( tbody, in_use, buildings, sort, ascending ) {
 		addTD( tr, maybe(building.owner) );
 		addTD( tr, maybe(building.level), 'right' );
 
-		for ( j = 0, jend = in_use.length; j < jend; j++ ) {
-			ckey = in_use[j];
+		for ( j = 0, jend = inUse.length; j < jend; j++ ) {
+			ckey = inUse[j];
 			commodity = Commodities.getCommodity( ckey );
 			s = null;
 
@@ -247,6 +250,8 @@ function fillTBody( tbody, in_use, buildings, sort, ascending ) {
 					cell.classList.add( 'lime' );
 				else if ( n < 0 )
 					cell.classList.add( 'pink' );
+
+				sums [j] += parseInt(n);
 			}
 		}
 
@@ -270,6 +275,25 @@ function fillTBody( tbody, in_use, buildings, sort, ascending ) {
 
 		tbody.appendChild( tr );
 	}
+
+	// Sum row.
+	tr = document.createElement( 'tr' );
+	cell = addTD ( tr, 'Total:' );
+	cell.className = 'r';
+	cell.colSpan = 4;
+	for( i = 0; i < sums.length; i++ ) {
+		cell = addTD ( tr, sums [i].toString() );
+		cell.className = 'c';
+		if( sums [i].toString() > 0 ) {
+			cell.classList.add( 'lime' );
+		}
+		else if( sums [i].toString() < 0 ) {
+			cell.classList.add( 'pink' );
+		}
+	}
+	cell = addTD ( tr );
+	cell.colSpan = 4;
+	tbody.appendChild( tr )
 
 	// Do this once and for all
 	function maybe( val ) {
@@ -573,7 +597,7 @@ function finishAddBuildings( callback, buildingData ) {
 	    storedBuildings, stored, toStore, storeData,
 	    min, max, b;
 
-	now = Math.floor( Date.now() / 1000 );
+	now = Building.now();
 
 	// We track if we actually made changes to the building list.  Because
 	// if we didn't, we don't actually need to store it again.

@@ -169,6 +169,23 @@ Building.ticksPassed = function( timeSecs, nowSecs ) {
 	return ticksPassed;
 }
 
+// The new Building object stores commodity lists as sparse arrays, not objects,
+// because that's faster (object keys are always strings, and our ids are always
+// numbers; using objects forces conversion back and forth).  However, arrays
+// are harder to work with because arrays are not iterable with for..in loops,
+// and we can't use for..of loops because that's too modern for our
+// compatibility requirements.  So, this utility helps you convert any of the
+// Building arrays (forSale, toBuy, minimum, maximum).
+
+Building.makeDictionary = function( array ) {
+	return array.reduce(
+		function( o, n, id ) {
+			o[ id ] = n;
+			return o;
+		},
+		{}
+	);
+}
 
 // An unusual function that actually updates `chrome.storage.sync`.  Added
 // because removing a single building is in fact a common operation.
@@ -214,8 +231,13 @@ Building.prototype.getUpkeepCommodities = function() {
 	return Building.getUpkeepCommodities( this.typeId );
 }
 
+Building.prototype.hasMinMax = function() {
+	return this.minimum.length > 0 && this.maximum.length > 0;
+}
+
 Building.prototype.isUpkeep = function( commodityId ) {
-	return this.getUpkeepCommodities().indexOf( commodityId ) !== -1;
+	return this.getUpkeepCommodities().
+		indexOf( parseInt(commodityId) ) !== -1;
 }
 
 Building.prototype.storageKey = function( universeKey ) {
@@ -344,7 +366,6 @@ function storageCommodityMap( a ) {
 		[]
 	);
 }
-
 
 return Building;
 
