@@ -1,8 +1,6 @@
-// The Building object manages the information we track about each building, and
-// provides an interface to manipulate them.
+// Instances of Building represent Pardus buildings.
 //
-// This script is self-contained; it doesn't rely on any other source in the
-// extension.
+// This script is self-contained; it doesn't rely on any other source.
 
 var Building = (function() {
 
@@ -53,23 +51,31 @@ var NAME_IDS, ICON_IDS;
 // Construct a new Building instance.
 //
 // You can supply as many parameters as you have data for, and/or use undefined
-// for missing data.  Be advised, though: the building will only be fully usable
-// until properties `loc`, `sectorId`, and `typeId` have been set.
+// for missing data.  Note though: the building will not be fully usable (some
+// instance methods may fail) until at least properties `loc`, `sectorId`, and
+// `typeId`, have been set.
 //
-// `location`, `sectorId`, `typeId`, `timeSecs`, `level`, `ticksLeft`, if
-// provided, should be integers.
+// `loc`, `sectorId`, `typeId`, `time`, `level`, and `ticksLeft`, if provided,
+// should be integers.
 //
 // `owner`, if provided, should be a string.
 //
 // `forSale`, `toBuy`, `minimum`, and `maximum`, if provided, can be arrays or
 // objects.  See internalCommodityMap below.
+//
+// Note that `time` is expected as a Unix timestamp in *seconds*, not
+// milliseconds.  You can use Building.seconds to convert the result of
+// Date.now().
+//
+// If you don't initialise the instance fully here, you can assign the missing
+// properties to the instance later using the same names as these parameters.
 
-function Building( location, sectorId, typeId, timeSecs, owner, level,
-		   ticksLeft, forSale, toBuy, minimum, maximum ) {
-	this.loc = location;
+function Building( loc, sectorId, typeId, time, owner, level, ticksLeft,
+		   forSale, toBuy, minimum, maximum ) {
+	this.loc = loc;
 	this.sectorId = sectorId;
 	this.typeId = typeId;
-	this.time = timeSecs || Building.now();
+	this.time = time || Building.now();
 	this.owner = owner;
 	this.level = level;
 	this.ticksLeft = ticksLeft;
@@ -85,26 +91,28 @@ function Building( location, sectorId, typeId, timeSecs, owner, level,
 
 // Convenience for the current time in seconds, so K's heart doesn't break that
 // hard...
+
 Building.now = function() {
 	return Building.seconds( Date.now() );
 }
 
 // Convert a time in milliseconds, like Date uses, to seconds, like Building
-// does.
+// wants.
 
 Building.seconds = function( millis ) {
 	return Math.floor( millis / 1000 );
 }
 
 // Get the type spec object for the given typeId.  Most likely you'll want to
-// use the instance's methods instead, getTypeName, etc.
+// use the instance's methods instead, getTypeName etc.
 
 Building.getType = function( typeId ) {
 	return CATALOGUE[ typeId ];
 }
 
 // If you have the name of a building type (e.g. "Medical Laboratory"), this
-// gives you the type id for it.  If the name isn't recognisable, return null.
+// gives you the type id for it.  If the name isn't recognisable, returns
+// undefined.
 
 Building.getTypeId = function( name ) {
 	if ( NAME_IDS === undefined ) {
@@ -159,9 +167,7 @@ Building.getUpkeepCommodities = function( typeId ) {
 }
 
 // Create a Building instance from data obtained from storage. `key` is the
-// storage key used to retrieve the building; `a` is data in v2.1 storage
-// format, which means a 3- to 10-element array.  See function body for
-// positions.
+// storage key used to retrieve the building; `a` is data retrieved from storage.
 //
 // Do not use building data from storage directly; always create an instance
 // with this function, manipulate that, and use its toStorage method if you need
@@ -169,6 +175,7 @@ Building.getUpkeepCommodities = function( typeId ) {
 // modify the app anywhere but here.
 
 Building.createFromStorage = function( key, a ) {
+	// V2.1 format is a 3- to 10-element array.
 	var loc = parseInt( key.substr(1) );
 	return new Building(
 		loc,
@@ -185,23 +192,24 @@ Building.createFromStorage = function( key, a ) {
 	);
 }
 
-// The number of production ticks elapsed from Unix timestamp `timeSecs` to
-// `nowSecs`.  If the latter is ommited, it defaults to the current time.
+// The number of production ticks elapsed from Unix timestamp `time` to `now`.
+// Both are given in seconds past the epoch.  If the latter is omitted, it
+// defaults to the current time.
 
-Building.ticksPassed = function( timeSecs, nowSecs ) {
+Building.ticksPassed = function( time, now ) {
 	var timeToTick, timePassed, ticksPassed;
 
-	if ( nowSecs === undefined )
-		nowSecs = Building.now();
+	if ( now === undefined )
+		now = Building.now();
 
-	timeToTick = 6 * 3600 - (timeSecs - 5100) % (6 * 3600);
-	timePassed = nowSecs - timeSecs;
+	timeToTick = 6 * 3600 - (time - 5100) % (6 * 3600);
+	timePassed = now - time;
 	ticksPassed = ( timePassed > timeToTick ) ? 1 : 0;
 	ticksPassed += Math.floor( timePassed / (6 * 3600) );
 	return ticksPassed;
 }
 
-// The Building object stores commodity lists as sparse arrays, not objects,
+// Building instances store lists of commodities as sparse arrays, not objects,
 // because that's faster (object keys are always strings, and our ids are always
 // numbers; using objects would force conversions back and forth).  However,
 // arrays are harder to work with because arrays are not enumerable with for..in
@@ -224,8 +232,11 @@ Building.makeDictionary = function( array ) {
 	);
 }
 
-// An unusual function that actually updates `chrome.storage.sync`.  Added
-// because removing a single building is in fact a common operation.
+// Removes the given building from storate.  `ukey` is the universe key (a
+// single uppercase letter: A, O, P).
+//
+// This is an unusual function that actually updates `chrome.storage.sync`.
+// Added because removing a single building is in fact a common operation.
 
 Building.removeStorage = function( loc, ukey, callback ) {
 	loc = parseInt( loc );
@@ -289,19 +300,19 @@ Building.prototype.isUpkeep = function( commodityId ) {
 		indexOf( parseInt(commodityId) ) !== -1;
 }
 
-// Compute how many ticks of upkeep remain at time `nowSecs`, based on the last
-// time the building was updated and how many ticks left it had then.  If
-// `nowSecs` is ommited, it defaults to the current time.
+// Compute how many ticks of upkeep remain at time `now`, which should be after
+// the last time the building was updated.  If omitted, it defaults to the
+// current time.  `now` is a timestamp in seconds past the epoch.
 //
 // If remaining ticks were unknown at the time the building was last updated,
 // this function will return undefined.
 
-Building.prototype.ticksNow = function( nowSecs ) {
+Building.prototype.ticksNow = function( now ) {
 	if ( this.ticksLeft === undefined )
 		return undefined;
 
 	 return Math.max(
-		 0, this.ticksLeft - Building.ticksPassed(this.time, nowSecs) );
+		 0, this.ticksLeft - Building.ticksPassed(this.time, now) );
 }
 
 // Compute the storage key that you'd use to store this building in the given
@@ -313,9 +324,9 @@ Building.prototype.storageKey = function( universeKey ) {
 
 // Create the object that gets sent to storage when we store a Building.  Do not
 // store building data directly; always create a Building instance, use this
-// function to obtain the data to store, and send that to `chrome.storage`.
-// This lets us change the storage format when needed, without having to modify
-// the app anywhere but here.
+// function to obtain the data to store, and send that to storage.  This lets us
+// change the storage format when needed, without having to modify the app
+// anywhere but here.
 
 Building.prototype.toStorage = function() {
 	// V2.1 format is a 3 to 10-element array.
