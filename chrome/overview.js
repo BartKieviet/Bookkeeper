@@ -198,7 +198,7 @@ function showOverviewBuildings( sort, ascending, data ) {
 
 function fillTBody( tbody, in_use, buildings, sort, ascending ) {
 	var key, building, tr, cell, img, ckey, n, s, i , end, j, jend, commodity,
-	    sortfn, fn, className, deleteIconUri;
+	    sortfn, fn, className, deleteIconUri, ticks, now;
 
 	sortfn = BUILDING_SORT_FUNCTIONS[ sort ];
 	if ( sortfn ) {
@@ -213,6 +213,7 @@ function fillTBody( tbody, in_use, buildings, sort, ascending ) {
 		tbody.removeChild( tbody.firstChild );
 
 	deleteIconUri = chrome.extension.getURL('icons/minusbw.svg');
+	now = Building.now();
 
 	for ( i = 0, end = buildings.length; i < end; i++ ) {
 		building = buildings[ i ];
@@ -221,8 +222,8 @@ function fillTBody( tbody, in_use, buildings, sort, ascending ) {
 		addTD( tr, humanCoords( building ) );
 		cell = addTD( tr, building.getTypeShortName() );
 		cell.title = building.getTypeName();
-		addTD( tr, building.owner || 'need update' );
-		addTD( tr, isNaN(building.level) ? '?' : String(building.level), 'right' );
+		addTD( tr, maybe(building.owner) );
+		addTD( tr, maybe(building.level), 'right' );
 
 		for ( j = 0, jend = in_use.length; j < jend; j++ ) {
 			ckey = in_use[j];
@@ -252,29 +253,31 @@ function fillTBody( tbody, in_use, buildings, sort, ascending ) {
 		cell = makeTimeTD( building.time * 1000 );
 		tr.appendChild( cell );
 
-		addTD( tr, building.ticksLeft === undefined ? '?' : String(building.ticksLeft), 'r' );
+		// Ticks left at the time the building was updated
+		addTD( tr, maybe(building.ticksLeft), 'r' );
 
-		if ( building.ticksLeft !== undefined ) {
-			className = null;
-			var ticksNow = building.ticksLeft - ticksPassed( building.time );
-			if ( ticksNow < 0 )
-				ticksNow = 0;
-			if ( ticksNow < 1 )
-				className = 'red';
-			else if ( ticksNow < 2 )
-				className = 'yellow';
-			cell = addTD( tr, String(ticksNow), 'r' );
-			if ( className )
-				cell.classList.add( className );
+		// Ticks now
+		ticks = building.ticksNow( now );
+		cell = addTD( tr, maybe(ticks), 'r' );
+		if ( ticks !== undefined ) {
+			if ( ticks < 1 )
+				cell.classList.add( 'red' );
+			else if ( ticks < 2 )
+				cell.classList.add( 'yellow' );
 		}
-		else
-			addTD( tr, '?', 'r' );
-
-		// This is showing the same as above?
 
 		addTD( tr, makeRemoveButton(building.loc) );
 
 		tbody.appendChild( tr );
+	}
+
+	// Do this once and for all
+	function maybe( val ) {
+		if ( val === undefined
+		  || val === null
+		  || (typeof val === 'number' && isNaN(val)) )
+			return '?';
+		return val;
 	}
 }
 
@@ -359,13 +362,11 @@ function getCommoditiesInUse( buildings ) {
 	var inUse, i, end, commodity;
 
 	inUse = {};
-
 	buildings.forEach(
 		function( building ) {
 			building.getCommoditiesInUse().forEach( markInUse );
 		}
 	);
-
 
 	return Object.keys( inUse ).map( toInt ).sort( compare );
 
@@ -392,24 +393,12 @@ function addChild( parent, tagname, content, className, id ) {
 		elt.className = className;
 	if ( id )
 		elt.id = id;
-	if ( typeof content == 'string' )
-		content = document.createTextNode( String(content) );
+	if ( typeof content === 'string' || typeof content === 'number' )
+		content = document.createTextNode( content );
 	if ( content )
 		elt.appendChild( content );
 	parent.appendChild( elt );
 	return elt;
-}
-
-function ticksPassed( timeSecs ) {
-	var timeToTick = 6 * 3600 - (timeSecs - 5100) % (6 * 3600);
-	var timePassed = Math.floor(Date.now()/1000) - timeSecs;
-
-	var ticksPassed = 0;
-	if ( timePassed > timeToTick ) {
-		ticksPassed += 1;
-	}
-	ticksPassed += Math.floor( timePassed / (6 * 3600) );
-	return ticksPassed;
 }
 
 // Extract all relevant data from the page.  This doesn't rely on any storage
@@ -665,7 +654,6 @@ function finishAddBuildings( callback, buildingData ) {
 }
 
 // XXX these two may need to be in building.js
-//
 // `amount` is a sparse array of commodity amounts.
 function updateForSale( building, amount ) {
 	if ( building.minimum.length === 0 )

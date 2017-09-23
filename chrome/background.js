@@ -269,13 +269,13 @@ OpHandlers.queryTicksLeft = function( message, sendResponse ) {
 	return true;
 
 	function onData( data ) {
-		var key, building, r;
+		var key, building, r, now;
 
 		r = {};
+		now = Building.now();
 		for ( key in data ) {
 			building = Building.createFromStorage( key, data[key] );
-			if ( building.ticksLeft !== undefined )
-				r[ building.loc ] = building.ticks_left;
+			r[ building.loc ] = building.ticksNow( now );
 		}
 
 		sendResponse( r );

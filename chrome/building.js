@@ -71,6 +71,14 @@ function Building( location, sectorId, typeId, timeSecs, owner, level,
 	this.maximum = internalCommodityMap( maximum );
 }
 
+// Convenience for the current time in seconds, so K's heart doesn't break that
+// hard...
+Building.now = function() {
+	return Building.seconds( Date.now() );
+}
+
+// Convert a time in milliseconds, like Date uses, to seconds, like Building
+// does.
 Building.seconds = function( millis ) {
 	return Math.floor( millis / 1000 );
 }
@@ -146,6 +154,22 @@ Building.createFromStorage = function( key, a ) {
 	);
 }
 
+// The number of production ticks elapsed from Unix timestamp `timeSecs` to
+// `nowSecs`.  If the latter is ommited, it defaults to the current time.
+Building.ticksPassed = function( timeSecs, nowSecs ) {
+	var timeToTick, timePassed, ticksPassed;
+
+	if ( nowSecs === undefined )
+		nowSecs = Building.seconds( Date.now() );
+
+	timeToTick = 6 * 3600 - (timeSecs - 5100) % (6 * 3600);
+	timePassed = nowSecs - timeSecs;
+	ticksPassed = ( timePassed > timeToTick ) ? 1 : 0;
+	ticksPassed += Math.floor( timePassed / (6 * 3600) );
+	return ticksPassed;
+}
+
+
 // An unusual function that actually updates `chrome.storage.sync`.  Added
 // because removing a single building is in fact a common operation.
 //
@@ -196,6 +220,14 @@ Building.prototype.isUpkeep = function( commodityId ) {
 
 Building.prototype.storageKey = function( universeKey ) {
 	return universeKey + this.loc;
+}
+
+Building.prototype.ticksNow = function( nowSecs ) {
+	if ( this.ticksLeft === undefined )
+		return undefined;
+
+	 return Math.max(
+		 0, this.ticksLeft - Building.ticksPassed(this.time, nowSecs) );
 }
 
 // Create the object that gets sent to storage. V2.1 is a 3 to 10-element

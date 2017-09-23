@@ -186,15 +186,15 @@ function guessLevel() {
 	return undefined;
 }
 
-// This computation should be accurate for any building, including MOs and
-// bonused farms and TSS drug stations and whatever.  This is because, rather
-// than trying to compute the amounts consumed per tick, from guessed level and
-// base upkeep figures and whatever funky rules for this particular building, we
-// lift the actual value off the page, where Killer Queen helpfully gave it to
-// us in her recent update.
+// This computation should be accurate for any building, including bonused farms
+// and TSS drug stations and whatever.  This is because, rather than trying to
+// compute the amounts consumed per tick, from guessed level and base upkeep
+// figures and whatever funky rules for this particular building, we lift the
+// actual value off the page, where Killer Queen helpfully gave it to us in her
+// recent update.
 
 function getRealUpkeep() {
-	var r, trs, tr, trxp, td, id, val;
+	var r, trs, tr, trxp, td, id, m, val;
 
 	trs = document.evaluate(
 		'.//tr[starts-with(@id, "baserow")]',
@@ -210,11 +210,15 @@ function getRealUpkeep() {
 		td = trxp.evaluate(
 			tr, XPathResult.ANY_UNORDERED_NODE_TYPE,
 			null).singleNodeValue;
-		val = parseInt( td.textContent );
-		if ( isNaN(val) )
+
+		// MOs show things like "-5 to -15" here.  We could be smarter
+		// for those, and probably will soon to fully close #32, but for
+		// now we'll just assume the higher value applies.
+		m = /-(\d+)(:?\s+to\s+-(\d+))?/.exec( td.textContent );
+		if ( !m )
 			continue;
 
-		r[ id ] = val;
+		r[ id ] = parseInt( m[2] ? m[2] : m[1] );
 	}
 
 	return r;
@@ -230,16 +234,12 @@ function computeTicksLeft() {
 	function computeRow( upkeep, id ) {
 		var amt, ticks;
 
-		if ( !(upkeep < 0) )
-			// Ignore production
-			return;
-
 		amt = parseInt( amount[ id ] );
 		if ( isNaN(amt) )
-			// This is weird
+			// That was weird
 			return;
 
-		ticks = Math.floor( amt / -upkeep );
+		ticks = Math.floor( amt / upkeep );
 		if ( ticks < least )
 			least = ticks;
 	}
