@@ -79,10 +79,10 @@ function Building( loc, sectorId, typeId, time, owner, level, ticksLeft,
 	this.owner = owner;
 	this.level = level;
 	this.ticksLeft = ticksLeft;
-	this.forSale = internalCommodityMap( forSale );
-	this.toBuy = internalCommodityMap( toBuy );
-	this.minimum = internalCommodityMap( minimum );
-	this.maximum = internalCommodityMap( maximum );
+	this.forSale = Building.makeCommodityArray( forSale );
+	this.toBuy = Building.makeCommodityArray( toBuy );
+	this.minimum = Building.makeCommodityArray( minimum );
+	this.maximum = Building.makeCommodityArray( maximum );
 }
 
 
@@ -209,15 +209,19 @@ Building.ticksPassed = function( time, now ) {
 	return ticksPassed;
 }
 
-// Building instances store lists of commodities as sparse arrays, not objects,
-// because that's faster (object keys are always strings, and our ids are always
-// numbers; using objects would force conversions back and forth).  However,
-// arrays are harder to work with because arrays are not enumerable with for..in
-// loops, and we can't use for..of loops because that's too modern for our
-// compatibility requirements.
+// Building instances store lists of commodity values as sparse arrays, not
+// objects, because that's faster (object keys are always strings, and our ids
+// are always numbers; using objects would force conversions back and forth).
+//
+// Getting and setting values is straightforward:
+// `var foodForSale = building.forSale[ foodId ];`
+//
+// However, sparse arrays are harder to enumerate, because naïve "for 0 to
+// length" scans would visit all the "holes"; for..in loops can't be used, and
+// for..of loops are too modern for our compatibility requirements.
 //
 // So, this utility converts to object any of the arrays held by the Building
-// instance (forSale, toBuy, minimum, maximum).
+// instance (`forSale`, `toBuy`, `minimum`, `maximum`).
 //
 // You may want to consider using things like `building.forSale.forEach()`
 // instead anyway, and avoid creating objects.
@@ -232,8 +236,62 @@ Building.makeDictionary = function( array ) {
 	);
 }
 
-// Removes the given building from storate.  `ukey` is the universe key (a
-// single uppercase letter: A, O, P).
+// Converts commodity data (associative collections of commodity id to integer)
+// into the sparse arrays that we hold in Building instances.  You can use it to
+// set the `forSale`, `toBuy`, `minimum`, `maximum` properties of an instance:
+//
+// `building.toBuy = Building.makeCommodityArray( {foodId: 50, waterId: 80} );`
+//
+// `arg` can be one of:
+//
+//  * An array: we assume `arg` contains an even number of integer items: the
+//    first a commodity id, the second a value, the third another commodity id,
+//    and so forth.  This form is used to load objects from storage, which needs
+//    to run fast (sometimes we're just constructing an instance to look at some
+//    stored datum, not because we need the full Building functionality.  So no
+//    checking is performed here, for speed.
+//
+//  * An object: we expect the enumerable keys of `arg` to be commodity ids, and
+//    the associated values, integers.  Return a sparse array with the exact
+//    same keys the given object had (only as integers not strings).  This
+//    doesn't need to run that fast, instead we want correctness, so we do
+//    validate a few things.
+//
+//  * null or undefined: return an empty array.
+//
+// Any other type will throw an error, because that's useful for debugging.
+
+Building.makeCommodityArray = function( arg ) {
+	var a, i, end, key, val;
+
+	if ( arg === null || arg === undefined )
+		return [];
+
+	if ( arg instanceof Array ) {
+		for ( a = [], i = 0, end = arg.length; i < end; i += 2 )
+			a[ arg[i] ] = arg[ i + 1 ];
+		return a;
+	}
+
+	if ( typeof arg !== 'object' )
+		throw 'Invalid commodity map: ' + JSON.stringify(arg);
+
+	a = [];
+	for ( key in arg ) {
+		key = parseInt( key );
+		val = parseInt( arg[key] );
+		if ( isNaN(key) || isNaN(val) ) {
+			throw 'Invalid commodity map pair: ' +
+				JSON.stringity( key ) + ' -> ' +
+				JSON.stringify( arg[key] );
+		}
+		a[ key ] = val;
+	}
+	return a;
+}
+
+// Removes the building at location `loc` from storage.  `ukey` is the universe
+// key (a single uppercase letter: A, O, P).
 //
 // This is an unusual function that actually updates `chrome.storage.sync`.
 // Added because removing a single building is in fact a common operation.
@@ -384,57 +442,6 @@ Building.prototype.removeStorage = function( ukey, callback ) {
 
 // 3. Private functions.
 
-
-// Converts commodity data (associative collections of commodity_id to integer)
-// into the sparse arrays that we hold in Building instances.  `arg` can be
-// one of:
-//
-//  * An array: we assume `arg` contains an even number of integer items: the
-//    first a commodity id, the second a value, the third another commodity id,
-//    and so forth.  This form is used to load objects from storage, which needs
-//    to run fast (sometimes we're just constructing an instance to look at some
-//    stored datum, not because we need the full Building functionality.  So no
-//    checking is performed here, for speed.
-//
-//  * An object: we expect the enumerable keys of `arg` to be commodity ids, and
-//    the associated values, integers.  Return a sparse array with the exact
-//    same keys the given object had (only as integers not strings).  This form
-//    is used when creating Building instances from data fetched from a page or
-//    otherwise computed.  That doesn't need to run that fast, instead we want
-//    correctness, so we do validate a few things.
-//
-//  * null or undefined: return an empty map.
-//
-// Any other type will throw an error, because that's useful for debugging.
-
-function internalCommodityMap( arg ) {
-	var a, i, end, key, val;
-
-	if ( arg === null || arg === undefined )
-		return [];
-
-	if ( arg instanceof Array ) {
-		for ( a = [], i = 0, end = arg.length; i < end; i += 2 )
-			a[ arg[i] ] = arg[ i + 1 ];
-		return a;
-	}
-
-	if ( typeof arg !== 'object' )
-		throw 'Invalid commodity map: ' + JSON.stringify(arg);
-
-	a = [];
-	for ( key in arg ) {
-		key = parseInt( key );
-		val = parseInt( arg[key] );
-		if ( isNaN(key) || isNaN(val) ) {
-			throw 'Invalid commodity map pair: ' +
-				JSON.stringity( key ) + ' -> ' +
-				JSON.stringify( arg[key] );
-		}
-		a[ key ] = val;
-	}
-	return a;
-}
 
 function storageCommodityMap( a ) {
 	if ( a.length === 0 )
