@@ -334,12 +334,8 @@ function updateBuildingFromEntry( entry ) {
 // production and upkeep, and full prices.  But we'll do a best effort.
 
 function inferBuildingFromEntry( entry ) {
-	var building;
-
-	building = new Building( entry.loc, sectorId );
+	entry.building = new Building( entry.loc, sectorId );
 	updateBuildingFromEntry( entry );
-
-	return building;
 }
 
 function onToggle( event ) {
@@ -362,7 +358,7 @@ function onToggle( event ) {
 
 function trackBuilding( entry ) {
 	if ( !entry.building )
-		entry.building = inferBuildingFromEntry( entry );
+		inferBuildingFromEntry( entry );
 
 	chrome.storage.sync.get( universe.key, onBuildingList );
 
