@@ -1,3 +1,9 @@
+// The Building object manages the information we track about each building, and
+// provides an interface to manipulate them.
+//
+// This script is self-contained; it doesn't rely on any other source in the
+// extension.
+
 var Building = (function() {
 
 // Don't change the order of this array; add new types at the bottom.  The index
@@ -5,8 +11,8 @@ var Building = (function() {
 // chrome.storage, so changing this would make a mess of current users' data.
 //
 // `n` is the building name, `s` is the building short name, `i` is the URL of
-// the building image, without the image pack prefix and the '.png' suffix.
-// `u` is a list of commodity IDs that this building _consumes_.
+// the building image without the image pack prefix and the '.png' suffix.
+// `u` is a list of commodity IDs that this building consumes.
 
 var CATALOGUE = [
 	, // id=0 is not in use
@@ -40,20 +46,22 @@ var CATALOGUE = [
 	{ n:"Stim Chip Mill", s:"SCM", i:"stim_chip_mill", u:[1,3,7,17,28] }
 ];
 
-// Lazily initialised by the getTypeId and getTypeIdByIcon.
+// Lazily initialised by getTypeId and getTypeIdByIcon
+
 var NAME_IDS, ICON_IDS;
 
 // Construct a new Building instance.
 //
-// The first two arguments are required.  The rest can be ommited or specified
-// as undefined.
+// You can supply as many parameters as you have data for, and/or use undefined
+// for missing data.  Be advised, though: the building will only be fully usable
+// until properties `loc`, `sectorId`, and `typeId` have been set.
 //
-// `location`, `sectorId`, `typeId`, and `timeSecs`, `level`, `ticksLeft` if
+// `location`, `sectorId`, `typeId`, `timeSecs`, `level`, `ticksLeft`, if
 // provided, should be integers.
 //
 // `owner`, if provided, should be a string.
 //
-// `forSale`, `toBuy`, `minimum`, and `maximum` if provided, can be arrays or
+// `forSale`, `toBuy`, `minimum`, and `maximum`, if provided, can be arrays or
 // objects.  See internalCommodityMap below.
 
 function Building( location, sectorId, typeId, timeSecs, owner, level,
@@ -61,7 +69,7 @@ function Building( location, sectorId, typeId, timeSecs, owner, level,
 	this.loc = location;
 	this.sectorId = sectorId;
 	this.typeId = typeId;
-	this.time = timeSecs || Building.seconds( Date.now() );
+	this.time = timeSecs || Building.now();
 	this.owner = owner;
 	this.level = level;
 	this.ticksLeft = ticksLeft;
@@ -71,6 +79,10 @@ function Building( location, sectorId, typeId, timeSecs, owner, level,
 	this.maximum = internalCommodityMap( maximum );
 }
 
+
+// 1. Methods of the Building object.
+
+
 // Convenience for the current time in seconds, so K's heart doesn't break that
 // hard...
 Building.now = function() {
@@ -79,13 +91,20 @@ Building.now = function() {
 
 // Convert a time in milliseconds, like Date uses, to seconds, like Building
 // does.
+
 Building.seconds = function( millis ) {
 	return Math.floor( millis / 1000 );
 }
 
+// Get the type spec object for the given typeId.  Most likely you'll want to
+// use the instance's methods instead, getTypeName, etc.
+
 Building.getType = function( typeId ) {
 	return CATALOGUE[ typeId ];
 }
+
+// If you have the name of a building type (e.g. "Medical Laboratory"), this
+// gives you the type id for it.  If the name isn't recognisable, return null.
 
 Building.getTypeId = function( name ) {
 	if ( NAME_IDS === undefined ) {
@@ -101,6 +120,9 @@ Building.getTypeId = function( name ) {
 	return NAME_IDS[ name ];
 }
 
+// If you have the URL of the building's image, strip the prefix up to the last
+// slash, and the '.png' suffix, then call this for the type id.
+
 Building.getTypeIdByIcon = function( icon ) {
 	if ( ICON_IDS === undefined ) {
 		ICON_IDS = CATALOGUE.reduce(
@@ -115,27 +137,36 @@ Building.getTypeIdByIcon = function( icon ) {
 	return ICON_IDS[ icon ];
 }
 
+// Get the type name from a type id.
+
 Building.getTypeName = function( typeId ) {
 	var t = Building.getType( typeId );
 	return t !== undefined ? t.n : undefined;
 }
+
+// Get the type short name from a type id (e.g. ACS, DAC, etc.).
 
 Building.getTypeShortName = function( typeId ) {
 	var t = Building.getType( typeId );
 	return t !== undefined ? t.s : undefined;
 }
 
+// Get an array of commodity ids that buildings of the given type consume.
+
 Building.getUpkeepCommodities = function( typeId ) {
 	var t = Building.getType( typeId );
 	return t !== undefined ? t.u : undefined;
 }
 
-// Create a Building from data obtained from storage. `key` is the storage key
-// used to retrieve the building; `a` is data in v2.1 storage format, which
-// means a 3- to 10-element array.  See function body for positions.
+// Create a Building instance from data obtained from storage. `key` is the
+// storage key used to retrieve the building; `a` is data in v2.1 storage
+// format, which means a 3- to 10-element array.  See function body for
+// positions.
 //
-// Commodity dictionaries are stored as arrays of numbers.  This function
-// converts them to objects keyed by commodity id.
+// Do not use building data from storage directly; always create an instance
+// with this function, manipulate that, and use its toStorage method if you need
+// to store it back.  This lets us change the storage format without having to
+// modify the app anywhere but here.
 
 Building.createFromStorage = function( key, a ) {
 	var loc = parseInt( key.substr(1) );
@@ -156,11 +187,12 @@ Building.createFromStorage = function( key, a ) {
 
 // The number of production ticks elapsed from Unix timestamp `timeSecs` to
 // `nowSecs`.  If the latter is ommited, it defaults to the current time.
+
 Building.ticksPassed = function( timeSecs, nowSecs ) {
 	var timeToTick, timePassed, ticksPassed;
 
 	if ( nowSecs === undefined )
-		nowSecs = Building.seconds( Date.now() );
+		nowSecs = Building.now();
 
 	timeToTick = 6 * 3600 - (timeSecs - 5100) % (6 * 3600);
 	timePassed = nowSecs - timeSecs;
@@ -169,13 +201,18 @@ Building.ticksPassed = function( timeSecs, nowSecs ) {
 	return ticksPassed;
 }
 
-// The new Building object stores commodity lists as sparse arrays, not objects,
+// The Building object stores commodity lists as sparse arrays, not objects,
 // because that's faster (object keys are always strings, and our ids are always
-// numbers; using objects forces conversion back and forth).  However, arrays
-// are harder to work with because arrays are not iterable with for..in loops,
-// and we can't use for..of loops because that's too modern for our
-// compatibility requirements.  So, this utility helps you convert any of the
-// Building arrays (forSale, toBuy, minimum, maximum).
+// numbers; using objects would force conversions back and forth).  However,
+// arrays are harder to work with because arrays are not enumerable with for..in
+// loops, and we can't use for..of loops because that's too modern for our
+// compatibility requirements.
+//
+// So, this utility converts to object any of the arrays held by the Building
+// instance (forSale, toBuy, minimum, maximum).
+//
+// You may want to consider using things like `building.forSale.forEach()`
+// instead anyway, and avoid creating objects.
 
 Building.makeDictionary = function( array ) {
 	return array.reduce(
@@ -189,10 +226,6 @@ Building.makeDictionary = function( array ) {
 
 // An unusual function that actually updates `chrome.storage.sync`.  Added
 // because removing a single building is in fact a common operation.
-//
-// XXX though really, this should take the buildingList as argument, and return
-// the updated list and the key of the item to remove.  Let scripts handle
-// storage themselves.
 
 Building.removeStorage = function( loc, ukey, callback ) {
 	loc = parseInt( loc );
@@ -219,30 +252,49 @@ Building.removeStorage = function( loc, ukey, callback ) {
 	}
 }
 
+
+// 2.  Methods of Building instances.
+
+
+// Get the name of buildings of this type.
+
 Building.prototype.getTypeName = function() {
 	return Building.getTypeName( this.typeId );
 }
+
+// Get the short name of buildings of this type.
 
 Building.prototype.getTypeShortName = function() {
 	return Building.getTypeShortName( this.typeId );
 }
 
+// Get an array with the ids of all the commodities that this building consumes.
+
 Building.prototype.getUpkeepCommodities = function() {
 	return Building.getUpkeepCommodities( this.typeId );
 }
 
+// Check if this building stores minimums and maximums.  That is not often the
+// case: currently bookie only stores that for your own buildings, when it
+// watches you set the limits in the "trade settings" page.
+
 Building.prototype.hasMinMax = function() {
 	return this.minimum.length > 0 && this.maximum.length > 0;
 }
+
+// Test if a given commodity id is consumed by this building.
 
 Building.prototype.isUpkeep = function( commodityId ) {
 	return this.getUpkeepCommodities().
 		indexOf( parseInt(commodityId) ) !== -1;
 }
 
-Building.prototype.storageKey = function( universeKey ) {
-	return universeKey + this.loc;
-}
+// Compute how many ticks of upkeep remain at time `nowSecs`, based on the last
+// time the building was updated and how many ticks left it had then.  If
+// `nowSecs` is ommited, it defaults to the current time.
+//
+// If remaining ticks were unknown at the time the building was last updated,
+// this function will return undefined.
 
 Building.prototype.ticksNow = function( nowSecs ) {
 	if ( this.ticksLeft === undefined )
@@ -252,10 +304,21 @@ Building.prototype.ticksNow = function( nowSecs ) {
 		 0, this.ticksLeft - Building.ticksPassed(this.time, nowSecs) );
 }
 
-// Create the object that gets sent to storage. V2.1 is a 3 to 10-element
-// array.
+// Compute the storage key that you'd use to store this building in the given
+// universe.
+
+Building.prototype.storageKey = function( universeKey ) {
+	return universeKey + this.loc;
+}
+
+// Create the object that gets sent to storage when we store a Building.  Do not
+// store building data directly; always create a Building instance, use this
+// function to obtain the data to store, and send that to `chrome.storage`.
+// This lets us change the storage format when needed, without having to modify
+// the app anywhere but here.
 
 Building.prototype.toStorage = function() {
+	// V2.1 format is a 3 to 10-element array.
 	var a = [
 		this.sectorId,
 		this.typeId,
@@ -301,11 +364,17 @@ Building.prototype.getCommoditiesInUse = function() {
 	function compare( a, b ) { return a - b; }
 }
 
+// Remove this building from storage.  This updates `chrome.storage.sync`.
+
 Building.prototype.removeStorage = function( ukey, callback ) {
 	Building.removeStorage( this.loc, ukey, callback );
 }
 
-// Converts a commodity map (associative collection of commodity_id to integer)
+
+// 3. Private functions.
+
+
+// Converts commodity data (associative collections of commodity_id to integer)
 // into the sparse arrays that we hold in Building instances.  `arg` can be
 // one of:
 //
@@ -317,10 +386,11 @@ Building.prototype.removeStorage = function( ukey, callback ) {
 //    checking is performed here, for speed.
 //
 //  * An object: we expect the enumerable keys of `arg` to be commodity ids, and
-//    the associated values, integers.  Return a sparse array in internal
-//    format.  This form is used when creating Building instances from data
-//    fetched from a page or otherwise computed.  That doesn't need to run that
-//    fast, instead we want correctness, so we do validate a few things.
+//    the associated values, integers.  Return a sparse array with the exact
+//    same keys the given object had (only as integers not strings).  This form
+//    is used when creating Building instances from data fetched from a page or
+//    otherwise computed.  That doesn't need to run that fast, instead we want
+//    correctness, so we do validate a few things.
 //
 //  * null or undefined: return an empty map.
 //
