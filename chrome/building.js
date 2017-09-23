@@ -6,6 +6,7 @@ var Building = (function() {
 //
 // `n` is the building name, `s` is the building short name, `i` is the URL of
 // the building image, without the image pack prefix and the '.png' suffix.
+// `u` is a list of commodity IDs that this building _consumes_.
 
 var CATALOGUE = [
 	, // id=0 is not in use
@@ -44,7 +45,7 @@ var NAME_IDS, ICON_IDS;
 
 // Construct a new Building instance.
 //
-// The first three arguments are required.  The rest can be ommited or specified
+// The first two arguments are required.  The rest can be ommited or specified
 // as undefined.
 //
 // `location`, `sectorId`, `typeId`, and `timeSecs`, `level`, `ticksLeft` if
@@ -310,42 +311,6 @@ function storageCommodityMap( a ) {
 		},
 		[]
 	);
-}
-
-// XXX move this to overview, it isn't used anywhere else.
-
-function ticksPassed( building ) {
-	if ( !(building.level > 0) )
-		return 0;
-
-	var timeToTick = 6 * 3600 - (building.time - 5100) % (6 * 3600);
-	var timePassed = Math.floor(Date.now()/1000) - building.time;
-
-	var ticksPassed = 0;
-	if (timePassed > timeToTick) {
-		ticksPassed += 1;
-	}
-	ticksPassed += Math.floor(timePassed / (6 * 3600));
-	return ticksPassed;
-}
-
-// XXX move this to trade.js, it isn't used anywhere else
-function numberOfTicks( building ) {
-	var lowest, key, base, tickAmount, ticks;
-
-	if ( !(building.level > 0) )
-		return Infinity;
-
-	lowest = Infinity;
-	for ( key in building.res_upkeep ) {
-		base = building.res_upkeep[ key ];
-		tickAmount = Math.round( base * ( 1 + 0.4 * (building.level - 1) ) );
-		ticks = Math.floor( building.amount[key] / tickAmount );
-		if ( ticks < lowest )
-			lowest = ticks;
-	}
-
-	return lowest;
 }
 
 
