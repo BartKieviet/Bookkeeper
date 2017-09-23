@@ -447,13 +447,11 @@ function parseOwnBuildings() {
 	xpr = document.evaluate(
 		'./tbody/tr[td]', table, null,
 		XPathResult.UNORDERED_NODE_ITERATOR_TYPE, null );
-	while ( (row = xpr.iterateNext()) !== null ) {
-		entry = parseBuildingRow( row );
-		if ( entry === null )
-			return null;
-		entries.push( entry );
-	}
-
+    while ( (row = xpr.iterateNext()) !== null ) {
+        entry = parseBuildingRow( row );
+        if ( entry !== null )
+            entries.push( entry );
+    }
 	return entries;
 }
 
