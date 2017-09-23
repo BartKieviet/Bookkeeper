@@ -44,7 +44,6 @@ function onGameMessage( event ) {
 
 function addButton ( buildingData ) {
 	var building = Building.createFromStorage ( universe.key + userloc , buildingData [ universe.key + userloc ]);
-	console.log(building);
 	
 	//check if building has min/maxes comes here - later.
 	if (true) {
@@ -52,7 +51,7 @@ function addButton ( buildingData ) {
 		new_button.setAttribute('type','button');
 		new_button.setAttribute('value','Auto Sell Buy');
 		new_button.setAttribute('name','Auto');
-	new_button.addEventListener('click',auto_sell_buy.bind(null, building [ "res_upkeep" ], building [ "res_production" ], building [ "amount_min" ], building [ "amount_max" ]));
+		new_button.addEventListener('click',auto_sell_buy.bind(null, building [ "res_upkeep" ], building [ "res_production" ], building [ "amount_min" ], building [ "amount_max" ]));
 		document.getElementsByName('trade_ship')[0].parentNode.appendChild(document.createElement('br'));
 		document.getElementsByName('trade_ship')[0].parentNode.appendChild(document.createElement('br'));
 		document.getElementsByName('trade_ship')[0].parentNode.appendChild(new_button);
