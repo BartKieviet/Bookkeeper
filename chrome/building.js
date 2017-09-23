@@ -263,6 +263,23 @@ Building.removeStorage = function( loc, ukey, callback ) {
 	}
 }
 
+// No idea if this should be prototype or not. I read up on this:
+// https://stackoverflow.com/questions/15659063/whats-the-difference-between-this-function-and-prototype-function
+// I still have no idea, ghehe.
+// Checks if the building is fully stocked.
+Building.isFullyStocked = function () {
+	var total = 0;
+	
+	for (var key in this.toBuy) {
+		total += this.toBuy [ key ];
+	}
+
+	if (total === 0 && this.ticksPassed === 0) {
+		return true;
+	} else {
+		return false;
+	}
+}
 
 // 2.  Methods of Building instances.
 
