@@ -287,15 +287,17 @@ OpHandlers.queryTicksLeft = function( message, sendResponse ) {
 	return true;
 
 	function onData( data ) {
-		var key, building, r, now;
+		var key, building, r, now, ticksNow;
 
 		r = {};
 		now = Building.now();
 		for ( key in data ) {
 			building = Building.createFromStorage( key, data[key] );
+			ticksNow = building.ticksNow( now );
 			r[ building.loc ] = {
-				t: building.ticksNow( now ),
-				f: building.isFullyStocked()
+				t: ticksNow,
+				f: ticksNow !== building.ticksLeft ||
+					building.isFullyStocked()
 			}
 		}
 

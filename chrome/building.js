@@ -437,20 +437,22 @@ Building.prototype.removeStorage = function( ukey, callback ) {
 	Building.removeStorage( this.loc, ukey, callback );
 }
 
-// Checks if the building is fully stocked. Gives true, if not, or ticks have passed since the last update, gives false.
-Building.prototype.isFullyStocked = function() {
-	var total = 0;
-	this.toBuy.forEach( function(value, index) {
-		if (value) {
-			total += value;
-		}
-	});
+// Return true if the building was fully stocked at the time it was last
+// updated.  This means that it won't buy any of the commodities it consumes.
 
-	if (total === 0 && Building.ticksPassed(this.time) === 0) {
-		return true;
-	} else {
-		return false;
-	}
+Building.prototype.isFullyStocked = function() {
+
+	// * this.getUpkeepCommodities() returns an array of commodity ids.
+	// * find runs the anonymous function for each commodity, with `this`
+	//   set as the the building's `toBuy`; returns a commodity id if there
+	//   is one for which toBuy is greater than zero, or undefined if there
+	//   are none.
+	// * isFullyStocked returns true if find returns undefined.
+
+	return this.getUpkeepCommodities().find(
+		function( commId ) { return this[commId] > 0; },
+		this.toBuy
+	) === undefined;
 }
 
 // 3. Private functions.
