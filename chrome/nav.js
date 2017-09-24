@@ -185,7 +185,7 @@ function showTicks() {
 
 	for ( i = 0, end = needTicksDisplay.length; i < end; i++ ) {
 		cached = needTicksDisplay[ i ];
-		addTickThingies( cached.td, cached.ticks );
+		addTickThingies( cached.td, cached.ticks , cached.stocked );
 	}
 
 	if ( needed.length === 0 )
