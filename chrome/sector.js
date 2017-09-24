@@ -413,10 +413,6 @@ var CATALOGUE = [
 
 var NAME_IDS; // lazily initialized in Sectors.getId
 
-// `data` is the sector data as per Sector.getData().  External code will most
-// likely want to use the conveniences Sector.createFromId() and
-// Sector.createFromName().
-
 var Sector = {};
 
 Sector.getId = function( sectorName ) {

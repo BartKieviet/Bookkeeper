@@ -229,13 +229,32 @@ function migrateV19Storage() {
 } // function function migrateV19Storage()
 
 
-// This is called when a content script asks us to do some work for them.
+// The function below is called when a content script asks the background page
+// to do some work for it.
+//
+// The idea is: when a content script needs something, it builds an object with
+// a property `op`, which contains a string naming one of the "op handlers"
+// defined further down.  Other properties are added to that object, as required
+// by the particular handler.  The object is then sent as a message with
+// `chrome.runtime.sendMessage`, and is received by the handler below, who
+// dispatches it to the appropriate handler.
+//
+// Some handlers do not respond anything to the content script.  These can take
+// a single parameter, the message, and should always return false.
+//
+// Some handlers may need to deliver data back to the content script, and this
+// data may not be immediately available.  These should accept three parameters;
+// the third will be a callback function; they should return true immediately
+// and arrange for the callback to be called when the response can be delivered.
+//
+// If a handler returns true, MAKE SURE THE CALLBACK IS CALLED EVENTUALLY,
+// otherwise the content script may just sit there waiting for a response that
+// will never arrive.  And Chrome will leak a connection to the background page
+// indefinitely, keeping it from unloading when the extension is idle.  We want
+// none of this.
 
 function onMessage( message, sender, sendResponse ) {
-	var handler;
-
-	//console.log( 'received message', message, sender );
-	handler = OpHandlers[ message.op ];
+	var handler = OpHandlers[ message.op ];
 	if ( handler )
 		return handler( message, sendResponse );
 	return false;
@@ -265,7 +284,6 @@ OpHandlers.queryTicksLeft = function( message, sendResponse ) {
 
 	keys = message.ids.map( function(id) { return message.ukey + id; } );
 	chrome.storage.sync.get( keys, onData );
-
 	return true;
 
 	function onData( data ) {

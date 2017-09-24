@@ -312,8 +312,6 @@ function onBuildingUntracked() {
 	toggleButton( btn );
 }
 
-// When this is called, we know the building is already tracked, so no need to
-// update the list.
 function updateBuilding( items, building, callback ) {
 	var info, id, amt, max, min;
 
@@ -342,5 +340,4 @@ function updateBuilding( items, building, callback ) {
 	items[ buildingKey ] = building.toStorage();
 
 	chrome.storage.sync.set( items, callback );
-	//callback();
 }

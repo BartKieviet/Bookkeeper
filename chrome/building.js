@@ -61,7 +61,7 @@ var NAME_IDS, ICON_IDS;
 // `owner`, if provided, should be a string.
 //
 // `forSale`, `toBuy`, `minimum`, and `maximum`, if provided, can be arrays or
-// objects.  See internalCommodityMap below.
+// objects.  See makeCommodityArray below.
 //
 // Note that `time` is expected as a Unix timestamp in *seconds*, not
 // milliseconds.  You can use Building.seconds to convert the result of
@@ -282,7 +282,7 @@ Building.makeCommodityArray = function( arg ) {
 		val = parseInt( arg[key] );
 		if ( isNaN(key) || isNaN(val) ) {
 			throw 'Invalid commodity map pair: ' +
-				JSON.stringity( key ) + ' -> ' +
+				JSON.stringify( key ) + ' -> ' +
 				JSON.stringify( arg[key] );
 		}
 		a[ key ] = val;

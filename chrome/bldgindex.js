@@ -8,6 +8,7 @@ var Universe,    // from universe.js
 var CalendarNames, ToggleMaker; // from functions.js
 
 // These are initialised in setup() and the callbacks triggered from there.
+
 var universe, sectorId, now, pageData;
 
 setup();
@@ -63,7 +64,8 @@ function setup() {
 	now = Building.seconds( now );
 
 	// Find the table with the buildings. We look for a table with a TH
-	// "Automatic Info"
+	// "Automatic Info".
+
 	buildingsTable = document.evaluate(
 		'//table[tbody/tr/th[text() = "Automatic Info"]]', document,
 		null, XPathResult.ANY_UNORDERED_NODE_TYPE,
@@ -76,10 +78,12 @@ function setup() {
 
 	// Now add our UI.
 	// The first entry is the row with the table headers.
+
 	addBookkeeperHeader( entries.shift() );
 
 	// The rest are rows. This adds the extra TD and a button for trackable
 	// buildings (a reference to which is added to the entry).
+
 	addBookkeeperRowCells( entries );
 
 	// Now build the global pageData object.  This is an object keyed by
@@ -110,11 +114,13 @@ function parsePage( buildingsTable ) {
 	entries = [];
 
 	// Find all TRs in the buildings table.
+
 	rows = document.evaluate(
 		'./tbody/tr', buildingsTable, null,
 		XPathResult.UNORDERED_NODE_ITERATOR_TYPE, null);
 
 	// We'll execute these repeatedly; worth to compile
+
 	iconxp = document.createExpression( './td[position()=1]/img/@src', null );
 	ownerxp = document.createExpression( './td[position()=3]/a/text()', null );
 	sellxp = document.createExpression(
@@ -128,8 +134,6 @@ function parsePage( buildingsTable ) {
 		null );
 
 	while ( (tr = rows.iterateNext()) !== null ) {
-		// the JS engine is happier if we declare the object's final
-		// form upfront.
 		entry = parseRow();
 		if ( entry === null )
 			entry = { tr: tr, trackable: false };
@@ -145,6 +149,7 @@ function parsePage( buildingsTable ) {
 		// Get the x,y coords from the onmouseover attribute.  We could
 		// get them from the Coord. column, too, but that'd be another
 		// XPath lookup.
+
 		m = /markField\('y(\d+)x(\d+)/.exec(
 			tr.getAttribute('onmouseover') );
 		if ( !m )
@@ -153,6 +158,7 @@ function parsePage( buildingsTable ) {
 			sectorId, parseInt(m[2]), parseInt(m[1]) );
 
 		// Get the typeId from the icon
+
 		s = iconxp.evaluate(
 			tr, XPathResult.STRING_TYPE, null ).stringValue;
 		m = /\/([^/]+)\.png$/.exec( s );
@@ -163,19 +169,23 @@ function parsePage( buildingsTable ) {
 			return null;
 
 		// Get the owner
+
 		s = ownerxp.evaluate(
 			tr, XPathResult.STRING_TYPE, null ).stringValue.trim();
 		if ( s === '' )
 			return null;
 		owner = s;
 
+		// Get the selling and buying lists
+
 		xpr = sellxp.evaluate(
 			tr, XPathResult.UNORDERED_NODE_ITERATOR_TYPE, null );
 		selling = parseCommodityTDs( xpr );
-
 		xpr = buyxp.evaluate(
 			tr, XPathResult.UNORDERED_NODE_ITERATOR_TYPE, null );
 		buying = parseCommodityTDs( xpr );
+
+		// Get the ticks left
 
 		xpr = tickxp.evaluate(
 			tr, XPathResult.ANY_UNORDERED_NODE_TYPE,
@@ -211,6 +221,7 @@ function parsePage( buildingsTable ) {
 		while ( (td = xpr.iterateNext()) !== null ) {
 
 			// Get the commodity id from its icon.
+
 			img = td.firstElementChild;
 			if ( !img || img.tagName != 'IMG' )
 				continue;
@@ -223,6 +234,7 @@ function parsePage( buildingsTable ) {
 
 			// Get the amount.
 			// Could get the price here too, but we don't care now.
+
 			m = /× (\d+)/.exec( td.textContent );
 			if ( !m )
 				continue;
@@ -252,11 +264,7 @@ function addBookkeeperRowCells( entries ) {
 			input = toggle.firstElementChild;
 			input.dataset.bookkeeperLoc = entry.loc;
 			td.appendChild( toggle );
-
-			// Wanted this to be 'input' not 'click' but that
-			// doesn't seem to work in chrome...
 			input.addEventListener( 'click', onToggle, false );
-
 			entry.ui = input;
 		}
 
@@ -328,11 +336,6 @@ function updateBuildingFromEntry( entry ) {
 	building.toBuy = entry.buying;
 }
 
-// When the user asks us to track a building from this page, we kinda have a
-// problem, because we don't have all the information we have from the trade
-// screen.  Specifically, we don't have the building level, maxes and mins,
-// production and upkeep, and full prices.  But we'll do a best effort.
-
 function inferBuildingFromEntry( entry ) {
 	entry.building = new Building( entry.loc, sectorId );
 	updateBuildingFromEntry( entry );
@@ -357,8 +360,17 @@ function onToggle( event ) {
 }
 
 function trackBuilding( entry ) {
-	if ( !entry.building )
-		inferBuildingFromEntry( entry );
+
+	// If the building wasn't being tracked, then there will be no
+	// entry.building.  We create a new one then.  Otherwise, reuse the
+	// building instance we already have.  This keeps the level and owner of
+	// buildings that were already tracked, just were untracked and tracked
+	// again without reloading the page.
+
+	if ( !entry.building ) {
+		entry.building = new Building( entry.loc, sectorId );
+		updateBuildingFromEntry( entry );
+	}
 
 	chrome.storage.sync.get( universe.key, onBuildingList );
 
@@ -382,11 +394,12 @@ function untrackBuilding( entry ) {
 	entry.building.removeStorage( universe.key, onRemoved );
 
 	function onRemoved() {
+
 		// Note we DON'T remove entry.building, even though it isn't
 		// stored any more.  This is because, if the user clicks the
-		// button again, we already have the building, likely with
-		// better data than inferBuildingFromEntry() can come up with,
-		// so in that case we'll just re-add it.
+		// button again, we already have the building and in that case
+		// we'll just re-add it.
+
 		entry.tracked = false;
 		entry.ui.checked = false;
 	}
