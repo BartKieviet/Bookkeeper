@@ -201,23 +201,28 @@ function showTicks() {
 }
 
 function onHaveTicks( r ) {
-	var key, ticks, cached, elt;
+	var key, ticks, cached, elt, stocked;
 
 	for ( key in r ) {
-		ticks = r[ key ];
+		ticks = r[ key ].t;
+		stocked = r [ key ].f;
 		cached = bldgTileCache[ key ];
 		cached.ticks = ticks;
-		addTickThingies( cached.td, ticks );
+		cached.stocked = stocked;
+		addTickThingies( cached.td, ticks , stocked );
 	}
 }
 
-function addTickThingies( td, ticks ) {
+function addTickThingies( td, ticks, stocked ) {
 	var elt = document.createElement( 'div' );
 	elt.className = 'bookkeeper-ticks';
 	if ( ticks === 0 )
 		elt.classList.add( 'red' );
 	else if ( ticks === 1 )
 		elt.classList.add( 'yellow' );
+	if (stocked) {
+		elt.classList.add( 'gold' );
+	}
 	elt.textContent = ticks;
 	td.appendChild( elt );
 }

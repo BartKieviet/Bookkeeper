@@ -293,7 +293,10 @@ OpHandlers.queryTicksLeft = function( message, sendResponse ) {
 		now = Building.now();
 		for ( key in data ) {
 			building = Building.createFromStorage( key, data[key] );
-			r[ building.loc ] = building.ticksNow( now );
+			r[ building.loc ] = {
+				t: building.ticksNow( now ),
+				f: building.isFullyStocked()
+			}
 		}
 
 		sendResponse( r );
