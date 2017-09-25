@@ -221,7 +221,7 @@ function addTickThingies( td, ticks, stocked ) {
 	else if ( ticks === 1 )
 		elt.classList.add( 'yellow' );
 	if (stocked) {
-		elt.classList.add( 'gold' );
+		elt.classList.add( 'grey' );
 	}
 	elt.textContent = ticks;
 	td.appendChild( elt );
