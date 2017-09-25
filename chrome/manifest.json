@@ -39,9 +39,10 @@
 		{
 			"matches": [ "*://*.pardus.at/building_management.php*" ],
 			"js": [ "functions.js", "building.js", "management.js" ],
+			"css": [ "bookkeeper.css" ],
 			"all_frames": true
 		}
-		
+
 	],
 	"description": "User trade interface enhancements for the online game Pardus",
 	"manifest_version": 2,

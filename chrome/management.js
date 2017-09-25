@@ -168,12 +168,13 @@ function addUI() {
 	// XXX - this is nasty.  Remind me to write a function to load HTML
 	// snippets. ~V
 
-	div = document.createElement( 'table' );
+	div = document.createElement( 'div' );
 	div.id = 'bookkeeper-quick-buttons';
 
 	label = document.createElement( 'label' );
 	img = document.createElement( 'img' );
 	img.src = chrome.extension.getURL( 'icons/16.png' );
+	img.title = 'Pardus Bookkeeper';
 	label.appendChild( img );
 	label.appendChild( document.createTextNode('Quick Buttons') );
 	autoSell = document.createElement( 'button' );
