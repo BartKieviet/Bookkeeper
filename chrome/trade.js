@@ -1,19 +1,18 @@
-// -*- js3-indent-level: 8; js3-indent-tabs-mode: t -*-
-
 // This is a content script.  It runs on building_trade.php.
 
 var Universe; // in universe.js
 var Building; // in building.js
 
-(function () {
-
-'use strict';
-
 //Global variables.
 var configured = false;
 var userloc, res_upkeep, res_production, amount_max, amount_min, buy_price, sell_price, time, amount;
 var universe = Universe.fromDocument( document );
+var buildingKey;
 //var buildingList = new Object();
+
+configure();
+
+// End of content script execution.
 
 function configure() {
 	if (!configured) {
@@ -57,24 +56,24 @@ function onGameMessage( event ) {
 	sell_price = data.player_sell_price;
 	time = data.time;
 	amount = data.amount;
+
+	buildingKey = universe.key + userloc;
+
+	// Now check if the building is tracked
+	chrome.storage.sync.get( buildingKey, onBuildingData );
 }
 
-function addTrackButton() {
-	// We need to check if the building is tracked.	 Request the building
-	// list from storage, it's probably shorter than the actual building
-	// entry.
-	chrome.storage.sync.get( universe.key, finishAddTrackButton );
-}
-
-function finishAddTrackButton( data ) {
-	var buildingList = data[ universe.key ],
-	    index = buildingList ? buildingList.indexOf(userloc) : -1;
-
-	if( index == -1 )
-		addButton( 'Track', onTrackButtonClick );
-	else {
-		updateBuilding();
+function onBuildingData( data ) {
+	var building;
+	if ( data[buildingKey] ) {
+		// Building is tracked.
+		building = Building.createFromStorage(
+			buildingKey, data[buildingKey] );
+		updateBuilding( {}, building, function() {} );
 		addButton( 'Untrack', onTrackButtonClick );
+	}
+	else {
+		addButton( 'Track', onTrackButtonClick );
 	}
 }
 
@@ -97,10 +96,15 @@ function addButton( name, listener ) {
 function onTrackButtonClick() {
 	this.disabled = true;
 
-	if( this.value == "Track" )
-		chrome.storage.sync.get( universe.key, trackBuilding );
-	else
-		removeBuilding( userloc, universe, onBuildingUntracked );
+	if( this.value == "Track" ) {
+		// Fetch the universe list and the building again -- it could
+		// have been updated in another tab.
+		chrome.storage.sync.get(
+			[ universe.key, buildingKey ], onTrackingBuilding );
+	}
+	else {
+		Building.removeStorage( userloc, universe.key, onBuildingUntracked );
+	}
 
 	// Don't toggle or enable here.	 We'll toggle when Chrome tells us the
 	// building is saved (it can fail if we're over quota) or removed.
@@ -125,9 +129,9 @@ function findTransferButton() {
 }
 
 function parseInfo() {
-	var tds = document.getElementsByTagName("td"),
-	    nameline;
+	var tds, nameline, typeId;
 
+	tds = document.getElementsByTagName("td");
 	for (var i =0; i<tds.length;i++){
 		// so Pardus has this specific color for two TDs, pilot and building owner.
 		if (tds[i].style.color === "rgb(221, 221, 255)"){
@@ -135,18 +139,26 @@ function parseInfo() {
 		}
 	}
 
+	// XXX - this may break for owners whose name ends in 's', review later.
 	nameline = nameline.split(/'s /);
-	var owner = nameline[0];
-	var type = nameline[1];
-	return [owner, type];
+	typeId = Building.getTypeId( nameline[1] );
+	if ( typeId === undefined )
+		return null;
+
+	return {
+		owner: nameline[ 0 ],
+		typeId: typeId
+	};
 }
 
-function getLevel() {
-	var perCommodity = new Object();
-	var levelEst = new Object();
-	var level = 0;
+function guessLevel() {
+	var perCommodity, levelEst, level, key;
 
-	for (var key in amount_max) {
+	perCommodity = new Object();
+	levelEst = new Object();
+	level = 0;
+
+	for (key in amount_max) {
 		var fontList = document.getElementById('baserow'+key).getElementsByTagName("font");
 		perCommodity[key] = parseInt(fontList[fontList.length-1].innerHTML);
 		if (perCommodity[key] > 0) {
@@ -163,7 +175,7 @@ function getLevel() {
 
 	// here we double check the level by calculating the upkeep.
 	var levelCheck = 0;
-	for (var key in res_upkeep) {
+	for (key in res_upkeep) {
 		levelCheck += Math.round(res_upkeep[key]*(1+0.4*(level - 1))) + perCommodity[key];
 	}
 
@@ -171,12 +183,73 @@ function getLevel() {
 		return level;
 	}
 
-	return -1;
+	return undefined;
 }
 
-function trackBuilding( data ) {
-	var buildingList = data[ universe.key ],
-	    storeItems = {};
+// This computation should be accurate for any building, including bonused farms
+// and TSS drug stations and whatever.  This is because, rather than trying to
+// compute the amounts consumed per tick, from guessed level and base upkeep
+// figures and whatever funky rules for this particular building, we lift the
+// actual value off the page, where Killer Queen helpfully gave it to us in her
+// recent update.
+
+function getRealUpkeep() {
+	var r, trs, tr, trxp, td, id, m, val;
+
+	trs = document.evaluate(
+		'.//tr[starts-with(@id, "baserow")]',
+		document.forms.building_trade, null,
+		XPathResult.UNORDERED_NODE_ITERATOR_TYPE, null);
+	trxp = document.createExpression( './td[position() = 4]', null );
+	r = [];
+
+	while ( (tr = trs.iterateNext()) ) {
+		id = parseInt( tr.id.substr(7) ); // 7 == 'baserow'.length
+		if ( isNaN(id) )
+			continue;
+		td = trxp.evaluate(
+			tr, XPathResult.ANY_UNORDERED_NODE_TYPE,
+			null).singleNodeValue;
+
+		// MOs show things like "-5 to -15" here.  We could be smarter
+		// for those, and probably will soon to fully close #32, but for
+		// now we'll just assume the higher value applies.
+		m = /-(\d+)(:?\s+to\s+-(\d+))?/.exec( td.textContent );
+		if ( !m )
+			continue;
+
+		r[ id ] = parseInt( m[2] ? m[2] : m[1] );
+	}
+
+	return r;
+}
+
+function computeTicksLeft() {
+	var least = Infinity;
+
+	getRealUpkeep().forEach( computeRow );
+
+	return least < Infinity ? least : undefined;
+
+	function computeRow( upkeep, id ) {
+		var amt, ticks;
+
+		amt = parseInt( amount[ id ] );
+		if ( isNaN(amt) )
+			// That was weird
+			return;
+
+		ticks = Math.floor( amt / upkeep );
+		if ( ticks < least )
+			least = ticks;
+	}
+}
+
+function onTrackingBuilding( data ) {
+	var buildingList, building, storeItems;
+
+	buildingList = data[ universe.key ];
+	storeItems = {};
 
 	if( buildingList ) {
 		// We already had a building list, check again if the building
@@ -194,10 +267,33 @@ function trackBuilding( data ) {
 		// First building, woot
 		storeItems[ universe.key ] = [ userloc ];
 
-	// Get the current sector and coords
-	chrome.storage.local.get(
-		['sector', 'x', 'y'],
-		finishSaveBuilding.bind(null, storeItems, onBuildingTracked) );
+	if ( data[buildingKey] ) {
+		// We already had a building? Weird. May have been another tab.
+		building = Building.createFromStorage( buildingKey, data[buildingKey] );
+		updateBuilding( storeItems, building, onBuildingTracked );
+	}
+	else {
+		// Get the current sector, finish when available.  The building
+		// list already goes inside storeItems.
+		chrome.storage.local.get(
+			'sector',
+			finishSaveBuilding.bind(null, storeItems, onBuildingTracked) );
+	}
+}
+
+function finishSaveBuilding( items, callback, data ) {
+	var buildingId, info, building, sectorId;
+
+	sectorId = Sector.getId( data.sector );
+	if ( sectorId === undefined ) {
+		// Oops, currently can't save without this.  How did this happen?
+		// XXX - also, should tell the user we failed somehow
+		callback();
+	}
+	else {
+		building = new Building( userloc, sectorId );
+		updateBuilding( items, building, callback );
+	}
 }
 
 function onBuildingTracked() {
@@ -216,28 +312,32 @@ function onBuildingUntracked() {
 	toggleButton( btn );
 }
 
-// When this is called, we know the building is already tracked, so no need to
-// update the list.
-function updateBuilding() {
-	// Get the current sector and coords
-	chrome.storage.local.get(
-		['sector', 'x', 'y'],
-		finishSaveBuilding.bind(null, {}, undefined) );
-}
+function updateBuilding( items, building, callback ) {
+	var info, id, amt, max, min;
 
-function finishSaveBuilding( items, callback, data ) {
-	var buildingId = universe.key + userloc,
-	    info = parseInfo(),
-	    level = getLevel(),
-	    building = Building.createFromPardus(
-		    userloc, time, data.sector, data.x, data.y, info[1],
-		    level, info[0], amount, amount_max, amount_min,
-		    res_production, res_upkeep, buy_price, sell_price );
-	items[ buildingId ] = building.toStorage();
+	info = parseInfo();
+	if ( !info )
+		return;
+
+	building.typeId = info.typeId;
+	building.time = Building.seconds( time );
+	building.owner = info.owner;
+	building.level = guessLevel();
+	building.ticksLeft = computeTicksLeft();
+
+	building.forSale.length = 0;
+	building.toBuy.length = 0;
+
+	for ( id in amount ) {
+		amt = amount[ id ];
+		max = amount_max[ id ];
+		min = amount_min[ id ];
+
+		building.forSale[ id ] = Math.max( 0, amt - min );
+		building.toBuy[ id ] = Math.max( 0, max - amt );
+	}
+
+	items[ buildingKey ] = building.toStorage();
+
 	chrome.storage.sync.set( items, callback );
 }
-
-configure();
-addTrackButton();
-
-})();

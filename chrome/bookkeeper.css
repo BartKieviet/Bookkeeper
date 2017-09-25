@@ -85,6 +85,48 @@ h1.bookkeeper img {
 	cursor: pointer;
 }
 
+/* These are used for the management quick buttons */
+div#bookkeeper-quick-buttons {
+	background: url("//static.pardus.at/img/stdhq/bg.gif");
+	border: 1px outset #A0B1C9;
+	margin-left: 3px;
+	margin-right: 3px;
+	margin-top: 12px;
+	padding: 5px;
+}
+
+div#bookkeeper-quick-buttons label {
+	display: inline-block;
+	font-size: 11px;
+	font-weight: bold;
+	text-transform: uppercase;
+}
+
+div#bookkeeper-quick-buttons > label:first-child {
+	background: #A1A1AF;
+	color: #00001C;
+	font-size: 12px;
+	font-weight: bold;
+	margin-bottom: 3px;
+	padding: 1px 0;
+	text-transform: none;
+	width: 100%;
+}
+
+div#bookkeeper-quick-buttons > label:first-child > img {
+	margin-right: 3px;
+	vertical-align: -2px;
+}
+
+div#bookkeeper-quick-buttons > button {
+	cursor: pointer;
+	display: inline-block;
+	height: 35px;
+	margin-bottom: 12px;
+	min-width: 150px;
+	width: 100%;
+}
+
 /* Toggle switches
    Adapted from https://www.w3schools.com/howto/howto_css_switch.asp */
 

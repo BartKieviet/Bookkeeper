@@ -30,14 +30,26 @@
 				"commodity.js", "bldgindex.js" ],
 			"css": [ "bookkeeper.css" ],
 			"all_frames": false
+		},
+		{
+			"matches": [ "*://*.pardus.at/building_trade_settings.php*" ],
+			"js": [ "functions.js", "building.js", "buildingtradesettings.js" ],
+			"all_frames": true
+		},
+		{
+			"matches": [ "*://*.pardus.at/building_management.php*" ],
+			"js": [ "functions.js", "building.js", "management.js" ],
+			"css": [ "bookkeeper.css" ],
+			"all_frames": true
 		}
+
 	],
 	"description": "User trade interface enhancements for the online game Pardus",
 	"manifest_version": 2,
 	"minimum_chrome_version": "42",
 	"name": "Pardus Bookkeeper",
 	"permissions": [ "notifications", "storage" ],
-	"version": "2.0",
+	"version": "2.1",
 	"browser_action": {
 		"default_title": "Trade info",
 		"default_popup": "popup.html"

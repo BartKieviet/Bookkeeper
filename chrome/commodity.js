@@ -1,4 +1,4 @@
-// -*- js3-indent-level: 8; js3-indent-tabs-mode: t -*-
+// Commodities is a utility object to transform
 
 var Commodities = (function() {
 
@@ -8,7 +8,7 @@ var Commodities = (function() {
 // of dashes and underscores, should all stay like this exactly (we need to
 // match the game).
 
-var COMMODITIES = {
+var CATALOGUE = {
 	1: { i: 'food',
 	     n: 'Food' },
 	2: { i: 'energy',
@@ -109,23 +109,36 @@ var COMMODITIES = {
 	       n: 'Golden Beryl jewels' }
 };
 
-var COMMODITY_IDS; // lazily initialized in Commodity.getId
+var CATALOGUE_ARRAY, COMMODITY_IDS; // lazily initialized in Commodity.getId
 
 var Commodities = {};
 
 Commodities.getId = function( icon_name ) {
-	if( !COMMODITY_IDS ) {
+	if ( COMMODITY_IDS === undefined ) {
 		var key;
 		COMMODITY_IDS = {};
-		for( key in COMMODITIES )
-			COMMODITY_IDS[ COMMODITIES[key].i ] = parseInt( key );
+		for ( key in CATALOGUE )
+			COMMODITY_IDS[ CATALOGUE[key].i ] = parseInt( key );
 	}
 
-	return COMMODITY_IDS[ icon_name ] || undefined;
+	return COMMODITY_IDS[ icon_name ];
 }
 
 Commodities.getCommodity = function( id ) {
-	return COMMODITIES[ id ] || undefined;
+	if ( typeof id === 'number' )
+		return getCommodityByInt( id );
+	return CATALOGUE[ id ];
+}
+
+function getCommodityByInt( id ) {
+	if ( CATALOGUE_ARRAY === undefined ) {
+		var key;
+		CATALOGUE_ARRAY = [];
+		for ( key in CATALOGUE )
+			CATALOGUE_ARRAY[ parseInt(key) ] = CATALOGUE[ key ];
+	}
+
+	return CATALOGUE_ARRAY[ id ];
 }
 
 return Commodities;

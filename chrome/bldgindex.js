@@ -7,24 +7,9 @@ var Universe,    // from universe.js
 
 var CalendarNames, ToggleMaker; // from functions.js
 
-(function() {
-
-// Regular expressions, XPath expressions and other stuff we use repeatedly.
-var IMGRX = /([^/]*)\.png$/,
-    COORDSRX = /\[(\d+),(\d+)\]/,
-    OWNERRX = /^sendmsg\('(.*)'\)$/,
-    AMTRX = /^\s*×\s*(\d+)/,
-    CREDICONRX = /.*\/credits\.png$/,
-    TDS_XPATH = document.createExpression( './td', null ),
-    INFOROW_XPATH = document.createExpression(
-	    './table/tbody/tr[td[position()=1]/i]', null ),
-    INFOROW_PARSERS = {
-	'selling:': parseSellTDs,
-	'buying:': parseBuyTDs
-    };
-
 // These are initialised in setup() and the callbacks triggered from there.
-var universe, sectorId, sector, now, pageData;
+
+var universe, sectorId, now, pageData;
 
 setup();
 
@@ -42,15 +27,14 @@ function setup() {
 		'//h1[contains(text(),"Building Index")]',
 		document, null, XPathResult.FIRST_ORDERED_NODE_TYPE,
 		null).singleNodeValue;
-	if( !h1 )
+	if ( !h1 )
 		return;
 	m = /^(.*) Building Index$/.exec( h1.textContent );
-	if( !m )
+	if ( !m )
 		return;
 	sectorId = Sector.getId( m[1] );
-	if( !sectorId )
+	if ( sectorId === undefined )
 		return;
-	sector = Sector.createFromId( sectorId );
 
 	// Get the timestamp.  This will be in the same TD that contains the H1
 	// header, inside a SPAN of class 'cached', inside a DIV.
@@ -59,7 +43,7 @@ function setup() {
 		'//td[h1[contains(text(),"Building Index")]]/div/span[@class="cached"]',
 		document, null, XPathResult.FIRST_ORDERED_NODE_TYPE,
 		null).singleNodeValue;
-	if( !now )
+	if ( !now )
 		return;
 	// Pardus' timestamp format *in this page* is
 	// "Tue Sep 19 19:41:39 GMT 2017"
@@ -75,30 +59,31 @@ function setup() {
 		m[4], // minute
 		m[5]  // second
 	);
-	if( isNaN(now) )
+	if ( isNaN(now) )
 		return;
-	now = Math.floor( now / 1000 );
+	now = Building.seconds( now );
 
 	// Find the table with the buildings. We look for a table with a TH
-	// "Automatic Info"
+	// "Automatic Info".
+
 	buildingsTable = document.evaluate(
 		'//table[tbody/tr/th[text() = "Automatic Info"]]', document,
 		null, XPathResult.ANY_UNORDERED_NODE_TYPE,
 		null).singleNodeValue;
-	if( !buildingsTable )
+	if ( !buildingsTable )
 		return;
-
-	// Phew. We're all set now. Go.
 	entries = parsePage( buildingsTable );
-
-	if( entries.length < 2 )
+	if ( entries.length < 1 )
 		return;
 
 	// Now add our UI.
 	// The first entry is the row with the table headers.
+
 	addBookkeeperHeader( entries.shift() );
+
 	// The rest are rows. This adds the extra TD and a button for trackable
 	// buildings (a reference to which is added to the entry).
+
 	addBookkeeperRowCells( entries );
 
 	// Now build the global pageData object.  This is an object keyed by
@@ -107,9 +92,9 @@ function setup() {
 
 	pageData = {};
 	keys = [];
-	for( i = 0, end = entries.length; i < end; i++ ) {
+	for ( i = 0, end = entries.length; i < end; i++ ) {
 		entry = entries[ i ];
-		if( entry.trackable ) {
+		if ( entry.trackable ) {
 			pageData[ entry.loc ] = entry;
 			keys.push( universe.key + entry.loc );
 		}
@@ -123,217 +108,142 @@ function setup() {
 }
 
 function parsePage( buildingsTable ) {
-	var entries, xpr, trh, tr, idx, building, entry;
+	var entries, rows, tr, entry,
+	    iconxp, ownerxp, sellxp, buyxp, tickxp;
 
 	entries = [];
 
-	// Find the TR with the headers
-	tr = document.evaluate(
-		'./tbody/tr[th]', buildingsTable, null,
-		XPathResult.FIRST_ORDERED_NODE_TYPE,
-		null).singleNodeValue;
-	if( !tr )
-		return entries;
+	// Find all TRs in the buildings table.
 
-	// Iterate over all TRs, fetching
-	xpr = document.evaluate(
+	rows = document.evaluate(
 		'./tbody/tr', buildingsTable, null,
 		XPathResult.UNORDERED_NODE_ITERATOR_TYPE, null);
 
-	while( (tr = xpr.iterateNext()) !== null ) {
-		entry = trToEntry( tr );
-		if( entry )
-			entries.push( entry );
+	// We'll execute these repeatedly; worth to compile
+
+	iconxp = document.createExpression( './td[position()=1]/img/@src', null );
+	ownerxp = document.createExpression( './td[position()=3]/a/text()', null );
+	sellxp = document.createExpression(
+		'./td[position()=4]/table/tbody/tr/td[i[text()="selling:"]]/following-sibling::td',
+		null );
+	buyxp = document.createExpression(
+		'./td[position()=4]/table/tbody/tr/td[i[text()="buying:"]]/following-sibling::td',
+		null );
+	tickxp = document.createExpression(
+		'./td[position()=4]/table/tbody/tr/td[i[text()="supplied for:"]]/following-sibling::td',
+		null );
+
+	while ( (tr = rows.iterateNext()) !== null ) {
+		entry = parseRow();
+		if ( entry === null )
+			entry = { tr: tr, trackable: false };
+		entries.push( entry );
 	}
 
 	return entries;
-}
 
-function trToEntry( tr, building ) {
-	var entry, xpr, imgtd, coordtd, ownertd, infotd, x, y;
+	function parseRow() {
+		var m, s, xpr,
+		    loc, typeId, owner, selling, buying, ticksLeft;
 
-	// This may not get all its attributes, but the JS engine is happier if
-	// we declare the object's final form upfront.
-	entry = {
-		tr: tr,
-		trackable: false,
-		tracked: false,
-		x: -1,
-		y: -1,
-		loc: -1,
-		type_id: -1,
-		owner: '',
-		buying: undefined,
-		selling: undefined,
-		ui: undefined,
-		building: undefined
-	}
+		// Get the x,y coords from the onmouseover attribute.  We could
+		// get them from the Coord. column, too, but that'd be another
+		// XPath lookup.
 
-	xpr = TDS_XPATH.evaluate( tr, XPathResult.ORDERED_NODE_ITERATOR_TYPE, null );
-	if( parseIconTd(entry, xpr.iterateNext()) &&
-	    parseCoordTd(entry, xpr.iterateNext()) &&
-	    parseOwnerTd(entry, xpr.iterateNext()) &&
-	    parseInfoTd(entry, xpr.iterateNext()) ) {
-		entry.trackable = true;
-		return entry;
-	}
-
-	return entry;
-}
-
-function parseIconTd( entry, td ) {
-	var img, m, id;
-	if( !td )
-		return false;
-
-	img = td.firstElementChild;
-	if( !img || img.tagName !== 'IMG' )
-		return false;
-
-	m = IMGRX.exec( img.src );
-	if( !m )
-		return false;
-	id = Building.getTypeIdByIcon( m[1] );
-	if( !id )
-		return false;
-	entry.type_id = id;
-
-	return true;
-}
-
-function parseCoordTd( entry, td ) {
-	var m, x, y;
-	if( !td )
-		return false;
-
-	m = COORDSRX.exec( td.textContent );
-	if( !m )
-		return false;
-
-	entry.x = parseInt(m[1]);
-	entry.y = parseInt(m[2]);
-	entry.loc = sector.getLocation( entry.x, entry.y );
-
-	return true;
-}
-
-function parseOwnerTd( entry, td ) {
-	var a, m;
-	if( !td )
-		return false;
-
-	a = td.firstElementChild;
-	if( !a || a.tagName !== 'A' ||
-	    !a.href.startsWith("javascript:sendmsg(") )
-		return false;
-
-	entry.owner = a.textContent.trim();
-	return true;
-}
-
-function parseInfoTd( entry, td ) {
-	var xpr, tr, row, rowtd, parse;
-
-	if( !td )
-		return false;
-
-	// The "automatic info" table contains up to 4 tables, each of a single
-	// row.  We identify the rows by the label in the first cell: selling,
-	// buying, free capacity, and supplied for.
-
-	xpr = INFOROW_XPATH.evaluate( td, XPathResult.UNORDERED_NODE_ITERATOR_TYPE, null );
-	while( (tr = xpr.iterateNext()) != null ) {
-		rowtd = tr.firstElementChild;
-		parse = INFOROW_PARSERS[ rowtd.textContent ];
-		if( parse ) {
-			if( !parse(entry, rowtd.nextElementSibling) )
-				return false;
-		}
-		// else ignore row
-	}
-
-	return true;
-}
-
-function parseSellTDs( entry, firstTD ) {
-	var row = parseCommoditiesRow( firstTD );
-	if( !row )
-		return false;
-	entry.selling = row;
-	return true;
-}
-
-function parseBuyTDs( entry, firstTD ) {
-	var row = parseCommoditiesRow( firstTD );
-	if( !row )
-		return false;
-	entry.buying = row;
-	return true;
-}
-
-function parseCommoditiesRow( td ) {
-	var r = { amount: {}, price: {} };
-
-	while( td ) {
-		if( !parseCommodityTd( r, td ) )
+		m = /markField\('y(\d+)x(\d+)/.exec(
+			tr.getAttribute('onmouseover') );
+		if ( !m )
 			return null;
-		td = td.nextElementSibling;
+		loc = Sector.getLocation(
+			sectorId, parseInt(m[2]), parseInt(m[1]) );
+
+		// Get the typeId from the icon
+
+		s = iconxp.evaluate(
+			tr, XPathResult.STRING_TYPE, null ).stringValue;
+		m = /\/([^/]+)\.png$/.exec( s );
+		if ( !m )
+			return null;
+		typeId = Building.getTypeIdByIcon( m[1] );
+		if ( typeId === undefined )
+			return null;
+
+		// Get the owner
+
+		s = ownerxp.evaluate(
+			tr, XPathResult.STRING_TYPE, null ).stringValue.trim();
+		if ( s === '' )
+			return null;
+		owner = s;
+
+		// Get the selling and buying lists
+
+		xpr = sellxp.evaluate(
+			tr, XPathResult.UNORDERED_NODE_ITERATOR_TYPE, null );
+		selling = parseCommodityTDs( xpr );
+		xpr = buyxp.evaluate(
+			tr, XPathResult.UNORDERED_NODE_ITERATOR_TYPE, null );
+		buying = parseCommodityTDs( xpr );
+
+		// Get the ticks left
+
+		xpr = tickxp.evaluate(
+			tr, XPathResult.ANY_UNORDERED_NODE_TYPE,
+			null ).singleNodeValue;
+		if ( xpr === null )
+			return null;
+		m = /(\d+) production round/.exec( xpr.textContent );
+		if ( !m )
+			return null;
+		ticksLeft = parseInt( m[1] );
+
+		// Done, phew.
+
+		return {
+			tr: tr,
+			trackable: true,
+			tracked: false,
+			loc: loc,
+			typeId: typeId,
+			owner: owner,
+			ticksLeft: ticksLeft,
+			buying: buying,
+			selling: selling,
+			ui: undefined,
+			building: undefined
+		};
 	}
 
-	return r;
-}
+	function parseCommodityTDs( xpr ) {
+		var r, td, img, m, id;
 
-function parseCommodityTd( r, td ) {
-	var nodes, icon, id, amount, span, m, price;
+		r = [];
+		while ( (td = xpr.iterateNext()) !== null ) {
 
-	// Here's what we expect: exactly 4 child nodes. First is an IMG element
-	// with the icon of a commodity.  Second is a text node with content ' ×
-	// NN' where NN is the amount.  Third is a BR element.  Fourth is a SPAN
-	// element.
+			// Get the commodity id from its icon.
 
-	nodes = td.childNodes;
-	if( nodes.length < 4 )
-		return false;
-	icon = nodes[0];
-	amount = nodes[1];
-	span = nodes[3];
+			img = td.firstElementChild;
+			if ( !img || img.tagName != 'IMG' )
+				continue;
+			m = /\/([^/]+)\.png$/.exec( img.src );
+			if ( !m )
+				continue;
+			id = Commodities.getId( m[1] );
+			if ( id === undefined )
+				continue;
 
-	if( icon.nodeType !== Node.ELEMENT_NODE ||
-	    icon.tagName !== 'IMG' ||
-	    amount.nodeType !== Node.TEXT_NODE ||
-	    span.nodeType !== Node.ELEMENT_NODE ||
-	    span.tagName !== 'SPAN' )
-		return false;
+			// Get the amount.
+			// Could get the price here too, but we don't care now.
 
-	m = IMGRX.exec( icon.src );
-	if( !m )
-		return false;
-	icon = m[1];
-	id = Commodities.getId( icon );
-	if( !id )
-		return false;
+			m = /× (\d+)/.exec( td.textContent );
+			if ( !m )
+				continue;
 
-	m = AMTRX.exec( amount.textContent );
-	if( !m )
-		return false;
-	amount = parseInt( m[1] );
+			r[ id ] = parseInt( m[1] );
+		}
 
-	nodes = span.childNodes;
-	if( nodes.length < 2 )
-		return false;
-	icon = nodes[0];
-	price = nodes[1];
-
-	if( icon.nodeType !== Node.ELEMENT_NODE ||
-	    icon.tagName !== 'IMG' ||
-	    !CREDICONRX.test(icon.src) ||
-	    price.nodeType !== Node.TEXT_NODE )
-		return false;
-	price = parseInt( price.textContent );
-
-	r.amount[ id ] = amount;
-	r.price[ id ] = price;
-	return true;
+		return r;
+	}
 }
 
 function addBookkeeperHeader( entry ) {
@@ -345,7 +255,7 @@ function addBookkeeperHeader( entry ) {
 function addBookkeeperRowCells( entries ) {
 	var i, end, entry, td, toggle, input, src;
 
-	for( i = 0, end = entries.length; i < end; i++ ) {
+	for ( i = 0, end = entries.length; i < end; i++ ) {
 		entry = entries[ i ];
 		td = document.createElement( 'td' );
 
@@ -354,11 +264,7 @@ function addBookkeeperRowCells( entries ) {
 			input = toggle.firstElementChild;
 			input.dataset.bookkeeperLoc = entry.loc;
 			td.appendChild( toggle );
-
-			// Wanted this to be 'input' not 'click' but that
-			// doesn't seem to work in chrome...
 			input.addEventListener( 'click', onToggle, false );
-
 			entry.ui = input;
 		}
 
@@ -372,13 +278,13 @@ function onBuildingData( data ) {
 	updates = {};
 	updateCount = 0;
 
-	for( key in data ) {
+	for ( key in data ) {
 		building = Building.createFromStorage( key, data[key] );
 		entry = pageData[ building.loc ];
 		entry.tracked = true;
 		entry.building = building;
 		entry.ui.checked = true;
-		if( building.time < now ) {
+		if ( building.time < now ) {
 			updates[ key ] = entry;
 			updateCount++;
 		}
@@ -386,17 +292,17 @@ function onBuildingData( data ) {
 
 	updates = computeUpdates( updates );
 
-	if( updateCount > 0 )
+	if ( updateCount > 0 )
 		chrome.storage.sync.set( updates, notifyUpdated );
 
 	function notifyUpdated() {
 		var op, text;
 
-		if( updateCount === 1 )
+		if ( updateCount === 1 )
 			text = 'Updated 1 building';
 		else
 			text = 'Updated ' + updateCount + ' buildings';
-		text += ' in ' + sector.name;
+		text += ' in ' + Sector.getName( sectorId );
 
 		op = {
 			op: 'showNotification',
@@ -411,7 +317,7 @@ function computeUpdates( updates ) {
 	var r, key, entry;
 
 	r = {}
-	for( key in updates ) {
+	for ( key in updates ) {
 		entry = updates[key];
 		updateBuildingFromEntry( entry );
 		r[ key ] = entry.building.toStorage();
@@ -421,131 +327,18 @@ function computeUpdates( updates ) {
 }
 
 function updateBuildingFromEntry( entry ) {
-	var building, key, n, m;
-
-	building = entry.building;
-
-	building.type_id = entry.type_id;
-	building.owner = entry.owner;
+	var building = entry.building;
+	building.typeId = entry.typeId;
 	building.time = now;
-
-	if( entry.selling ) {
-		for( key in entry.selling.amount ) {
-
-			// If a building is *selling* N of a thing, it means
-			// that it has N above its minimum for the thing.
-
-			m = building.amount_min[ key ];
-			if( typeof m === 'number' ) {
-				n = entry.selling.amount[ key ];
-				building.amount[ key ] = m + n;
-			}
-		}
-
-		// Note the inversion: entry.selling contains the prices for
-		// which the building sells commodities.  These are the prices
-		// for which a trader would BUY from the building, and are
-		// stored as such in our persistent data.
-
-		Object.assign( building.buy_price, entry.selling.price );
-	}
-
-	if( entry.buying ) {
-		for( key in entry.buying.amount ) {
-
-			// If a building is *buying* N of a thing, it means that
-			// it has N below its maximum for the thing.
-
-			m = building.amount_max[ key ];
-			if( typeof m === 'number' ) {
-				n = entry.buying.amount[ key ];
-				building.amount[ key ] = m - n;
-			}
-		}
-
-		// Note the inversion: entry.buying contains the prices for
-		// which the building buys commodities.  These are the prices
-		// for which a trader would SELL to the building, and are stored
-		// as such in our persistent data.
-
-		Object.assign( building.sell_price, entry.buying.price );
-	}
+	building.owner = entry.owner;
+	building.ticksLeft = entry.ticksLeft;
+	building.forSale = entry.selling;
+	building.toBuy = entry.buying;
 }
 
-// When the user asks us to track a building from this page, we kinda have a
-// problem, because we don't have all the information we have from the trade
-// screen.  Specifically, we don't have the building level, maxes and mins,
-// production and upkeep, and full prices.  But we'll do a best effort.
-
 function inferBuildingFromEntry( entry ) {
-	var key, n, amount, amount_max, amount_min, buy_price, sell_price,
-	    res_production, res_upkeep;
-
-	amount = {};
-	amount_max = {};
-	amount_min = {};
-	res_production = {};
-	res_upkeep = {};
-
-	if( entry.selling ) {
-		// If a building is *selling* N of a thing, we'll assume it has
-		// N and its minimum is zero.
-		for( key in entry.selling.amount ) {
-			n = entry.selling.amount[ key ];
-			amount[ key ] = n;
-			amount_min[ key ] = 0;
-
-			// We assume this is building production.  We have no
-			// idea how much it produces per tick, but we need to
-			// fill something here so that overview paints the
-			// amount positive.
-			res_production[ key ] = 9;
-		}
-
-		// As per updateBuildingFromEntry(), this sets the *buy* prices.
-		buy_price = entry.selling.price;
-	}
-	else
-		buy_price = {};
-
-	if( entry.buying ) {
-		// If a building is *buying* N of a thing, we'll assume it has
-		// zero and its maximum is N.
-		for( key in entry.buying.amount ) {
-			n = entry.buying.amount[ key ];
-			amount[ key ] = 0;
-			amount_max[ key ] = n;
-
-			// We assume this is building upkeep.  We have no idea
-			// how much it consumes per tick, but we need to fill
-			// something here so that overview paints the amount
-			// pink and negative.
-			res_upkeep[ key ] = 9;
-		}
-
-		// As per updateBuildingFromEntry(), this sets the *sell*
-		// prices.
-		sell_price = entry.buying.price;
-	}
-	else sell_price = {};
-
-	return new Building(
-		entry.loc,
-		now,
-		sectorId,
-		entry.x,
-		entry.y,
-		entry.type_id,
-		-1, // level
-		entry.owner,
-		amount,
-		amount_max,
-		amount_min,
-		res_production,
-		res_upkeep,
-		buy_price,
-		sell_price
-	);
+	entry.building = new Building( entry.loc, sectorId );
+	updateBuildingFromEntry( entry );
 }
 
 function onToggle( event ) {
@@ -567,8 +360,17 @@ function onToggle( event ) {
 }
 
 function trackBuilding( entry ) {
-	if( !entry.building )
-		entry.building = inferBuildingFromEntry( entry );
+
+	// If the building wasn't being tracked, then there will be no
+	// entry.building.  We create a new one then.  Otherwise, reuse the
+	// building instance we already have.  This keeps the level and owner of
+	// buildings that were already tracked, just were untracked and tracked
+	// again without reloading the page.
+
+	if ( !entry.building ) {
+		entry.building = new Building( entry.loc, sectorId );
+		updateBuildingFromEntry( entry );
+	}
 
 	chrome.storage.sync.get( universe.key, onBuildingList );
 
@@ -576,7 +378,7 @@ function trackBuilding( entry ) {
 		var list, index;
 		list = data[ universe.key ];
 		index = list.indexOf( entry.loc );
-		if( index === -1 )
+		if ( index === -1 )
 			list.push( entry.loc );
 		data[ universe.key + entry.loc ] = entry.building.toStorage();
 		chrome.storage.sync.set( data, onAdded );
@@ -592,14 +394,13 @@ function untrackBuilding( entry ) {
 	entry.building.removeStorage( universe.key, onRemoved );
 
 	function onRemoved() {
+
 		// Note we DON'T remove entry.building, even though it isn't
 		// stored any more.  This is because, if the user clicks the
-		// button again, we already have the building, likely with
-		// better data than inferBuildingFromEntry() can come up with,
-		// so in that case we'll just re-add it.
+		// button again, we already have the building and in that case
+		// we'll just re-add it.
+
 		entry.tracked = false;
 		entry.ui.checked = false;
 	}
 }
-
-})();
