@@ -86,7 +86,9 @@ function Building( loc, sectorId, typeId, time, owner, level, ticksLeft,
 }
 
 
+
 // 1. Methods of the Building object.
+
 
 
 // Convenience for the current time in seconds, so K's heart doesn't break that
@@ -164,6 +166,12 @@ Building.getTypeShortName = function( typeId ) {
 Building.getUpkeepCommodities = function( typeId ) {
 	var t = Building.getType( typeId );
 	return t !== undefined ? t.u : undefined;
+}
+
+// Compute the storage key of a building at the given location and universe.
+
+Building.storageKey = function( universeKey, location ) {
+	return universeKey + location;
 }
 
 // Create a Building instance from data obtained from storage. `key` is the
@@ -321,7 +329,11 @@ Building.removeStorage = function( loc, ukey, callback ) {
 	}
 }
 
+
+
 // 2.  Methods of Building instances.
+
+
 
 // Get the name of buildings of this type.
 
@@ -455,7 +467,10 @@ Building.prototype.isFullyStocked = function() {
 	) === undefined;
 }
 
+
+
 // 3. Private functions.
+
 
 
 function storageCommodityMap( a ) {

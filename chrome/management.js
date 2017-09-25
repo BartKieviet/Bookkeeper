@@ -1,8 +1,14 @@
 'use strict';
 
+// From other scripts injected
+var Universe, Building;
+
+var previewSettingKey = 'previewAutoTransfer';
 var universe = Universe.fromDocument ( document );
-var configured = false;
-var userloc, time, shipSpace, buildingSpace;
+
+// Globals set during configuration
+var configured, userloc, time, shipSpace, buildingSpace, buildingKey,
+    pageData, building, previewEnabled, previewCheckbox;
 
 configure();
 
@@ -32,7 +38,7 @@ if(typeof(addUserFunction)=='function')addUserFunction(fn);fn();})();";
 function onGameMessage( event ) {
 	var data = event.data;
 
-	if ( !data || data.pardus_bookkeeper != 3 ) {
+	if ( !data || data.pardus_bookkeeper !== 3 ) {
 		return;
 	}
 
@@ -40,131 +46,366 @@ function onGameMessage( event ) {
 	time = data.time;
 	shipSpace = parseInt ( data.ship_space );
 	buildingSpace = parseInt ( data.obj_space );
+	buildingKey = Building.storageKey( universe.key, userloc );
 
-	//configured, let's get started.
-	chrome.storage.sync.get( universe.key + userloc, addButton );
+	// Configured, let's get started.  Parse the page, then get the building
+	// record from storage.
+
+	pageData = parsePage();
+	chrome.storage.sync.get( buildingKey, onBuildingData );
 }
 
-function addButton ( buildingData ) {
-	var building = Building.createFromStorage ( universe.key + userloc , buildingData [ universe.key + userloc ]);
+// Lift all the data we can lift from this page.
 
-	if ( building.hasMinMax() ) {
-		var new_button = document.getElementsByName("trade_ship")[0].cloneNode(false);
-		new_button.type = 'button';
-		new_button.textContent = 'Auto Sell Buy';
-		//new_button.name = 'Auto'; do we need this?
-		new_button.addEventListener( 'click', auto_sell_buy.bind(null, building) );
-		var node = document.getElementsByName('trade_ship')[0].parentNode;
-		node.appendChild(document.createElement('br'));
-		node.appendChild(document.createElement('br'));
-		node.appendChild(new_button);
+function parsePage() {
+	var s, m, r, as, a;
+
+	r = {};
+
+	// Get the building type
+
+	s = document.evaluate(
+		'//h1', document, null, XPathResult.FIRST_ORDERED_NODE_TYPE,
+		null).singleNodeValue.textContent.trim()
+	r.typeId = Building.getTypeId( s );
+	if ( r.typeId === undefined )
+		return null;
+
+	// Get ticks left
+
+	s = document.evaluate(
+		'//td[h1]/b[starts-with(text(),"Upkeep stock will last for:")]/text()',
+		document, null, XPathResult.STRING_TYPE, null).stringValue;
+	m = /: (\d+) production rounds/.exec( s );
+	if ( !m )
+		return null;
+	r.ticksLeft = parseInt( m[1] );
+
+	as = document.evaluate('.//a[starts-with(@href,"javascript:useMax(")]',
+			       document.forms.building_man, null,
+			       XPathResult.UNORDERED_NODE_ITERATOR_TYPE, null);
+	r.comm = [];
+	r.ship = [];
+	r.stock = [];
+	while ( (a = as.iterateNext()) != null ) {
+		m = /^javascript:useMax\('(ship|comm|stock)', (\d+), (\d+)/.exec(
+			a.getAttribute( 'href' ) );
+		if ( !m )
+			continue;
+		r[ m[1] ][ parseInt(m[2]) ] = parseInt( m[3] );
 	}
+
+	return r;
 }
 
-function auto_sell_buy( building ) {
-	var amount = {};
-	var key, resNode;
-	var ship_amount = {};
-
-	// See comment in the definition of makeDictionary, in building.js, for
-	// the meaning of this.  If we didn't do this, then instead of the
-	// "for(key in minDict)" loops below, we would use
-	// "building.minimum.forEach()" instead.
-	//
-	// Which probably would be better anyway, but I'll leave it like this so
-	// it's easier to understand what's going on here.
-	var minDict = Building.makeDictionary( building.minimum );
-
-	//checking for both ship and building how much we have. This can probably be quicker.
-
-	// This will iterate over all the commodity ids for which we have
-	// minimums (and maximums, if we have one we always have the other).
-	// Since those are lifted from the tradesettings screen, we know these
-	// are exactly the upkeep/production commodities; whatever other junk
-	// the owner is storing in their building won't have an entry here.
-
-	for ( key in minDict ) {
-
-		// Now we check if commodity id `key` is part of the upkeep for
-		// this kind of building.  If it isn't, then it is production,
-		// guaranteed.
-
-		// (at least until we start dealiing with TOs lololol)
-
-		if ( building.isUpkeep(key) ) {
-			resNode = document.getElementById( "stock_" + key );
-			if (!resNode) {
-				amount [ key ] = 0;
-			} else {
-				amount [ key ] = resNode.parentNode.previousSibling.textContent;
-			}
-		}
-		else {
-			resNode = document.getElementById( "comm_" + key );
-			if (!resNode) {
-				amount [ key ] = 0;
-			} else {
-				amount [ key ] = resNode.parentNode.previousSibling.textContent;
-			}
-		}
-
-		resNode = document.getElementById( "ship_" + key );
-		if (!resNode) {
-			ship_amount [ key ] = 0;
-		} else {
-			ship_amount [ key ] = resNode.parentNode.previousSibling.textContent;
+function onBuildingData( data ) {
+	data = data[ buildingKey ];
+	if ( data !== undefined ) {
+		building = Building.createFromStorage ( buildingKey, data );
+		// Hasn't changed type? lol could happen I guess
+		if ( building.typeId === pageData.typeId &&
+		     building.hasMinMax() ) {
+			// All well so far, get the preview setting.  Note
+			// stored in local, not sync.
+			chrome.storage.local.get(
+				previewSettingKey, onPrefsData );
+			return;
 		}
 	}
 
-	console.log( 'amount', amount );
-
-	// now fill in the forms.
-	var value;
-	for ( key in minDict ) {
-		if ( building.isUpkeep(key) ) {
-			if (ship_amount [ key ] > 0) {
-				if (ship_amount [ key ] < building.maximum[ key ] - amount [ key ]) {
-					value = ship_amount [ key ];
-				} else {
-					value = building.maximum[ key ] - amount [ key ];
-				}
-				resNode = document.getElementById( "ship_" + key );
-				resNode.value = value;
-			}
-		}
-		else {
-			if (amount [ key ] > 0) {
-				if (amount [ key ] < building.minimum[ key ]) {
-					value = 0;
-				} else {
-					value = amount[ key ] - building.minimum[ key ];
-				}
-				resNode = document.getElementById( "comm_" + key );
-				resNode.value = value;
-			}
-		}
-	}
-
-	// We really need the "preview" checkbox here... as a user, I never let
-	// auto sell submit the form like this, without a chance to review :")
-
-	document.getElementsByName("trade_ship")[0].click();
+	// XXX else add a note for the user, with a link to the trade settings
+	// page.
 }
 
-/*
-Old stuff saved for reference. In case we need to parse res_production and res_upkeep from this page and not from storage.
-function buy_all_prod() {
-	 // 4 upkeep, 5 production
-	var upk_table = document.getElementsByTagName("table")[4].getElementsByTagName('img');
-	var prod_table = document.getElementsByTagName("table")[5].getElementsByTagName('img');
-	var prod_res_links = document.getElementsByTagName("table")[11].getElementsByTagName("a");
+function onPrefsData( data ) {
+	previewEnabled = !!data[ previewSettingKey ];
 
-	for (var i = 0; i < prod_res_links.length; i++) {
-		for (var j = 0 ; j < prod_table.length; j++) {
-			if (prod_res_links[i].parentNode.previousSibling.previousSibling.firstChild.src == prod_table[j].src) {
-				prod_res_links[i].click();
-			}
+	// Ok we're all set now, have the building and preferences, let's roll.
+
+	updateBuilding();
+	addUI();
+}
+
+function updateBuilding() {
+	building.time = Building.now();
+	building.ticksLeft = pageData.ticksLeft;
+	building.forSale = building.minimum.reduce(
+		function( forSale, min, id ) {
+			var amt = pageData.comm[ id ];
+			if ( amt !== undefined )
+				forSale[ id ] = Math.max( 0, amt - min );
+			else
+				forSale[ id ] = 0;
+			return forSale;
+		},
+		[]
+	);
+
+	building.toBuy = building.maximum.reduce(
+		function( toBuy, max, id ) {
+			var amt = pageData.stock[ id ];
+			if ( amt !== undefined )
+				toBuy[ id ] = Math.max( 0, max - amt );
+			else
+				toBuy[ id ] = 0;
+			return toBuy;
+		},
+		[]
+	);
+
+	var data = {};
+	data[ buildingKey ] = building.toStorage();
+	chrome.storage.sync.set( data );
+}
+
+function addUI() {
+	var pardusButton, div, label, img, preview, autoSell, autoBuy, autoBoth;
+
+	// Imitate the "quick buttons" thing in the regular trade screen.
+	// Except let's not as scummy as Pardus and save all the styling for the
+	// stylesheet.
+
+	// XXX - this is nasty.  Remind me to write a function to load HTML
+	// snippets. ~V
+
+	div = document.createElement( 'table' );
+	div.id = 'bookkeeper-quick-buttons';
+
+	label = document.createElement( 'label' );
+	img = document.createElement( 'img' );
+	img.src = chrome.extension.getURL( 'icons/16.png' );
+	label.appendChild( img );
+	label.appendChild( document.createTextNode('Quick Buttons') );
+	autoSell = document.createElement( 'button' );
+	autoSell.textContent = 'Transfer upkeep ->';
+	autoBuy = document.createElement( 'button' );
+	autoBuy.textContent = '<- Transfer production';
+	autoBoth = document.createElement( 'button' );
+	autoBoth.textContent = '<- Auto Transfer ->';
+	preview = document.createElement( 'label' );
+	// previewCheckBox is a global, remember
+	previewCheckbox = document.createElement( 'input' );
+	previewCheckbox.type = 'checkbox';
+	previewCheckbox.checked = previewEnabled;
+	previewCheckbox.id = 'bookkeeper-preview';
+	preview.appendChild( previewCheckbox );
+	preview.appendChild( document.createTextNode('Preview') );
+
+	div.appendChild( label );
+	div.appendChild( document.createElement('br') );
+	div.appendChild( autoSell );
+	div.appendChild( document.createElement('br') );
+	div.appendChild( autoBuy );
+	div.appendChild( document.createElement('br') );
+	div.appendChild( autoBoth );
+	div.appendChild( document.createElement('br') );
+	div.appendChild( preview );
+
+	document.forms.building_man.elements.trade_ship.parentElement.
+		appendChild( div );
+
+	autoSell.addEventListener( 'click', onAutoSell );
+	autoBuy.addEventListener( 'click', onAutoBuy );
+	autoBoth.addEventListener( 'click', onAutoBoth );
+	previewCheckbox.addEventListener( 'click', onPreviewToggle );
+}
+
+// XXX - Some similar code in these three fns below.  Can we isolate the common
+// stuff further, and write it only once?
+
+function onAutoSell( event ) {
+	var upkeep, ship, transfer;
+
+	event.preventDefault();
+
+	// In a transfer from ship to building, the desired commodities are the
+	// building's upkeep ones.  The source is the ship, but we don't want to
+	// consider more than the amount the building will buy of each
+	// commodity.  Destination space is the space in the building.
+
+	upkeep = building.getUpkeepCommodities();
+	ship = capAmounts( pageData.ship, building.toBuy );
+	transfer = computeTransfer( upkeep, ship, buildingSpace );
+	sendForm( 'ship_', transfer );
+}
+
+function onAutoBuy( event ) {
+	var upkeep, production, transfer;
+
+	event.preventDefault();
+
+	// In a transfer from building to ship, the desired commodities are the
+	// building's production ones.  We don't store that directly, but it can
+	// be inferred from the building's maximums: it'll be any commodities
+	// that have a maximum, but are not part of the building's upkeep.
+
+	// XXX - this should be a method of Building.prototype
+	upkeep = building.getUpkeepCommodities();
+	production = building.maximum.reduce(
+		function( prod, val, id ) {
+			if ( upkeep.indexOf(id) === -1 )
+				prod.push( id );
+			return prod;
+		},
+		[]
+	);
+	transfer = computeTransfer(
+		production, pageData.comm, shipSpace );
+	sendForm( 'comm_', transfer );
+}
+
+function onAutoBoth( event ) {
+	var upkeep, production, ship, s2b, b2s;
+
+	event.preventDefault();
+
+	// As the two handlers above, only, after the transfer from ship to
+	// building, we'll have more space in the ship, so we consider that.
+
+	upkeep = building.getUpkeepCommodities();
+	production = building.maximum.reduce(
+		function( prod, val, id ) {
+			if ( upkeep.indexOf(id) === -1 )
+				prod.push( id );
+			return prod;
+		},
+		[]
+	);
+	ship = capAmounts( pageData.ship, building.toBuy );
+	s2b = computeTransfer( upkeep, ship, buildingSpace );
+	b2s = computeTransfer(
+		production, pageData.comm, shipSpace + s2b.total );
+	sendForm( 'ship_', s2b, 'comm_', b2s );
+}
+
+function onPreviewToggle( event ) {
+	var items;
+
+	previewEnabled = event.target.checked;
+	items = {};
+	items[ previewSettingKey ] = previewEnabled;
+	chrome.storage.local.set( items );
+}
+
+// This takes an even number of argumenst: the first is a prefix, the second a
+// transfer, the third another prefix, the fourth another transfer, etc.
+function sendForm() {
+	var i, form, prefix, transfer;
+
+	form = document.forms.building_man;
+
+	form.reset();
+	// Annoyingly, the above resets our checkbox too
+	previewCheckbox.checked = previewEnabled;
+
+	i = 0;
+	while ( i < arguments.length ) {
+		prefix = arguments[i++];
+		transfer = arguments[i++]
+		transfer.amount.forEach(
+			function( n, id ) {
+				if ( n > 0 )
+					form.elements[ prefix + id ].value = n;
+			} );
+	}
+
+	if ( !previewEnabled )
+		document.forms.building_man.elements.trade_ship.click();
+}
+
+// Given an array of amounts, and an array of caps, compute a new array in which
+// none of the amounts exceed the cap.
+//
+// `amount` and `cap` are both sparse arrays: indices are commodity ids, and
+// values are the value for that commodity.  If an id appears in `amount` but
+// not in `cap`, it is not included in the result.
+
+function capAmounts( amount, cap ) {
+	return cap.reduce(
+		function( capped, cap, id ) {
+			var amt = amount[ id ];
+			if ( amt !== undefined )
+				capped[ id ] = amt > cap ? cap : amt;
+			return capped;
+		},
+		[]
+	);
+}
+
+// Compute an auto transfer, one way.
+//
+// `desiredCommodities` is an array of commodity ids.
+// `source` is a sparse array: indices are commodity ids, and values are the
+// amount of that commodity that is available at the source.
+// `destinationSpace` is self explanatory.
+//
+// Return an object with two properties:
+//
+// `amount` is a sparse array: indices are commodity ids, values are the amount
+// of that commodity that will be transferred.
+// `total` is the total sum of commodities that will be transferred.
+
+function computeTransfer( desiredCommodities, source, destinationSpace ) {
+	var sourceTotal, factor, transfer, transferTotal, id;
+
+	// 1. Figure out the total amount of commodities what we would like to
+	// transfer from source to destination.  This is the sum of the amounts
+	// available at the source, of any commodities that are desired.
+
+	sourceTotal = desiredCommodities.reduce(
+		function( sum, id ) {
+			if ( source[id] > 0 )
+				sum += source[ id ];
+			return sum;
+		},
+		0
+	);
+
+	if ( sourceTotal === 0 )
+		// we're done
+		return { amount: [], total: 0 }
+
+	// 2. If the total amount is larger than the destination's space, then
+	// we won't be able to transfer all of it.  Figure out what fraction of
+	// the total we can actually transfer.
+
+	if ( destinationSpace < sourceTotal )
+		factor = destinationSpace / sourceTotal;
+	else
+		factor = 1;
+
+	// 3. Compute the actual amount of each commodity to transfer.
+
+	transfer = desiredCommodities.reduce(
+		function( a, id ) {
+			if ( source[id] > 0  )
+				a[id] = Math.ceil( factor * source[id] );
+			return a;
+		},
+		[] );
+
+	// 4. Sum to know exactly how many tons we'll transfer in total.
+
+	transferTotal = transfer.reduce(
+		function( sum, n ) { return sum + n }, 0 );
+
+	// If this amount is larger than the space at destination (because of
+	// rounding with Math.ceil above), then shave off the excess by removing
+	// one from a commodity until we fit.
+
+	for ( id in transfer ) {
+		if( transferTotal <= destinationSpace )
+			break;
+		else if ( transfer[id] > 0 ) {
+			transfer[ id ] -= 1;
+			transferTotal -= 1;
 		}
 	}
-	document.getElementsByName("trade_ship")[0].click();
-}*/
+
+	// And we're done.  Return the result of this computation.
+
+	return {
+		amount: transfer,
+		total: transferTotal
+	}
+}
