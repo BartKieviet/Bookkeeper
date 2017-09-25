@@ -12,7 +12,7 @@ var BUILDING_SORT_FUNCTIONS = {
 		return a.loc - b.loc;
 	},
 	type: function( a, b ) {
-		return a.stype.localeCompare( b.stype );
+		return  Building.getTypeShortName( a.typeId ).localeCompare( Building.getTypeShortName( b.typeId) );
 	},
 	owner: function( a, b ) {
 		return a.owner.localeCompare( b.owner );
@@ -24,10 +24,10 @@ var BUILDING_SORT_FUNCTIONS = {
 		return a.time - b.time;
 	},
 	ticks: function( a, b ) {
-		return a.ticks - b.ticks;
+		return a.ticksLeft - b.ticksLeft;
 	},
 	tleft: function( a, b ) {
-		return a.ticks_left - b.ticks_left;
+		return a.ticksNow( Building.now() ) - b.ticksNow( Building.now() );
 	}
 };
 
