@@ -151,27 +151,34 @@ function parseInfo() {
 	};
 }
 
-function guessLevel() {
-	var perCommodity, levelEst, level, key;
+function estimateLevel( typeId ) {
+	var perCommodity, levelEst, level, key, divCheck;
 
 	perCommodity = new Object();
 	levelEst = new Object();
 	level = 0;
+
+	// We compare our building with the list of buildings that get a 
+	// diversity bonus. If the building is on this list, we take only the 
+	// upkeep into account to get the level.
+	var divList = [ "SF", "NL", "Sm", "EF", "SC", "DD", "Br", "ML", "PF" ];
+	divCheck = divList.indexOf ( Building.getTypeShortName ( typeId ) );
 
 	for (key in amount_max) {
 		var fontList = document.getElementById('baserow'+key).getElementsByTagName("font");
 		perCommodity[key] = parseInt(fontList[fontList.length-1].innerHTML);
 		if (perCommodity[key] > 0) {
 			levelEst[key] = ((((perCommodity[key] / res_production[key]) - 1) / 0.5) + 1);
+			if (divCheck === -1) {
+				level += levelEst[key];
+			}
 		} else {
 			levelEst[key] = ((((-perCommodity[key] / res_upkeep[key]) - 1) / 0.4) + 1);
-			// So thanks to Div we only take the upkeep for level determination.
 			level += levelEst[key];
 		}
 	}
-
 	// The average of the estimated levels is most likely correct.
-	level = Math.round(level / Object.keys(res_upkeep).length);
+	level = Math.round(level / Object.keys(levelEst).length);
 
 	// here we double check the level by calculating the upkeep.
 	var levelCheck = 0;
@@ -322,7 +329,7 @@ function updateBuilding( items, building, callback ) {
 	building.typeId = info.typeId;
 	building.time = Building.seconds( time );
 	building.owner = info.owner;
-	building.level = guessLevel();
+	building.level = estimateLevel( info.typeId );
 	building.ticksLeft = computeTicksLeft();
 
 	building.forSale.length = 0;
