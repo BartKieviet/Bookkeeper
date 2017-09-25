@@ -110,12 +110,36 @@ function onBuildingData( data ) {
 			chrome.storage.local.get(
 				previewSettingKey, onPrefsData );
 			return;
+		} else if ( !building.hasMinMax() ) {
+			requestUpdateGUI();
 		}
+	} else {
+		requestUpdateGUI();
 	}
-
-	// XXX else add a note for the user, with a link to the trade settings
-	// page.
 }
+
+function requestUpdateGUI() {
+	// stolen from addUI()
+	var div, label, img, getMins;
+	div = document.createElement( 'div' );
+	div.id = 'bookkeeper-quick-buttons';
+	label = document.createElement( 'label' );
+	img = document.createElement( 'img' );
+	img.src = chrome.extension.getURL( 'icons/16.png' );
+	img.title = 'Pardus Bookkeeper';
+	label.appendChild( img );
+	label.appendChild( document.createTextNode('Quick Buttons') );
+	getMins = document.createElement( 'button' );
+	getMins.textContent = 'Min/Maxes unknown\nplease update';
+	div.appendChild( label );
+	div.appendChild( document.createElement('br') );
+	div.appendChild( getMins );
+	div.appendChild( document.createElement('br') );
+	document.forms.building_man.elements.trade_ship.parentElement.appendChild( div );
+	getMins.addEventListener( 'click' , function() { 
+		window.open('/building_trade_settings.php?object=' + userloc, '_blank' ) 
+		} );
+	}
 
 function onPrefsData( data ) {
 	previewEnabled = !!data[ previewSettingKey ];
