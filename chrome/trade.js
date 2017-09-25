@@ -168,8 +168,8 @@ function estimateLevel( typeId ) {
 		var fontList = document.getElementById('baserow'+key).getElementsByTagName("font");
 		perCommodity[key] = parseInt(fontList[fontList.length-1].innerHTML);
 		if (perCommodity[key] > 0) {
-			levelEst[key] = ((((perCommodity[key] / res_production[key]) - 1) / 0.5) + 1);
 			if (divCheck === -1) {
+				levelEst[key] = ((((perCommodity[key] / res_production[key]) - 1) / 0.5) + 1);
 				level += levelEst[key];
 			}
 		} else {
