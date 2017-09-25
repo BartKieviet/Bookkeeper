@@ -74,9 +74,10 @@ function parsePage() {
 	// Get ticks left
 
 	s = document.evaluate(
-		'//td[h1]/b[starts-with(text(),"Upkeep stock will last for:")]/text()',
-		document, null, XPathResult.STRING_TYPE, null).stringValue;
-	m = /: (\d+) production rounds/.exec( s );
+		'//td[h1]/b[starts-with(text(),"Upkeep stock will last for:")]',
+		document, null, XPathResult.FIRST_ORDERED_NODE_TYPE,
+		null).singleNodeValue.textContent;
+	m = /: (\d+) production round/.exec( s );
 	if ( !m )
 		return null;
 	r.ticksLeft = parseInt( m[1] );
@@ -136,10 +137,10 @@ function requestUpdateGUI() {
 	div.appendChild( getMins );
 	div.appendChild( document.createElement('br') );
 	document.forms.building_man.elements.trade_ship.parentElement.appendChild( div );
-	getMins.addEventListener( 'click' , function() { 
-		window.open('/building_trade_settings.php?object=' + userloc, '_blank' ) 
-		} );
-	}
+	getMins.addEventListener( 'click' , function() {
+		window.open('/building_trade_settings.php?object=' + userloc, '_blank' )
+	} );
+}
 
 function onPrefsData( data ) {
 	previewEnabled = !!data[ previewSettingKey ];
