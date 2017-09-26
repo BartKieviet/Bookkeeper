@@ -72,6 +72,7 @@
 		"icons/minus.svg",
 		"icons/mingray.svg",
 		"icons/plus.svg",
-		"icons/plusgray.svg"
+		"icons/plusgray.svg",
+		"html/bbox.html"
 	]
 }

@@ -16,7 +16,7 @@ var BLDGTILE_XPATH = document.createExpression(
 // will be ""navAjax(142080)"; if it's disabled, it will be "nav(142080)".
 var TILEID_RX = /^nav(?:Ajax)?\((\d+)\)$/;
 
-var bldgTileCache, ticksToggle, ticksEnabled, userloc;
+var bldgTileCache, ticksToggle, ticksEnabled, overviewToggle, overview, userloc;
 
 chrome.storage.local.get( 'navticks', configure );
 
@@ -52,6 +52,13 @@ function configure( data ) {
 	e.textContent = 'TICKS';
 	e.addEventListener( 'click', onToggleTicks, false );
 	ticksToggle = e;
+	ui.appendChild( e );
+
+	e = document.createElement( 'button' );
+	e.id = 'bookkeeper-overview-toggle';
+	e.textContent = 'OPEN';
+	e.addEventListener( 'click', onToggleOverview, false );
+	overviewToggle = e;
 	ui.appendChild( e );
 
 	// Wish we could insert directly in the cargo box, but partial refresh
@@ -240,6 +247,21 @@ function getNavArea() {
 	if ( !navTable )
 		navTable = document.getElementById( 'navarea' );
 	return navTable;
+}
+
+function onToggleOverview( event ) {
+	var url;
+	event.preventDefault();
+	url = chrome.extension.getURL( '/html/bbox.html' );
+	console.log( 'bbox', url );
+
+	if ( overview )
+		overview.remove();
+
+	overview = document.createElement( 'iframe' );
+	overview.id = 'bookkeeper-overview-box';
+	overview.src = url;
+	document.body.appendChild( overview );
 }
 
 })();
