@@ -16,7 +16,7 @@ var BLDGTILE_XPATH = document.createExpression(
 // will be ""navAjax(142080)"; if it's disabled, it will be "nav(142080)".
 var TILEID_RX = /^nav(?:Ajax)?\((\d+)\)$/;
 
-var bldgTileCache, ticksToggle, ticksEnabled, overviewToggle, overview, userloc;
+var bldgTileCache, ticksToggle, ticksEnabled, overviewToggle, bbox, userloc;
 
 chrome.storage.local.get( 'navticks', configure );
 
@@ -181,7 +181,7 @@ function showTicks() {
 		}
 		else {
 			needed.push( loc );
-			cached = { td: td, ticks: -1 };
+			cached = { loc: loc, td: td, ticks: -1 };
 		}
 
 		newCache[ loc ] = cached;
@@ -192,7 +192,7 @@ function showTicks() {
 
 	for ( i = 0, end = needTicksDisplay.length; i < end; i++ ) {
 		cached = needTicksDisplay[ i ];
-		addTickThingies( cached.td, cached.ticks , cached.stocked );
+		addTickThingies( cached );
 	}
 
 	if ( needed.length === 0 )
@@ -216,22 +216,24 @@ function onHaveTicks( r ) {
 		cached = bldgTileCache[ key ];
 		cached.ticks = ticks;
 		cached.stocked = stocked;
-		addTickThingies( cached.td, ticks , stocked );
+		addTickThingies( cached );
 	}
 }
 
-function addTickThingies( td, ticks, stocked ) {
+function addTickThingies( cached ) {
 	var elt = document.createElement( 'div' );
 	elt.className = 'bookkeeper-ticks';
-	if ( ticks === 0 )
+	elt.dataset.bookkeeperLoc = cached.loc;
+	if ( cached.ticks === 0 )
 		elt.classList.add( 'red' );
-	else if ( ticks === 1 )
+	else if ( cached.ticks === 1 )
 		elt.classList.add( 'yellow' );
-	if (stocked) {
+	if (cached.stocked) {
 		elt.classList.add( 'grey' );
 	}
-	elt.textContent = ticks;
-	td.appendChild( elt );
+	elt.textContent = cached.ticks;
+	cached.td.appendChild( elt );
+	elt.addEventListener( 'click', onSkittleClick, false );
 }
 
 function hideTicks() {
@@ -251,17 +253,43 @@ function getNavArea() {
 
 function onToggleOverview( event ) {
 	var url;
+
 	event.preventDefault();
+
+	if ( bbox )
+		bbox.remove();
+
 	url = chrome.extension.getURL( '/html/bbox.html' );
-	console.log( 'bbox', url );
+	bbox = document.createElement( 'iframe' );
+	bbox.id = 'bookkeeper-overview-box';
+	bbox.src = url;
+	document.body.appendChild( bbox );
+}
 
-	if ( overview )
-		overview.remove();
+// Like the above, but we have loc
+function onSkittleClick( event ) {
+	var op;
 
-	overview = document.createElement( 'iframe' );
-	overview.id = 'bookkeeper-overview-box';
-	overview.src = url;
-	document.body.appendChild( overview );
+	event.preventDefault();
+
+	if ( bbox )
+		bbox.remove();
+
+	op = {
+		op: 'setPopUpData',
+		data: document.location.hostname[0].toUpperCase() +
+			event.target.dataset.bookkeeperLoc
+	};
+	chrome.runtime.sendMessage( op, onItsSet );
+
+	function onItsSet() {
+		var url;
+		url = chrome.extension.getURL( '/html/bbox.html' );
+		bbox = document.createElement( 'iframe' );
+		bbox.id = 'bookkeeper-overview-box';
+		bbox.src = url;
+		document.body.appendChild( bbox );
+	}
 }
 
 })();

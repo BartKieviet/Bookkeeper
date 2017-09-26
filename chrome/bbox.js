@@ -11,12 +11,20 @@ document.addEventListener( 'DOMContentLoaded', onDOM, false );
 // End of script execution.
 
 function onDOM() {
+	chrome.runtime.sendMessage( { op: 'queryPopUpData' }, onHaveData );
+}
+
+function onHaveData( data ) {
 	var e = document.createElement( 'h1' );
 	e.textContent = 'Hello!';
 	document.body.appendChild( e );
 
 	e = document.createElement( 'p' );
 	e.textContent = 'It is now ' + Building.now() + ' seconds past Jan 1 1970 00:00';
+	document.body.appendChild( e );
+
+	e = document.createElement( 'p' );
+	e.textContent = "We're supposed to show building " + data;
 	document.body.appendChild( e );
 
 	chrome.storage.sync.getBytesInUse(null, onKnownBytesInUse );
