@@ -124,6 +124,9 @@ function onMessage( event ) {
 	// This is needed.
 	if ( ticksEnabled )
 		showTicks();
+	
+	addTipDiv();
+
 }
 
 function showTicks() {
@@ -225,7 +228,9 @@ function addTickThingies( td, ticks, stocked ) {
 	}
 	elt.textContent = ticks;
 	td.appendChild( elt );
-}
+	elt.addEventListener('onmouseover', function () { tip(this, 'Food', 'Food', 'r') } );
+	//elt.addEventListener('onmouseout', nukeTip() )
+	}
 
 function hideTicks() {
 	var elts = getNavArea().getElementsByClassName( 'bookkeeper-ticks' );
@@ -240,6 +245,61 @@ function getNavArea() {
 	if ( !navTable )
 		navTable = document.getElementById( 'navarea' );
 	return navTable;
+}
+
+
+function addTipDiv() {
+	
+	//var table, tr, td, divTip;
+	// var description = 'test';
+	// var title = 'titletest';
+	// var source = 'Pardus Bookkeer';
+	
+	// table = document.createElement( 'table' );
+	// table.class = 'messagestyle';
+	// table.cellspacing = '0';
+	// table.cellpadding = '3';
+	// table.width = '100%';
+	// table.style = 'background:url("//static.pardus.at/img/std/bgd.gif")'
+
+	// tr = document.createElement( 'tr' );
+	// tr.appendChild ( document.createElement( 'b' ) );
+	// td = document.createElement( 'td' );
+	// td.style = 'text-align:left;background:#000000;';
+	// td.textContent = title
+	// tr.firstChild.appendChild( td );
+	// table.appendChild ( tr );	
+	
+	// tr = document.createElement( 'tr' );
+	// td = document.createElement( 'td' );
+	// td.style = 'text-align:left;';
+	// td.textContent = description
+	// tr.appendChild( td );
+	// table.appendChild ( tr );	
+
+	// tr = document.createElement( 'tr' );
+	// td = document.createElement( 'td' );
+	// td.height = '5';
+	// var spacer = document.createElement( 'spacer' );
+	// spacer.type = 'block';
+	// spacer.width = '1';
+	// spacer.height = '1';
+	// td.appendChild( spacer );
+	// tr.appendChild( td );
+	// table.appendChild ( tr );	
+	
+	// tr = document.createElement( 'tr' );
+	// td = document.createElement( 'td' );
+	// td.style = 'text-align:right;background:#31313A;';
+	// td.textContent = source
+	// tr.appendChild( td );
+	// table.appendChild ( tr );
+	
+	var divTip = document.createElement( 'div' );
+	divTip.id = "tipBox";
+	//divTip.appendChild ( table );
+	divTip.style.visibility="hidden"
+	document.body.appendChild ( divTip );
 }
 
 })();
