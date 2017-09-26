@@ -228,8 +228,8 @@ function addTickThingies( td, ticks, stocked ) {
 	}
 	elt.textContent = ticks;
 	td.appendChild( elt );
-	elt.addEventListener('onmouseover', function () { tip(this, 'Food', 'Food', 'r') } );
-	//elt.addEventListener('onmouseout', nukeTip() )
+	elt.addEventListener('click', function () { tip(this, 'Food', 'Food', 'r') } );
+	elt.addEventListener('mouseout', nukeTip )
 	}
 
 function hideTicks() {
