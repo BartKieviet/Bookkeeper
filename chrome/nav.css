@@ -63,9 +63,8 @@ iframe#bookkeeper-overview-box {
 	/* W have to size it with js really this is just scaffolding */
 	width: 800px;
 	height: 480px;
-	top: 70%;
-	left: 50%;
-	transform: translate(-400px, -240px);
+	top: 500px;
+	left: 500px;
 }
 
 iframe#bookkeeper-building-box {
