@@ -8,15 +8,22 @@ body {
 	font-size: 12px;
 	color: #A1A1AF;
 	text-align: center;
+	overflow: hidden;
 }
 
 #overview {
-	display: inline-block;
-	width: auto;
-	border: outset 1px #A0B1C9;
-	margin-bottom: 2ex;
-	padding: 5px;
 	background: #00001C;
+	border: outset 1px #A0B1C9;
+	height: 100%;
+	left: 50%;
+	margin-bottom: 2ex;
+	margin: 0 auto;
+	min-width: 320px;
+	max-width: 100%;
+	overflow: auto;
+	padding: 5px;
+	position: absolute;
+	transform: translate(-50%,0);
 }
 
 #overview table {

@@ -182,9 +182,12 @@ Overview.prototype.refresh = function( callback ) {
 	function onHaveListData( data ) {
 
 		// Now fetch all buildings
-
-		list = data[ this.ukey ].map( bkey.bind(this) );
-		chrome.storage.sync.get( list, onHaveBuildingData.bind(this) );
+		list = data[ this.ukey ];
+		if ( list && list.length > 0 ) {
+			list = list.map( bkey.bind(this) );
+			chrome.storage.sync.get( list, onHaveBuildingData.bind(this) );
+		}
+		// XXX - should show something, "no elements to display" or whatever
 
 		function bkey( loc ) { return this.ukey + loc; }
 	}
@@ -512,6 +515,5 @@ function onHaveOptions( opts ) {
 
 	function onFresh() {
 		overview.sort( 'loc' );
-		console.log( 'overview bound', overview );
 	}
 }

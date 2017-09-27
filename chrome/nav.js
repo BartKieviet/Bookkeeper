@@ -17,7 +17,7 @@ var BLDGTILE_XPATH = document.createExpression(
 var TILEID_RX = /^nav(?:Ajax)?\((\d+)\)$/;
 
 var bldgTileCache, ticksToggle, ticksEnabled, bbox, userloc,
-    overviewToggle, overview;
+    overviewToggle, overview, resizeRunning;
 
 chrome.storage.local.get( 'navticks', configure );
 
@@ -260,9 +260,15 @@ function onToggleOverview( event ) {
 
 	event.preventDefault();
 
-	console.log( 'onToggleOverview', overview );
+	// XXX - We really should create the iframe the first time it's
+	// requested, and just hide/show it afterward, telling it to refresh
+	// when it's reshown.  That would avoid a visible reflow I'm still
+	// seeing.  However, for that, we need communication with the iframe,
+	// which is something I'm not going to do now.  One day I'll add that,
+	// and I'll fix the sizing issue too (see comment in setOverviewSize).
 
 	if ( overview === undefined ) {
+		// Show it
 		overviewToggle.disabled = true;
 		// open the overview
 		op = {
@@ -280,6 +286,8 @@ function onToggleOverview( event ) {
 		overview.remove();
 		overview = undefined;
 		overviewToggle.classList.remove( 'on' );
+		document.defaultView.removeEventListener(
+			'resize', onWindowResize );
 	}
 
 	function onItsSet() {
@@ -287,11 +295,85 @@ function onToggleOverview( event ) {
 		url = chrome.extension.getURL( '/html/overview.html' );
 		overview = document.createElement( 'iframe' );
 		overview.id = 'bookkeeper-overview-box';
+		setOverviewSize();
 		overview.src = url;
 		document.body.appendChild( overview );
 		overviewToggle.classList.add( 'on' );
 		overviewToggle.disabled = false;
+		document.defaultView.addEventListener(
+			'resize', onWindowResize );
 	}
+}
+
+function onWindowResize( event ) {
+	if ( resizeRunning )
+		return;
+	resizeRunning = true;
+	document.defaultView.requestAnimationFrame( setOverviewSize );
+}
+
+// This is called initially, and also every time the Window changes size (window
+// resizing, or device rotation).
+//
+// XXX - It's not the best we could do, but, for that we'd need to know how big
+// the document inside the iframe wants to be, and for *that* we'd need
+// communication with the overview page, so more mesaaging, and rather low-level
+// DOM hacking.  No time now.  Some day.
+
+function setOverviewSize() {
+	var window, fw, fh, nav, navw, navh, y, h;
+
+	resizeRunning = false;
+
+	if ( !overview )
+		return;
+
+	// The whole tab when running out of the frameset; otherwise the main
+	// Pardus frame.
+	window = document.defaultView;
+
+	// This is the real estate we have available to play with.
+	fw = window.innerWidth;
+	fh = window.innerHeight;
+
+	// I would love to use
+	//
+	//   document.getElementById( 'nav' ).getBoundingClientRect()
+	//
+	// and just measure the *actual* size of the nav TD.  That, however,
+	// would force a reflow which is nasty.  So instead we get the style of
+	// of the `navarea` table, and use width+28, height+25 to it, cause it
+	// seems that's the result of Pardus styling regardless of screen size.
+	nav = getNavArea();
+	navw = parseInt( nav.style.width ) || 704;
+	navh = parseInt( nav.style.height ) || 576;
+	navh += 25;
+	navw += 28;
+
+	// This is the y coordinate of the bottom edge of the nav grid, relative
+	// to the document.  Ideally, we'd want our iframe's top edge there.
+	y = navh + 8;
+
+	// And we'd like our iframe's bottom to sit 5px above the bottom of the
+	// window.
+
+	h = fh - 5 - y;
+
+	// If this results in a box too stumpy, then we'll invade the nav grid.
+	// Completely making up these numbers here btw, maybe K can come up with
+	// better ones, one day, in his fancy big monitor.
+	if ( h < 320 ) {
+		// Since now we don't need to fit so tightly, we can be a bit
+		// more ambitious and we'll ask for 480px.  But in no case we'll
+		// be taller than the nav grid, or the available height - 5.
+		h = Math.min( 480, navh, fh - 5 );
+		y = fh - 5 -h;
+	}
+
+	overview.style.top = y + 'px';
+	overview.style.left = '214px';
+	overview.width = Math.max( navw, fw - 428 );
+	overview.height = h;
 }
 
 // Like the above, but we have loc
