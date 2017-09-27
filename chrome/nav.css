@@ -53,13 +53,26 @@ div.bookkeeper-ticks.yellow { background: #f90 }
 div.bookkeeper-ticks.red { background: #900 }
 div.bookkeeper-ticks.grey { background: #808080 }
 
-iframe#bookkeeper-overview-box {
+iframe#bookkeeper-overview-box,
+iframe#bookkeeper-building-box {
 	position: fixed;
+	border: none;
+}
+
+iframe#bookkeeper-overview-box {
+	/* W have to size it with js really this is just scaffolding */
+	width: 800px;
+	height: 480px;
+	top: 50%;
+	left: 50%;
+	transform: translate(-400px, -240px);
+}
+
+iframe#bookkeeper-building-box {
+	background: #666;
+	color: #a1a1af;
 	width: 300px;
 	height: 200px;
 	top: 100px;
 	left: 100px;
-	background: #666;
-	color: #a1a1af;
-	border: none;
 }

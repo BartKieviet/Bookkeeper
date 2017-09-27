@@ -16,7 +16,8 @@ var BLDGTILE_XPATH = document.createExpression(
 // will be ""navAjax(142080)"; if it's disabled, it will be "nav(142080)".
 var TILEID_RX = /^nav(?:Ajax)?\((\d+)\)$/;
 
-var bldgTileCache, ticksToggle, ticksEnabled, overviewToggle, bbox, userloc;
+var bldgTileCache, ticksToggle, ticksEnabled, bbox, userloc,
+    overviewToggle, overview;
 
 chrome.storage.local.get( 'navticks', configure );
 
@@ -251,19 +252,46 @@ function getNavArea() {
 	return navTable;
 }
 
+// XXX - The following two handlers are too similar, combine common
+// functionality in one call.
+
 function onToggleOverview( event ) {
-	var url;
+	var op;
 
 	event.preventDefault();
 
-	if ( bbox )
-		bbox.remove();
+	console.log( 'onToggleOverview', overview );
 
-	url = chrome.extension.getURL( '/html/bbox.html' );
-	bbox = document.createElement( 'iframe' );
-	bbox.id = 'bookkeeper-overview-box';
-	bbox.src = url;
-	document.body.appendChild( bbox );
+	if ( overview === undefined ) {
+		overviewToggle.disabled = true;
+		// open the overview
+		op = {
+			op: 'setPopUpData',
+			data: {
+				ukey: document.location.hostname[0].
+					toUpperCase(),
+				mode: 'nav-embedded'
+			}
+		};
+		chrome.runtime.sendMessage( op, onItsSet );
+	}
+	else {
+		// hide it
+		overview.remove();
+		overview = undefined;
+		overviewToggle.classList.remove( 'on' );
+	}
+
+	function onItsSet() {
+		var url;
+		url = chrome.extension.getURL( '/html/overview.html' );
+		overview = document.createElement( 'iframe' );
+		overview.id = 'bookkeeper-overview-box';
+		overview.src = url;
+		document.body.appendChild( overview );
+		overviewToggle.classList.add( 'on' );
+		overviewToggle.disabled = false;
+	}
 }
 
 // Like the above, but we have loc
@@ -286,7 +314,7 @@ function onSkittleClick( event ) {
 		var url;
 		url = chrome.extension.getURL( '/html/bbox.html' );
 		bbox = document.createElement( 'iframe' );
-		bbox.id = 'bookkeeper-overview-box';
+		bbox.id = 'bookkeeper-building-box';
 		bbox.src = url;
 		document.body.appendChild( bbox );
 	}

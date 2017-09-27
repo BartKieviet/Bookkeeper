@@ -1,0 +1,61 @@
+/* Stylesheet loaded by iframes. Replicates Pardus style. */
+
+body {
+	margin-left: 3px;
+	margin-right: 3px;
+	background: #00001C;
+	font-family: Helvetica, Arial, sans-serif;
+	font-size: 12px;
+	color: #A1A1AF;
+	text-align: left;
+}
+
+#overview {
+	border: outset 1px #A0B1C9;
+	margin-bottom: 2ex;
+	padding: 5px;
+}
+
+#overview table {
+	border-collapse: collapse;
+}
+
+#overview th {
+	padding: 0 2px;
+	background: #a1a1af;
+	color: #00001c;
+	font-weight: bold;
+	text-align: center;
+	border-left: solid 2px #00001c;
+	border-right: solid 2px #00001c;
+}
+
+#overview th.c {
+	background: #3b3b49;
+	border: none;
+}
+
+#overview tbody {
+	cursor: crosshair;
+}
+
+#overview tbody tr:hover {
+	background-color: #1a1a36;
+}
+
+#overview td {
+	border: solid 1px #1a1a36;
+}
+
+#overview td.r,
+#overview td.c {
+	text-align: right;
+}
+
+/* Colours for profit/deficit from the trade log screens */
+#overview td.lime {
+	color: #8AB797;
+}
+#overview td.pink {
+	color: #B78A8E;
+}
