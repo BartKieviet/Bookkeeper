@@ -51,6 +51,11 @@ body {
 	color: #a1a1af;
 }
 
+/* make these wider, otherwise they start to wrap */
+#overview th.time {
+	min-width: 5em;
+}
+
 #overview th.asc::after {
 	content: "▲"
 }

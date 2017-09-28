@@ -111,9 +111,17 @@ var ROWSPEC = {
 	},
 
 	time: {
-		header: simpleHeader( 'Time' ),
-		cell: rCell(
-			function( b ) { return formatTime( b.time * 1000 ); } ),
+		header: function( th ) {
+			th.textContent = 'Time';
+			// we want these to pick a special style
+			th.classList.add( 'r', 'time' );
+		},
+		cell: function( b, td ) {
+			var t = new Date( b.time * 1000 );
+			td.textContent = formatTime( t, this.dateNow );
+			td.className = 'r';
+			td.title = t.toLocaleString();
+		},
 		sortKey: 'time',
 		sort: function( a, b ) { return a.time - b.time; },
 		initDesc: true
@@ -279,6 +287,11 @@ Overview.prototype.refresh = function( callback ) {
 		this.buildings = bldgs;
 		this.now = Building.now();
 
+		// Set this so we don't have spec functions creating thousands
+		// of these if they need it.
+
+		this.dateNow = new Date( this.now * 1000 );
+
 		clearElement( this.elements.rows );
 		clearElement( this.elements.foot );
 		clearElement( this.elements.head );
@@ -344,7 +357,7 @@ function makeRowSpec() {
 		ROWSPEC.coords, ROWSPEC.type, ROWSPEC.owner, ROWSPEC.level );
 	this.commodities.forEach( pushComm.bind(this) );
 	this.rowSpec.push(
-		/*ROWSPEC.time,*/ ROWSPEC.ticksLeft, ROWSPEC.ticksNow );
+		ROWSPEC.time, ROWSPEC.ticksLeft, ROWSPEC.ticksNow );
 
 	function pushComm( commId ) {
 		this.rowSpec.push( {
@@ -526,36 +539,36 @@ function getCommoditiesInUse( buildings ) {
 		function( r, x, id ) { r.push(id); return r; }, [] );
 }
 
-// Return an object with two properties: `s` is a short form suitable for adding
-// to a table cell; `l` is a long one suitable for the cell's title (so it shows
-// on mouseover).
+// Format a timestamp in a way that's short and readable.  Parameter `timestamp`
+// is the time to format, parameter `now` is the current time.  Both are
+// instances of Date, not numeric timestamps like we use everywhere else.
+//
+// XXX - should we try things like "seconds ago", "2 hours ago" etc.?
 
-function formatTime( timestamp ) {
-	var t = new Date( timestamp ),
-	    now = Date.now(),
-	    s;
+function formatTime( t, now ) {
 
-	// If the date is old, we just display the day and month.
-	// 432000000 is the number of milliseconds in five days.
-	if ( now - timestamp > 432000000 ) {
-		s = CalendarNames.MONTHS[ t.getMonth() ] + ' ' + t.getDate();
-	}
-	else {
-		now = new Date( now );
-		if ( now.getDate() == t.getDate() )
-			// This is today.  Just the time will do.
-			// We'll add seconds because why not.
-			s = twoDigits( t.getHours() )
-			  + ':' + twoDigits( t.getMinutes() )
-			  + ':' + twoDigits( t.getSeconds() );
-		else
-			// Show weekday and time.
-			s = CalendarNames.WEEKDAYS[ t.getDay() ] + ' '
-			  + twoDigits( t.getHours() )
-			  + ':' + twoDigits( t.getMinutes() );
+	// If the date is old, use the day and month.  432000000 is the number
+	// of milliseconds in five days.
+
+	if ( now.getTime() - t.getTime() > 432000000 ) {
+		return CalendarNames.MONTHS[ t.getMonth() ] + ' ' + t.getDate();
 	}
 
-	return { s: s, l: t.toLocaleString() }
+	if ( now.getDate() === t.getDate() ) {
+
+		// This is today.  Just the time will do.  We'll add seconds
+		// because why not.
+
+		return twoDigits( t.getHours() )
+		     + ':' + twoDigits( t.getMinutes() )
+		     + ':' + twoDigits( t.getSeconds() );
+	}
+
+	// Weekday and time.
+
+	return CalendarNames.WEEKDAYS[ t.getDay() ] + ' '
+	     + twoDigits( t.getHours() )
+	     + ':' + twoDigits( t.getMinutes() );
 
 	function twoDigits( n ) {
 		n = String(n);
