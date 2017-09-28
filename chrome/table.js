@@ -3,63 +3,23 @@
 
 var BKTable = (function() {
 
-
-
-// ## 1. Methods
-
-
-
 // Constructor.
 //
 // Options is an object with a property `ukey` that should be 'A', 'O', 'P' as
 // usual.  An optional `mode` property sets specific behaviour that I'll
-// document later.
+// document later.  A reference to this object is kept in the `options` instance
+// property.
 //
 // This associates the BKTable instance with a particular document.  A reference
-// to this document is kept by this instance for all further DOM operations.
-// Basic DOM elements for the table are created here, too, but they are NOT
-// attached to the document's DOM.  That should be done after the table is
-// created, with something like:
+// to this document is kept in the `doc` instance property.  Basic DOM elements
+// for the table are created here, too, and references are kept in the
+// `elements` instance property.  These are NOT attached to the document's DOM,
+// though.  That should be done after the table is created, with something like:
 //
 //   someNode.appendChild( tableInstance.elements.container ).
-
-// XXX
-
-// This below is a catalogue of _column specifications_ for the overview.  A
-// column specification is an object with these properties:
 //
-// `header`: a function that sets up the TH for the title of the column.  This
-// function receives the TH element already created, and should set its
-// textContent, and possibly className and whatever else is needed.  It will be
-// called once when creating the table's header.
-//
-// `cell`: a function that sets up the TD for this column's cell in a row.  When
-// called, this function receives TWO parameters: the Building instance that is
-// being displayed in the row, and the TD element already created.  It should
-// set the TD's textContent, className, whatever else is needed.  This function
-// is called once for every row in the table.
-//
-// `sortKey` is an optional string.  If given, the column is sortable, and this
-// column's criterion can be selected by passing the key to
-// Overview.prototype.sort.
-//
-// `sort` is a function that compares two Building instances, according to this
-// column's sort criterion.  Return negative, zero, or positive, as usual.
-//
-// `initDesc` is an optional flag that specifies that, when sorting by this
-// column for the first time, the order should be descending.  Further sorts by
-// the same column will switch direction as usual, this just sets the initial
-// direction.
-//
-// All callbacks in the spec are called with `this` set to the Overview
-// instance.  One can e.g. refer to `this.now` within them, and get the time at
-// which the overview table refresh started.
-//
-// Not every item in this catalogue is used every time.  The Overview table
-// chooses the appropriate ones at refresh, depending on the current filtering
-// and mode, and that determines completely the layout of the table.
-//
-// Commodity columns get synthesised specs, they don't appear in this catalogue.
+// One may set additional properties on the BKTable instance, so that spec
+// handlers may refer to them (see below).
 
 // XXX document options.id, options.defaultSortKey
 
@@ -93,10 +53,43 @@ function BKTable( options, document ) {
 	this.elements = elements;
 }
 
-// Fetches configuration and data from storage and recomputes the whole table.
-// Call this when the filter changes.  This does not redisplay the table yet,
-// that happens in `sort` below.
+// Prepares the table to display a collection of items.  This does not construct
+// the DOM table yet, that happens in BKTable.prototype.sort.
+//
+// `spec` is an object one or two properties: `columns`, an array of column
+// specifications; and an optional `foot`, a function that canstructs a table
+// footer.  `items` is an array of arbitrary objects.
+//
+// Column specifications are objects with the following properties:
+//
+// `header`: a function that sets up the TH element for the title of the column.
+// This function receives the TH element already created, and should set its
+// textContent, and possibly className and whatever else is needed.  It will be
+// called once when creating the table's header.
+//
+// `cell`: a function that sets up the TD for this column's cell in a row.  When
+// called, this function receives TWO parameters: the item that is being
+// displayed in the row, and the TD element already created.  It should set the
+// TD's textContent, className, whatever else is needed.  This function is
+// called once for every row in the table.
+//
+// `sortKey` is an optional string.  If given, the column is sortable, and this
+// column's criterion can be selected by passing the key to
+// BKTable.prototype.sort.
+//
+// `sort` is a function that compares two Building instances, according to this
+// column's sort criterion.  Return negative, zero, or positive, as usual.
+//
+// `initDesc` is an optional flag that specifies that, when sorting by this
+// column for the first time, the order should be descending.  Further sorts by
+// the same column will switch direction as usual, this just sets the initial
+// direction.
+//
+// All functions in the spec are called with `this` set to the BKTable instance.
+// So one can set custom properties in the BKTable instance, and refer to them
+// from the various spec functions.
 
+// XXX - move makeHead to sort
 // XXX - filters go here
 
 BKTable.prototype.refresh = function( spec, items ) {
@@ -114,8 +107,8 @@ BKTable.prototype.refresh = function( spec, items ) {
 	makeHead.call( this );
 }
 
-// Sort the table and redisplay it.  This is the actual function that creates a
-// visible table.  `asc` is optional.
+// Sort the table and rebuild its DOM.  This is the actual function that creates
+// a visible table.  `asc` is optional.
 
 BKTable.prototype.sort = function( sortKey, asc ) {
 	var sort, fn;
@@ -161,10 +154,9 @@ BKTable.prototype.sort = function( sortKey, asc ) {
 
 
 
-// ## 3. Private functions and stuff.
+// Private functions and utilities.
 //
-// Functions below using `this` are called in the context of an BKTable
-// instance.
+// Functions below using `this` are called in the context of a BKTable instance.
 
 
 

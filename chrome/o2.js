@@ -12,7 +12,7 @@ var BKTable; // from table.js
 
 var Overview = (function() {
 
-// This is a catalogue of "row specs".
+// This is a catalogue of "column specifications", as expected by BKTable.
 
 var COLUMN_SPECS = {
 	location: {
@@ -131,10 +131,6 @@ function rCell( fn ) {
 	}
 }
 
-
-
-// ## 2. Methods
-
 var Overview = {};
 
 // Fetches configuration and data from storage, and creates a table with it.
@@ -208,7 +204,7 @@ Overview.makeNavOverview = function( ukey, document, callback ) {
 	}
 }
 
-// Private functions and stuff.
+// Private functions and utilities.
 
 function makeNavColSpec( table, buildings ) {
 	var columns, commodities, totals, beforeTotals, afterTotals;
@@ -331,8 +327,6 @@ function makeNavColSpec( table, buildings ) {
 		}
 	}
 }
-
-// Make the one or two rows in the table footer.  Assume tfoot is already empty.
 
 function setCommodityTD( td, commId, n ) {
 	td.textContent = n;
