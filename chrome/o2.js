@@ -3,7 +3,55 @@ var Commodities; // from commodity.js
 var CalendarNames; // from functions.js
 var Sector; // from sector.js
 
+
+
+// This is an almost generic sortable and filterable table controller.  It's
+// still specific to sorting Building instances, but, if some day we need to
+// make a table of something else, I'll go the last mile here and make it truly
+// generic, a table of things.  ~V
+
+
+
 var Overview = (function() {
+
+
+// ## 1. Private definitions
+
+// This below is a catalogue of _column specifications_ for the overview.  A
+// column specification is an object with these properties:
+//
+// `header`: a function that sets up the TH for the title of the column.  This
+// function receives the TH element already created, and should set its
+// textContent, and possibly className and whatever else is needed.  It will be
+// called once when creating the table's header.
+//
+// `cell`: a function that sets up the TD for this column's cell in a row.  When
+// called, this function receives TWO parameters: the Building instance that is
+// being displayed in the row, and the TD element already created.  It should
+// set the TD's textContent, className, whatever else is needed.  This function
+// is called once for every row in the table.
+//
+// `sortKey` is an optional string.  If given, the column is sortable, and this
+// column's criterion can be selected by passing the key to
+// Overview.prototype.sort.
+//
+// `sort` is a function that compares two Building instances, according to this
+// column's sort criterion.  Return negative, zero, or positive, as usual.
+//
+// `initDesc` is an optional flag that specifies that, when sorting by this
+// column for the first time, the order should be descending.  Further sorts by
+// the same column will switch direction as usual, this just sets the initial
+// direction.
+//
+// All callbacks in the spec are called with `this` set to the Overview
+// instance.  One can e.g. refer to `this.now` within them, and get the time at
+// which the overview table refresh started.
+//
+// Not every item in this catalogue is used every time.  The Overview table
+// chooses the appropriate ones at refresh, depending on the current filtering
+// and mode, and that determines completely the layout of the table.
+//
+// Commodity columns get synthesised specs, they don't appear in this catalogue.
 
 var ROWSPEC = {
 	location: {
@@ -25,8 +73,8 @@ var ROWSPEC = {
 	},
 
 	// This one is useful when the overview is filtered by sector: show only
-	// coords, and don't bother doing the sector name comparison in sort.
-	locationNav: {
+	// coords, and don't bother with sector name comparisons.
+	coords: {
 		header: simpleHeader( 'Loc' ),
 		cell: rCell( function( b ) {
 			var coords = Sector.getCoords( b.sectorId, b.loc );
@@ -111,7 +159,17 @@ function rCell( fn ) {
 	}
 }
 
-// Constructor
+
+
+// ## 2. Methods
+
+
+
+// Constructor.
+//
+// Options is an object with a property `ukey` that should be 'A', 'O', 'P' as
+// usual.  An optional `mode` property sets specific behaviour that I'll
+// document later.
 
 function Overview( options ) {
 	this.ukey = options.ukey;
@@ -126,6 +184,14 @@ function Overview( options ) {
 		this.sortAscKey = this.ukey + 'OverviewSortAsc';
 	}
 }
+
+// This associates the Overview instance with a particular document.  A
+// reference to this document is kept by this instance for all further DOM
+// operations.  Basic DOM elements for the table are created here, too, but they
+// are NOT attached to the document's DOM.  That should be done after this call,
+// with something like:
+//
+//   someNode.appendChild( overviewInstance.elements.container ).
 
 Overview.prototype.bindToDocument = function( doc ) {
 	var elements;
@@ -155,6 +221,13 @@ Overview.prototype.bindToDocument = function( doc ) {
 
 	this.elements = elements;
 }
+
+// Fetches configuration and data from storage and recomputes the whole table.
+// Call this when the filter changes.  This does not redisplay the table yet,
+// that happens in `sort` below.
+//
+// This returns immediately, then the callback is called when ready to display.
+// It may take a bit.
 
 Overview.prototype.refresh = function( callback ) {
 	var keys, list;
@@ -218,6 +291,9 @@ Overview.prototype.refresh = function( callback ) {
 	}
 }
 
+// Sort the table and redisplay it.  This is the actual function that creates a
+// visible table.  `asc` is optional.
+
 Overview.prototype.sort = function( sortKey, asc ) {
 	var sort, fn;
 
@@ -251,6 +327,12 @@ Overview.prototype.sort = function( sortKey, asc ) {
 	makeRows.call( this );
 }
 
+
+
+// ## 3. Private functions and stuff.
+
+
+
 function makeRowSpec() {
 	// XXX - we'll change this when filtering
 
@@ -259,7 +341,7 @@ function makeRowSpec() {
 	this.sorts = {};
 
 	this.rowSpec.push(
-		ROWSPEC.locationNav, ROWSPEC.type, ROWSPEC.owner, ROWSPEC.level );
+		ROWSPEC.coords, ROWSPEC.type, ROWSPEC.owner, ROWSPEC.level );
 	this.commodities.forEach( pushComm.bind(this) );
 	this.rowSpec.push(
 		/*ROWSPEC.time,*/ ROWSPEC.ticksLeft, ROWSPEC.ticksNow );
