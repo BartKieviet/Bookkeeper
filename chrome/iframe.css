@@ -27,7 +27,7 @@ body {
 }
 
 #overview table {
-	margin: 0 auto;
+	margin: 0 auto 8px auto;
 	border-collapse: collapse;
 }
 

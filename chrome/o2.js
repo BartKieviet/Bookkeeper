@@ -338,11 +338,15 @@ Overview.prototype.sort = function( sortKey, asc ) {
 
 	clearElement( this.elements.rows );
 	makeRows.call( this );
+	makeFoot.call( this );
 }
 
 
 
 // ## 3. Private functions and stuff.
+//
+// Functions below using `this` are called in the context of an Overview
+// instance.
 
 
 
@@ -352,12 +356,18 @@ function makeRowSpec() {
 	this.rowSpec = [];
 	this.commodities = getCommoditiesInUse( this.buildings );
 	this.sorts = {};
+	this.totals = [];
 
 	this.rowSpec.push(
 		ROWSPEC.coords, ROWSPEC.type, ROWSPEC.owner, ROWSPEC.level );
 	this.commodities.forEach( pushComm.bind(this) );
 	this.rowSpec.push(
 		ROWSPEC.time, ROWSPEC.ticksLeft, ROWSPEC.ticksNow );
+
+	// XXX - don't really have a clean abstract way of dealing with totals,
+	// sadly.  It means there are 4 columns before the commodities.
+	this.totalsSpanBefore = 4;
+	this.totalsSpanAfter = 3;
 
 	function pushComm( commId ) {
 		this.rowSpec.push( {
@@ -370,8 +380,56 @@ function makeRowSpec() {
 	}
 }
 
-// Construct the TH elements in the table head.  Assume the row is already empty.
-// Called with `this` set as an Overview instance
+// Another function that constructs a function.  This one makes the `header`
+// function for the spec of a commodity column.
+
+function makeCommHeaderFn( commId ) {
+	return function( th ) {
+		var comm, img;
+
+		comm = Commodities.getCommodity( commId );
+		img = this.doc.createElement( 'img' );
+
+		// XXX should we have fetched the protocol (HTTP or
+		// HTTPS) from the Pardus page, to use the same here?
+		img.src = 'http://static.pardus.at/img/stdhq/res/'
+			+ comm.i + '.png';
+		img.title = comm.n;
+		th.className = 'c';
+		th.appendChild( img );
+		th.dataset.sort = commId;
+	}
+}
+
+// And another.  This one makes the `cell` function for the spec of a commodity.
+
+function makeCommCellFn( commId ) {
+	return function( building, td ) {
+		var n = overviewFigure( building, commId );
+		if ( n !== undefined ) {
+			setCommodityTD( td, commId, n );
+			this.totals[ commId ] =
+				( this.totals[commId] || 0 ) + n;
+		}
+	};
+}
+
+// One more.  Makes the `sort` function for the spec of a commodity.
+
+function makeCommSortFn( commId ) {
+	return function( a, b ) {
+		a = sortval( overviewFigure(a, commId) );
+		b = sortval( overviewFigure(b, commId) );
+		return a - b;
+	}
+
+	function sortval( n ) {
+		return n === undefined ? -Infinity : n;
+	}
+}
+
+// Make the single row of the table header.  Assume thead is already empty.
+
 function makeHead() {
 	var tr =  this.doc.createElement( 'tr' );
 	this.rowSpec.forEach( makeTH.bind(this) );
@@ -396,12 +454,12 @@ function makeHead() {
 	}
 }
 
-// Construct the TD elements in the table row.  Assume the row is already empty.
-// Called with `this` set as an Overview instance
-function makeRows() {
-	var now, doc, rows;
+// Make a row per building, and TD elements for each row according to spec.
+// Assume tbody is already empty.
 
-	now = Building.now();
+function makeRows() {
+	var doc, rows;
+
 	this.buildings.forEach( addRow.bind(this) );
 
 	function addRow( building ) {
@@ -418,64 +476,60 @@ function makeRows() {
 	}
 }
 
-// Another function that constructs a function.  The returned function will be
-// called whenever overview wants to render the header of a commodity column.
-// It will be called with `this` set to the Overview instance.
+// Make the one or two rows in the table footer.  Assume tfoot is already empty.
 
-function makeCommHeaderFn( commId ) {
-	return function( th ) {
-		var comm, img;
+function makeFoot() {
+	var append, first, last, tr, cell, i, end, total;
 
-		comm = Commodities.getCommodity( commId );
-		img = this.doc.createElement( 'img' );
+	// save typing
+	append = (function( tagName, className ) {
+		       cell = document.createElement( tagName );
+		       if ( className ) cell.className = className;
+		       tr.appendChild( cell );
+	       }).bind(this);
 
-		// XXX should we have fetched the protocol (HTTP or
-		// HTTPS) from the Pardus page, to use the same here?
-		img.src = 'http://static.pardus.at/img/stdhq/res/'
-			+ comm.i + '.png';
-		img.title = comm.n;
-		th.className = 'c';
-		th.appendChild( img );
-		th.dataset.sort = commId;
+	first = this.totalsSpanBefore;
+	last = this.rowSpec.length - this.totalsSpanAfter;
+
+	tr = this.doc.createElement( 'tr' );
+	append( 'td', 'r' );
+	cell.colSpan = first;
+	for ( i = first, end = last; i < end; i++ ) {
+		append( 'td' );
+		total = this.totals[ i ];
+		if ( total !== undefined )
+			setCommodityTD(
+				cell, this.commodities[i-first], total );
 	}
-}
+	append( 'td' );
+	cell.colSpan = this.totalsSpanAfter;
+	this.elements.foot.appendChild( tr );
 
-// And another.  The returned function will be called whenever overview wants to
-// render a commodity cell.  It will be called with `this` set to the Overview
-// instance.
-
-function makeCommCellFn( commId ) {
-	return function( building, td ) {
-		var n = overviewFigure( building, commId );
-		if ( n !== undefined ) {
-			td.textContent = n;
-			td.title = Commodities.getCommodity( commId ).n;
-			td.className = 'c';
-			if ( n > 0 )
-				td.classList.add( 'lime' );
-			else if ( n < 0 )
-				td.classList.add( 'pink' );
-
-			//sums [j] += parseInt(n);
+	// Arbitrary limit
+	if ( this.buildings.length > 24 ) {
+		tr = this.doc.createElement( 'tr' );
+		for ( i = 0, end = this.rowSpec.length; i < end; i++ ) {
+			append( 'th' )
+			this.rowSpec[ i ].header.call( this, cell );
 		}
-	};
-}
-
-function makeCommSortFn( commId ) {
-	return function( a, b ) {
-		a = sortval( overviewFigure(a, commId) );
-		b = sortval( overviewFigure(b, commId) );
-		return a - b;
-	}
-
-	function sortval( n ) {
-		return n === undefined ? -Infinity : n;
+		this.elements.foot.appendChild( tr );
 	}
 }
 
-// Given a building `b` and a commodity `comm`, return the number to display in
-// the overview table (negative upkeep, positive production, zero, or undefined
-// if the building doesn't trade in that commodity.
+function setCommodityTD( td, commId, n ) {
+	td.textContent = n;
+	td.title = Commodities.getCommodity( commId ).n;
+	td.className = 'c';
+	if ( n > 0 )
+		td.classList.add( 'lime' );
+	else if ( n < 0 )
+		td.classList.add( 'pink' );
+}
+
+// Given a building and commodity id, return the number to display in the
+// overview table: negative upkeep, positive production, zero, or undefined if
+// the building doesn't trade in that commodity.
+
 function overviewFigure( building, commId ) {
 	if ( building.isUpkeep( commId ) &&
 	     building.toBuy[commId] !== undefined )
