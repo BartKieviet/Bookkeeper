@@ -285,11 +285,11 @@ Overview.prototype.refresh = function( callback ) {
 
 		this.list = list;
 		this.buildings = bldgs;
+		this.needFoot = true;
 		this.now = Building.now();
 
 		// Set this so we don't have spec functions creating thousands
 		// of these if they need it.
-
 		this.dateNow = new Date( this.now * 1000 );
 
 		clearElement( this.elements.rows );
@@ -338,7 +338,8 @@ Overview.prototype.sort = function( sortKey, asc ) {
 
 	clearElement( this.elements.rows );
 	makeRows.call( this );
-	makeFoot.call( this );
+	if ( this.needFoot )
+		makeFoot.call( this );
 }
 
 
@@ -479,7 +480,7 @@ function makeRows() {
 // Make the one or two rows in the table footer.  Assume tfoot is already empty.
 
 function makeFoot() {
-	var append, first, last, tr, cell, i, end, total;
+	var append, first, last, tr, cell, i, end, total, id;
 
 	// save typing
 	append = (function( tagName, className ) {
@@ -496,10 +497,11 @@ function makeFoot() {
 	cell.colSpan = first;
 	for ( i = first, end = last; i < end; i++ ) {
 		append( 'td' );
-		total = this.totals[ i ];
+		id = this.commodities[i-first];
+		total = this.totals[ id ];
 		if ( total !== undefined )
 			setCommodityTD(
-				cell, this.commodities[i-first], total );
+				cell, id, total );
 	}
 	append( 'td' );
 	cell.colSpan = this.totalsSpanAfter;
@@ -514,6 +516,9 @@ function makeFoot() {
 		}
 		this.elements.foot.appendChild( tr );
 	}
+
+	// Don't do this again until the next refresh.
+	this.needFoot = false;
 }
 
 function setCommodityTD( td, commId, n ) {
