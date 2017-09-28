@@ -371,8 +371,8 @@ function setOverviewSize() {
 	}
 
 	overview.style.top = y + 'px';
-	overview.style.left = '214px';
-	overview.width = Math.max( navw, fw - 428 );
+	overview.style.left = '180px';
+	overview.width = Math.max( navw, fw - 360 );
 	overview.height = h;
 }
 
