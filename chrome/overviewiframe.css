@@ -1,0 +1,30 @@
+/* Replicate Pardus style and set special style for embedded overview */
+
+body {
+	margin: 0;
+	padding: 0;
+	background: transparent;
+	font-family: Helvetica, Arial, sans-serif;
+	font-size: 12px;
+	color: #A1A1AF;
+	text-align: center;
+	overflow: hidden;
+}
+
+#bookkeeper-overview.nav {
+	/* XXX test if no warnings when playing under HTTPS */
+	background: url('http://static.pardus.at/img/stdhq/bg.gif');
+	display: block;
+	height: 100%;
+	left: 50%;
+	margin: 0 auto;
+	max-width: 100%;
+	min-width: 320px;
+	overflow: auto;
+	position: absolute;
+	transform: translate(-50%,0);
+}
+
+#bookkeeper-overview.nav table {
+	margin: 0 auto 8px auto;
+}

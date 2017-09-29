@@ -5,23 +5,29 @@ var BKTable = (function() {
 
 // Constructor.
 //
-// Options is an object with a property `ukey` that should be 'A', 'O', 'P' as
-// usual.  An optional `mode` property sets specific behaviour that I'll
-// document later.  A reference to this object is kept in the `options` instance
-// property.
-//
-// This associates the BKTable instance with a particular document.  A reference
-// to this document is kept in the `doc` instance property.  Basic DOM elements
-// for the table are created here, too, and references are kept in the
-// `elements` instance property.  These are NOT attached to the document's DOM,
-// though.  That should be done after the table is created, with something like:
+// This creates a BKTable instance and associates it with a particular document.
+// A reference to this document is kept in the `doc` instance property.  Basic
+// DOM elements for the table are created here, too, and references are kept in
+// the `elements` instance property.  These are NOT attached to the document's
+// DOM, though; that should be done after the table is created, with something
+// like:
 //
 //   someNode.appendChild( tableInstance.elements.container ).
 //
-// One may set additional properties on the BKTable instance, so that spec
-// handlers may refer to them (see below).
-
-// XXX document options.id, options.defaultSortKey
+// `options` is an object with a property `ukey` that should be 'A', 'O', 'P' as
+// usual.  Optional property `defaultSortId` provides a fallback to use by
+// BKTable.prototype.sort in case the id passed there is not recognised.
+// Optional properties `id` and `className` set the DOM id and class name of the
+// container element.  Optional property `noFooter`, if true, specifies that a
+// table footer will never be needed so no TFOOT element should be created.
+//
+// A reference to the options object is kept in the `options` instance property,
+// so it may be accessed by spec functions (see below).
+//
+// After the table is created, you may set property `onSort` on the instance
+// directly, to a function, if you want to be called when the table is
+// re-sorted.  One may set additional instance properties so that spec functions
+// may access those, too.
 
 function BKTable( options, document ) {
 	var elements;
@@ -38,6 +44,8 @@ function BKTable( options, document ) {
 
 	if( this.options.id )
 		elements.container.id = this.options.id;
+	if( this.options.className )
+		elements.container.className = this.options.className;
 
 	elements.table.appendChild( elements.head );
 	elements.table.appendChild( elements.rows );
@@ -73,7 +81,7 @@ function BKTable( options, document ) {
 // TD's textContent, className, whatever else is needed.  This function is
 // called once for every row in the table.
 //
-// `sortKey` is an optional string.  If given, the column is sortable, and this
+// `sortId` is an optional string.  If given, the column is sortable, and this
 // column's criterion can be selected by passing the key to
 // BKTable.prototype.sort.
 //
@@ -110,27 +118,27 @@ BKTable.prototype.refresh = function( spec, items ) {
 // Sort the table and rebuild its DOM.  This is the actual function that creates
 // a visible table.  `asc` is optional.
 
-BKTable.prototype.sort = function( sortKey, asc ) {
+BKTable.prototype.sort = function( sortId, asc ) {
 	var sort, fn;
 
-	if ( this.sortKey !== undefined )
-		this.sorts[ this.sortKey ].th.classList.remove( 'asc', 'dsc' );
+	if ( this.sortId !== undefined )
+		this.sorts[ this.sortId ].th.classList.remove( 'asc', 'dsc' );
 
-	sort = this.sorts[ sortKey ];
+	sort = this.sorts[ sortId ];
 	if ( sort === undefined ) {
-		sortKey = this.options.defaultSortKey;
-		sort = this.sorts[ sortKey ];
+		sortId = this.options.defaultSortId;
+		sort = this.sorts[ sortId ];
 	}
 
 	if ( asc === undefined ) {
-		if ( this.sortKey === sortKey )
+		if ( this.sortId === sortId )
 			this.sortAsc = !this.sortAsc;
 		else
 			this.sortAsc = sort.initAsc;
 	}
 	else
 		this.sortAsc = asc;
-	this.sortKey = sortKey;
+	this.sortId = sortId;
 
 	if ( this.sortAsc ) {
 		fn = sort.fn;
@@ -168,14 +176,15 @@ function makeHead() {
 	this.elements.head.appendChild( tr );
 
 	function makeTH( spec ) {
-		var th, sortKey;
+		var th, sortId;
 
 		th = this.doc.createElement( 'th' );
 		spec.header.call( this, th );
 
-		if ( spec.sort ) {
-			th.dataset.sort = spec.sortKey;
-			this.sorts[ spec.sortKey ] = {
+		if ( spec.sortId ) {
+			th.classList.add( 'sort' );
+			th.dataset.sort = spec.sortId;
+			this.sorts[ spec.sortId ] = {
 				th: th,
 				fn: spec.sort.bind( this ),
 				initAsc: !spec.initDesc
@@ -209,23 +218,25 @@ function makeRows() {
 }
 
 function onHeaderClick( event ) {
-	var target, sort;
+	var target, sortId;
 
 	// The target may be the TH, or it may be the IMG we tuck inside the
 	// TH.
 
 	target = event.target;
-	while ( (sort = target.dataset.sort) === undefined &&
+	while ( (sortId = target.dataset.sort) === undefined &&
 		target !== event.currentTarget &&
 		target.parentElement !== null ) {
 		target = target.parentElement;
 	}
 
-	if ( sort === undefined )
+	if ( sortId === undefined )
 		return;
 
 	event.stopPropagation();
-	this.sort( sort );
+	this.sort( sortId );
+	if ( this.onSort )
+		this.onSort.call( this );
 }
 
 function clearElement( element ) {
