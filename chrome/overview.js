@@ -82,7 +82,7 @@ var COLUMN_SPECS = {
 	},
 
 	ticksLeft: {
-		header: simpleHeader( 'Tick' ),
+		header: simpleHeader( 'Ticks' ),
 		cell: rCell( function( b ) { return b.ticksLeft; } ),
 		sortId: 'tick',
 		sort: function( a, b ) { return a.ticksLeft - b.ticksLeft; }
