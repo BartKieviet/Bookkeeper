@@ -1,9 +1,171 @@
-// Stuff for making overview tables of all forms and shapes.
-
 // From other scripts:
-var Building, Commodities, CalendarNames, Sector, BKTable;
+var Building, Commodities, CalendarNames, Sector, BKTable, Filter;
+
+// Overview is a UI component that contains a Filter and a BKTable, and mediates
+// the interaction between those.
 
 var Overview = (function() {
+
+// Construct a new Overview.  This creates the DOM element, but does not attach
+// it to the document.  That should be done after the instance is configured,
+// with something like:
+//
+// someNode.appendChild( overviewInstance.containerElement );
+
+var Overview = function( ukey, document, storageKey ) {
+	var div, options, tableOptions;
+
+	// XXX we should take an options object, and merge with this:
+	this.options = {
+		id: 'bookkeeper-overview',
+		mode: 'full',
+		ukey: ukey,
+		filterKey: ukey + storageKey + 'Filter',
+		sortIdKey: ukey + storageKey + 'OverviewSortCrit',
+		sortAscKey: ukey + storageKey + 'OverviewSortAsc'
+	};
+
+	tableOptions = {
+		id: this.options.id,
+		// className: 'nav',
+		ukey: ukey,
+		defaultSortId: 'time'
+	}
+
+	this.filter = new Filter();
+
+	this.containerElement = document.createElement( 'div' );
+	this.containerElement.className = this.options.id + '-container';
+
+	div = document.createElement( 'div' );
+	this.filterInput = document.createElement( 'input' )
+	div.appendChild( this.filterInput );
+	this.containerElement.appendChild( div );
+
+	this.table = new BKTable( document, tableOptions );
+	this.table.onRefresh = onTableRefresh;
+	this.containerElement.appendChild( this.table.elements.container );
+}
+
+// If the list of building ids in this universe is already available (like, it
+// was needed for something else and fetched outside this object), then pass it
+// here, it'll save a storage query.  Otherwise, we'll ask for it.
+
+Overview.prototype.configure = function( universeList, callback ) {
+	var keys, sortId, sortAsc, sector, sectorId;
+
+	// Get data from local storage
+
+	keys = [
+		'sector',
+		this.options.filterKey,
+		this.options.sortIdKey,
+		this.options.sortAscKey
+	];
+	chrome.storage.local.get( keys, onStorageLocalData.bind(this) );
+
+	function onStorageLocalData( data ) {
+		var query = data[ this.options.filterKey ] || '';
+		this.filterInput.value = query;
+		this.sortId = data[ this.options.sortIdKey ];
+		this.sortAsc = !!data[ this.options.sortAscKey ];
+		this.currentSector = data.sector;
+		this.currentSectorId = Sector.getId( sector );
+		this.filter.parseQuery( query );
+		applyFilter.call( this, universeList, onReady.bind(this) );
+	}
+
+	function onReady() {
+		// At this point, the table is sorted by the initial sort.  Now
+		// we want to be notified of any re-sorting.
+		this.table.onSort = onSort;
+
+		// And we want to know if the user types a filter
+		this.filterTimeout = undefined;
+		this.filterInput.addEventListener(
+			'input', onFilterInput.bind(this), false );
+
+		// Done. Call the caller if they asked for it.
+		if ( callback )
+			callback( this );
+	}
+}
+
+function applyFilter( universeList, callback ) {
+	if ( universeList === undefined ) {
+		// The usual case: get the building list from sync
+		chrome.storage.sync.get(
+			this.options.ukey, onHaveUniverseData.bind(this) );
+	}
+	else
+		// Skip that sync.get
+		fetchBuildingData.call( this );
+
+	// XXX - if no building list we should show something, "no elements to
+	// display" or whatever.  Now more important, with filters.
+	function onHaveUniverseData( data ) {
+		universeList = data[ this.options.ukey ] || [];
+		fetchBuildingData.call( this );
+	}
+
+	// Now fetch all buildings
+	function fetchBuildingData() {
+		var keys, ukey;
+		ukey = this.options.ukey;
+		keys = universeList.map(
+			function( loc ) { return ukey + loc; } );
+		chrome.storage.sync.get( keys, onHaveBuildingData.bind(this) );
+	}
+
+	function onHaveBuildingData( data ) {
+		var key, buildings, spec, table;
+
+		buildings = [];
+		for ( key in data ) {
+			buildings.push(
+				Building.createFromStorage(key, data[key]) );
+		}
+
+		buildings = this.filter.filter( buildings, Building.now() );
+		spec = makeSpec.call( this, buildings );
+		this.table.refresh( spec, buildings );
+		this.table.sort( this.sortId, this.sortAsc );
+
+		console.log( 'applyFilter', this );
+
+		if ( callback )
+			callback( this );
+	}
+}
+
+// Called in the context of the BKTable.  Set properties nowDate and now, for
+// use in spec functions.
+function onTableRefresh() {
+	this.nowDate = new Date();
+	this.now = Building.seconds( this.nowDate.getTime() );
+}
+
+function onFilterInput( event ) {
+
+	// Throttle the input: wait until the user hasn't typed anything for a
+	// full second, before triggering a filter recompute.
+
+	if ( this.filterTimeout )
+		window.clearTimeout( this.filterTimeout );
+	this.filterTimeout = window.setTimeout( doIt.bind(this), 1000 );
+
+	function doIt() {
+		this.filterTimeout = undefined;
+		this.filter.parseQuery( event.target.value );
+		applyFilter.call( this );
+	}
+}
+
+
+
+// Private functions and utilities.
+
+
 
 // This is a catalogue of "column specifications", as expected by BKTable.
 
@@ -72,7 +234,7 @@ var COLUMN_SPECS = {
 		},
 		cell: function( b, td ) {
 			var t = new Date( b.time * 1000 );
-			td.textContent = formatTime( t, this.now );
+			td.textContent = formatTime( t, this.nowDate );
 			td.className = 'r';
 			td.title = t.toLocaleString();
 		},
@@ -90,13 +252,11 @@ var COLUMN_SPECS = {
 
 	ticksNow: {
 		header: simpleHeader( 'Now' ),
-		cell: rCell( function( b ) {
-			      return b.ticksNow( this.nowSecs );
-		      } ),
+		cell: rCell( function( b ) { return b.ticksNow( this.now ); } ),
 		sortId: 'now',
 		sort: function( a, b ) {
-			return a.ticksNow( this.nowSecs )
-			     - b.ticksNow( this.nowSecs );
+			return a.ticksNow( this.now )
+			     - b.ticksNow( this.now );
 		}
 	},
 
@@ -129,136 +289,48 @@ function rCell( fn ) {
 	}
 }
 
-var Overview = {};
-
 var grayIconSrc = chrome.extension.getURL( 'icons/mingray.svg' ),
     iconSrc = chrome.extension.getURL( 'icons/minus.svg' );
 
-// Fetches configuration and data from storage, and creates a table with it.
-// This returns immediately, then the callback is called when ready to display.
-// It may take a bit.
-//
-// `ukey` that should be 'A', 'O', 'P' as usual.
+// Create the spec for the table, based on the current filter.
 
-Overview.make = function( ukey, document, callback ) {
-	make( ukey, document, '', undefined, makeFullSpec, callback );
-}
+function makeSpec( buildings ) {
+	var spec, before, after;
 
-// As above, but make it nav-style.
-//
-// XXX The nav overview should be a bit less detailed still, to avoid clutter?
+	spec = { columns: [] };
 
-Overview.makeForNav = function( ukey, document, callback ) {
-	make( ukey, document, 'Nav', 'nav', makeNavSpec, callback );
-}
-
-// Private functions and utilities.
-
-function make( ukey, document, classname, storageKey, makeSpec, callback ) {
-	var options, keys, list, sortId, sortAsc, sector, sectorId;
-
-	// XXX - rename the "key" options so it's clear which are storage keys
-	options = {
-		id: 'bookkeeper-overview',
-		className: 'nav',
-		ukey: ukey,
-		sortIdKey: ukey + storageKey + 'OverviewSortCrit',
-		sortAscKey: ukey + storageKey + 'OverviewSortAsc',
-		defaultSortId: 'time'
+	if ( this.options.mode === 'compact' ) {
+		before = [
+			COLUMN_SPECS.coords, COLUMN_SPECS.type,
+			COLUMN_SPECS.owner ],
+		after = [ COLUMN_SPECS.time, COLUMN_SPECS.ticksNow ];
+	}
+	else {
+		// Full
+		before = [
+			COLUMN_SPECS.location, COLUMN_SPECS.type,
+			COLUMN_SPECS.owner, COLUMN_SPECS.level
+		];
+		after = [
+			COLUMN_SPECS.time, COLUMN_SPECS.ticksLeft,
+			COLUMN_SPECS.ticksNow, COLUMN_SPECS.remove
+		];
+		spec.foot = foot;
 	}
 
-	// Get data from local storage
-
-	keys = [ 'sector', options.sortIdKey, options.sortAscKey ];
-	chrome.storage.local.get( keys, onStorageLocalData );
-
-	function onStorageLocalData( data ) {
-		sortId = data[ options.sortIdKey ];
-		sortAsc = !!data[ options.sortAscKey ];
-		sector = data.sector;
-		sectorId = Sector.getId( sector );
-
-		// Now get the building list from sync
-
-		chrome.storage.sync.get( ukey, onHaveListData );
-	}
-
-	function onHaveListData( data ) {
-
-		// Now fetch all buildings
-
-		list = data[ ukey ];
-		if ( list && list.length > 0 ) {
-			list = list.map( function( loc ) { return ukey + loc; } );
-			chrome.storage.sync.get( list, onHaveBuildingData );
-		}
-		// XXX - else should show something, "no elements to display" or
-		// whatever
-	}
-
-	function onHaveBuildingData( data ) {
-		var key, buildings, spec, table;
-
-		buildings = [];
-		for ( key in data ) {
-			// XXX - we'll insert the filter here
-			buildings.push(
-				Building.createFromStorage(key, data[key]) );
-		}
-
-		table = new BKTable( options, document );
-		table.onSort = onSort;
-
-		spec = makeSpec( table, buildings );
-		table.refresh( spec, buildings );
-		// Add this so our spec handlers can refer to it:
-		table.nowSecs = Building.seconds( table.now.getTime() );
-
-		table.sort( sortId, sortAsc );
-		callback( table );
-	}
-}
-
-// Create the spec for  overview.
-
-function makeFullSpec( table, buildings ) {
-	return makeSpec(
-		table, buildings,
-		[ COLUMN_SPECS.location, COLUMN_SPECS.type,
-		  COLUMN_SPECS.owner, COLUMN_SPECS.level ],
-		[ COLUMN_SPECS.time, COLUMN_SPECS.ticksLeft,
-		  COLUMN_SPECS.ticksNow, COLUMN_SPECS.remove ] );
-}
-
-// Create the spec for nav-style overview.
-
-function makeNavSpec( table, buildings ) {
-	return makeSpec(
-		table, buildings,
-		[ COLUMN_SPECS.coords, COLUMN_SPECS.type,
-		  COLUMN_SPECS.owner ],
-		[ COLUMN_SPECS.time, COLUMN_SPECS.ticksNow ] );
-}
-
-function makeSpec( table, buildings, before, after ) {
-	var spec = {
-		columns: [],
-		foot: foot
-	};
-
-	// Properties for use in spec functions
-	table.totals = [];
-	table.beforeTotals = before.length;
-	table.afterTotals = after.length;
-	table.commodities = getCommoditiesInUse( buildings );
+	// Add properties to the table for use in its spec functions
+	this.table.totals = [];
+	this.table.beforeTotals = before.length;
+	this.table.afterTotals = after.length;
+	this.table.commodities = getCommoditiesInUse( buildings );
 
 	Array.prototype.push.apply( spec.columns, before );
-	table.commodities.forEach( pushComm );
+	this.table.commodities.forEach( pushCommSpec );
 	Array.prototype.push.apply( spec.columns, after );
 
 	return spec;
 
-	function pushComm( commId ) {
+	function pushCommSpec( commId ) {
 		spec.columns.push( {
 			header: makeCommHeaderFn( commId ),
 			cell: makeCommCellFn( commId ),
@@ -270,7 +342,7 @@ function makeSpec( table, buildings, before, after ) {
 }
 
 // Another three functs that construct functions.  They synthesise the spec
-// callbacks for each commodity.
+// callbacks for each commodity (see BKTable).
 
 function makeCommHeaderFn( commId ) {
 	return function( th ) {

@@ -5,34 +5,34 @@ var BKTable = (function() {
 
 // Constructor.
 //
-// This creates a BKTable instance and associates it with a particular document.
-// A reference to this document is kept in the `doc` instance property.  Basic
-// DOM elements for the table are created here, too, and references are kept in
-// the `elements` instance property.  These are NOT attached to the document's
-// DOM, though; that should be done after the table is created, with something
-// like:
+// Create a BKTable instance and associates it with a particular document.  A
+// reference to the document is kept in the `doc` instance property.  Basic DOM
+// elements for the table are created here, too, and references are kept in the
+// `elements` instance property.  These are not attached to the document,
+// though; that should be done after the table is created, with something like:
 //
 //   someNode.appendChild( tableInstance.elements.container ).
 //
-// `options` is an object with a property `ukey` that should be 'A', 'O', 'P' as
-// usual.  Optional property `defaultSortId` provides a fallback to use by
-// BKTable.prototype.sort in case the id passed there is not recognised.
-// Optional properties `id` and `className` set the DOM id and class name of the
-// container element.  Optional property `noFooter`, if true, specifies that a
-// table footer will never be needed so no TFOOT element should be created.
+// `options`, if supplied, is an object.  Options property `defaultSortId`
+// provides a fallback id to use by BKTable.prototype.sort in case the id passed
+// there is not recognised.  Options properties `id` and `className` set the DOM
+// id and class name of the container element.  Options property `noFooter`, if
+// true, specifies that a table footer will never be needed so no TFOOT element
+// should be created.
 //
 // A reference to the options object is kept in the `options` instance property,
 // so it may be accessed by spec functions (see below).
 //
-// After the table is created, you may set property `onSort` on the instance
-// directly, to a function, if you want to be called when the table is
-// re-sorted.  One may set additional instance properties so that spec functions
-// may access those, too.
+// After the table is created, property `onRefresh' may be set directly on the
+// instance, containing a function to be called when the table refreshes (before
+// any spec functions are called).  Propery `onSort` may be set on the instance,
+// containing a function to be called after the table is sorted.  Additional
+// instance properties may be set so that spec functions may access them.
 
-function BKTable( options, document ) {
+function BKTable( document, options ) {
 	var elements;
 
-	this.options = options;
+	this.options = options || {};
 	this.doc = document;
 
 	elements = {
@@ -104,13 +104,15 @@ BKTable.prototype.refresh = function( spec, items ) {
 	this.items = items;
 	this.spec = spec;
 	this.sorts = {};
-	this.now = new Date();
 	this.needFoot = !!spec.foot;
 
 	clearElement( this.elements.rows );
 	clearElement( this.elements.head );
 	if ( !this.options.noFooter )
 		clearElement( this.elements.foot );
+
+	if ( this.onRefresh )
+		this.onRefresh.call( this );
 
 	makeHead.call( this );
 }

@@ -1,30 +1,46 @@
 // This is a content script.  It runs on overview_buildings.php.
 
-// Stuff from other files included before.
+// From other files
 
 var Universe, Building, Commodities, CalendarNames,  Sector,
-    BKTable, Overview;
+    BKTable, Filter, Overview;
 
+// Global used here XXX K you were right, Universe shouldn't be an object.
 
-var universe = Universe.fromDocument( document ),
-    ownEntries = parseOwnBuildings(),
-    buildingList; // fetched from storage eventually
-
-// console.log( 'ownEntries', ownEntries );
+var universe = Universe.fromDocument( document );
 
 // Start the ball.
-showOverview();
+setup();
 
 // End of content script execution
 
-function showOverview() {
+function setup() {
+	var ownEntries, overview;
 
-	Overview.make( universe.key, document, onReady );
+	// Fetch the universe list, we need it for both the Overview component
+	// and to update the user's own buildings.
+	chrome.storage.sync.get( universe.key, onHaveUniverseListData );
 
-	function onReady( overview ) {
-		var h1, anchor, img;
+	function onHaveUniverseListData( data ) {
+		var universeList = data[ universe.key ] || [];
+		ownEntries = parseOwnBuildings();
+		addOwnBuildings(
+			universeList, ownEntries, onOwnBuildingsAdded );
+	}
 
-		anchor = document.getElementsByTagName('h1')[0];
+	function onOwnBuildingsAdded( universeList ) {
+		overview = new Overview( universe.key, document, '' );
+		overview.configure( universeList, onReady );
+	}
+
+	function onReady() {
+		var anchor, h1, img;
+
+		anchor = document.evaluate(
+			'//h1', document, null,
+			XPathResult.FIRST_ORDERED_NODE_TYPE,
+			null).singleNodeValue;
+
 		h1 = document.createElement( 'h1' );
 		h1.className = 'bookkeeper';
 		img = document.createElement( 'img' );
@@ -32,46 +48,10 @@ function showOverview() {
 		img.title = 'Pardus Bookkeeper';
 		h1.appendChild( img );
 		h1.appendChild( document.createTextNode('Bookkeeping') );
+
 		anchor.parentNode.insertBefore( h1, anchor );
 		anchor.parentNode.insertBefore(
-			overview.elements.container, anchor );
-	}
-}
-
-function makeRemoveButton( loc ) {
-	var button;
-
-	button = document.createElement( 'img' );
-	button.className = 'bookkeeper-small-button';
-	button.src = grayIconSrc;
-	button.dataset.bookkeperLoc = loc;
-	button.addEventListener( 'click', onRemoveClick );
-	button.addEventListener( 'mouseover', onRemoveMouseOver );
-	button.addEventListener( 'mouseout', onRemoveMouseOut );
-
-	return button;
-}
-
-function onRemoveMouseOver( event ) { event.target.src = iconSrc; }
-function onRemoveMouseOut( event ) { event.target.src = grayIconSrc; }
-
-function onRemoveClick( event ) {
-	var target, loc;
-
-	target = event.target;
-	loc = target.dataset.bookkeperLoc;
-	if ( !loc )
-		return;
-
-	event.preventDefault();
-
-	Building.removeStorage( loc, universe.key, removeRow );
-
-	function removeRow() {
-		var tr = target.parentElement;
-		while ( tr.tagName != 'TR' )
-			tr = tr.parentElement;
-		tr.remove();
+			overview.containerElement, anchor );
 	}
 }
 
@@ -111,7 +91,8 @@ function parseBuildingRow( tr ) {
 
 	r = {};
 	xpr = document.evaluate(
-		'./td', tr, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null );
+		'./td', tr, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE,
+		null );
 
 	// The row has 11 columns: Building, Position, Capacity, Condition,
 	// Production, Modules, Upkeep, Production, Upkeep stock, Commodities,
@@ -206,124 +187,84 @@ function parseCommodities( td ) {
 	return r;
 }
 
+// Add the user's own buildings to storage.  This may change the universeList,
+// so we want the rest of the overview stuff to wait until we're done.  So we
+// take a callback.  We call before we return (or arrange for chrome to call, if
+// we need to store stuff).  The callback receives the (possibly updated) list,
+// so stuff above may resume.
 
-// This used to fetch the building list from storage.  However, that's the first
-// thing that the script does, so we avoid the second query by calling this from
-// `showOverview()`, waay above.
-//
-// Also, this may change the list, so we want the rest of the overview stuff to
-// wait until we're done.  So we take a callback.  We call back before we return
-// (or arrange for chrome to call it back, if we need to store stuff).  The
-// callback receives the (possibly updated) buildingList, so stuff above may
-// resume.
+// XXX - just thought of this... what happens if you destroy one of your
+// buildings?
 
-// This may change buildingList, so we want the rest of the overview stuff to
-// wait until we're done.  So we take a callback.  We call back before we return
-// (or arrange for chrome to call it back, if we need to store stuff).
-
-function addOwnBuildings( callback ) {
-	var ownBuildingTable, ownNumberOfBuildings, i, end, building, m;
+function addOwnBuildings( universeList, ownEntries, callback ) {
+	var ownBuildingIds, updateUniverseList, storedBuildings, now;
 
 	if ( ownEntries.length === 0 ) {
 		// Bloke had only TOs or something?  Nothing to do.
-		callback();
+		callback( universeList );
 		return;
 	}
 
-	// Get from storage the buildings we're about to add
-
-	var ownBuildingList = [];
-	for ( i = 0, end = ownEntries.length; i < end ; i++ ) {
-		ownBuildingList.push ( universe.key + ownEntries[i].loc );
-	}
-
-	chrome.storage.sync.get(
-		ownBuildingList, finishAddBuildings.bind(null, callback) );
-}
-
-function finishAddBuildings( callback, buildingData ) {
-	var i, end, key, now, updatedBuildingList, own,
-	    storedBuildings, stored, toStore, storeData,
-	    min, max, b;
-
 	now = Building.now();
+	ownBuildingIds = ownEntries.map(
+		function( entry ) { return universe.key + entry.loc; } );
+	chrome.storage.sync.get( ownBuildingIds, onHaveOwnBuildings );
 
-	// We track if we actually made changes to the building list.  Because
-	// if we didn't, we don't actually need to store it again.
-	updatedBuildingList = false;
+	function onHaveOwnBuildings( buildingData ) {
+		var key, building, toStore, storeData;
 
-	storedBuildings = {};
-
-	// Add the new IDs to the building list.
-	for ( key in buildingData ) {
-		stored = Building.createFromStorage( key, buildingData[key] );
-		storedBuildings[ stored.loc ] = stored;
-	}
-
-	// console.log( 'storedBuildings', storedBuildings );
-
-	toStore = [];
-	for ( i = 0, end = ownEntries.length; i < end; i++ ) {
-		// Note own isn't a Building proper, just a generic
-		// Object created by parseOwnBuildings.
-		own = ownEntries[i];
-
-		if ( buildingList.indexOf(own.loc) === -1 ) {
-			buildingList.push( own.loc );
-			updatedBuildingList = true;
+		storedBuildings = {};
+		for ( key in buildingData ) {
+			building = Building.createFromStorage(
+				key, buildingData[key] );
+			storedBuildings[ building.loc ] = building;
 		}
 
-		stored = storedBuildings[ own.loc ];
-		if ( stored ) {
-			// If the building was already stored, then keep
-			// it but update the data we have here.
-			stored.time = now;
-			stored.typeId = own.typeId;
-			stored.level = own.level;
-			stored.ticksLeft = own.ticksLeft;
+		// Note makeOwnBuilding updates universeList as a side effect
+		toStore = ownEntries.map( makeOwnBuilding );
 
-			// Update forSale and toBuy if appropriate
-			updateForSale( stored, own.amount );
-			updateToBuy( stored, own.amount );
-			toStore.push( stored );
+		storeData = {};
+		if ( updateUniverseList )
+			storeData[ universe.key ] = universeList;
+		toStore.forEach( function( b ) {
+			storeData[ b.storageKey(universe.key) ] = b.toStorage();
+		});
+
+		chrome.storage.sync.set(
+			storeData, callback.bind( null, universeList ) );
+	}
+
+	function makeOwnBuilding( entry ) {
+		var building;
+
+		// While we're scanning, update uBIds if needed.
+
+		if ( universeList.indexOf(entry.loc) === -1 ) {
+			universeList.push( entry.loc );
+			updateUniverseList = true;
+		}
+
+		building = storedBuildings[ entry.loc ];
+
+		// If the building was already stored, then keep it but update
+		// the data we have here.  Otherwise create a new one.
+
+		if ( building ) {
+			building.time = now;
+			building.typeId = entry.typeId;
+			building.level = entry.level;
+			building.ticksLeft = entry.ticksLeft;
+			updateForSale( building, entry.amount );
+			updateToBuy( building, entry.amount );
 		}
 		else {
-			// Create a new building.  In this case, the only data
-			// we can add is what we already have.
-			b = new Building(
-				own.loc,
-				own.sectorId,
-				own.typeId,
-				now,
-				'You',
-				own.level,
-				own.ticksLeft
-			);
-			toStore.push( b );
+			building = new Building(
+				entry.loc, entry.sectorId, entry.typeId, now,
+				'You', entry.level, entry.ticksLeft );
 		}
+
+		return building;
 	}
-
-	// Compute the data to store.
-	storeData = {};
-
-	if ( updatedBuildingList ) {
-		storeData[ universe.key ] = buildingList;
-	}
-
-	for ( i = 0, end = toStore.length; i < end; i++ ) {
-		b = toStore[ i ];
-		storeData[ universe.key + b.loc ] = b.toStorage();
-	}
-
-	//console.log( 'storeData', storeData );
-
-	// Finally, store everything we need to store.  If you need to comment
-	// out this line, for debugging, insert a call to callback() in its
-	// place.  This is needed so that the rest of the overview code gets a
-	// chance to run.
-
-	chrome.storage.sync.set( storeData, callback );
-	// callback();
 }
 
 // XXX these two may need to be in building.js
