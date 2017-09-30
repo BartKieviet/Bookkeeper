@@ -4,46 +4,6 @@
 
 var Building = (function() {
 
-// Don't change the order of this array; add new types at the bottom.  The index
-// of each object in the array is actually a type ID already kept in
-// chrome.storage, so changing this would make a mess of current users' data.
-//
-// `n` is the building name, `s` is the building short name, `i` is the URL of
-// the building image without the image pack prefix and the '.png' suffix.
-// `u` is a list of commodity IDs that this building consumes.
-
-var CATALOGUE = [
-	, // id=0 is not in use
-	{ n:"Alliance Command Station", s:"ACS", i:"alliance_command_station", u:[2,19] },
-	{ n:"Asteroid Mine", s:"AM", i:"asteroid_mine", u:[1,2,3] },
-	{ n:"Battleweapons Factory", s:"BWF", i:"battleweapons_factory", u:[1,2,3,6,7,18] },
-	{ n:"Brewery", s:"Br", i:"brewery", u:[1,2,3,13] },
-	{ n:"Chemical Laboratory", s:"CL", i:"chemical_laboratory", u:[1,2,3] },
-	{ n:"Clod Generator", s:"CG", i:"clod_generator", u:[2,13,21] },
-	{ n:"Dark Dome", s:"DD", i:"dark_dome", u:[2,50] },
-	{ n:"Droid Assembly Complex", s:"DAC", i:"droid_assembly_complex", u:[1,2,3,8,19] },
-	{ n:"Drug Station", s:"DS", i:"drug_station", u:[1,2,3,17,50] },
-	{ n:"Electronics Facility", s:"EF", i:"electronics_facility", u:[1,2,3,6,9] },
-	{ n:"Energy Well", s:"EW", i:"energy_well", u:[1,3] },
-	{ n:"Fuel Collector", s:"FC", i:"fuel_collector", u:[2,13] },
-	{ n:"Gas Collector", s:"GC", i:"gas_collector", u:[1,2,3] },
-	{ n:"Handweapons Factory", s:"HWF", i:"handweapons_factory", u:[1,2,3,7,9,18] },
-	{ n:"Leech Nursery", s:"LN", i:"leech_nursery", u:[1,2,3,19,23] },
-	{ n:"Medical Laboratory", s:"ML", i:"medical_laboratory", u:[1,2,3,12] },
-	{ n:"Military Outpost", s:"MO", i:"military_outpost", u:[2,16,19] },
-	{ n:"Nebula Plant", s:"NP", i:"nebula_plant", u:[1,3,17] },
-	{ n:"Neural Laboratory", s:"NL", i:"neural_laboratory", u:[1,2,3,4,11] },
-	{ n:"Optics Research Center", s:"ORC", i:"optics_research_center", u:[1,2,3,14] },
-	{ n:"Plastics Facility", s:"PF", i:"plastics_facility", u:[1,2,3,12,13] },
-	{ n:"Radiation Collector", s:"RC", i:"radiation_collector", u:[1,2,3] },
-	{ n:"Recyclotron", s:"Rcy", i:"recyclotron", u:[2,13,21] },
-	{ n:"Robot Factory", s:"RF", i:"robot_factory", u:[1,2,3,6,7,18] },
-	{ n:"Slave Camp", s:"SC", i:"slave_camp", u:[1,2,3,11,15] },
-	{ n:"Smelting Facility", s:"Sm", i:"smelting_facility", u:[1,2,3,5] },
-	{ n:"Space Farm", s:"SF", i:"space_farm", u:[2,4] },
-	{ n:"Stim Chip Mill", s:"SCM", i:"stim_chip_mill", u:[1,3,7,17,28] }
-];
-
 // Lazily initialised by getTypeId and getTypeIdByIcon
 
 var NAME_IDS, ICON_IDS;
@@ -87,9 +47,51 @@ function Building( loc, sectorId, typeId, time, owner, level, ticksLeft,
 
 
 
-// 1. Methods of the Building object.
+// 1. Properties and methods of the Building object.
 
 
+
+// All the building types we care about.
+//
+// Don't change the order of this array; add new types at the bottom.  The index
+// of each object in the array is actually a type ID already kept in
+// chrome.storage, so changing this would make a mess of current users' data.
+//
+// `n` is the building name, `s` is the building short name, `i` is the URL of
+// the building image without the image pack prefix and the '.png' suffix.
+// `u` is a list of commodity IDs that this building consumes.
+
+Building.CATALOGUE = [
+	, // id=0 is not in use
+	{ n:"Alliance Command Station", s:"ACS", i:"alliance_command_station", u:[2,19] },
+	{ n:"Asteroid Mine", s:"AM", i:"asteroid_mine", u:[1,2,3] },
+	{ n:"Battleweapons Factory", s:"BWF", i:"battleweapons_factory", u:[1,2,3,6,7,18] },
+	{ n:"Brewery", s:"Br", i:"brewery", u:[1,2,3,13] },
+	{ n:"Chemical Laboratory", s:"CL", i:"chemical_laboratory", u:[1,2,3] },
+	{ n:"Clod Generator", s:"CG", i:"clod_generator", u:[2,13,21] },
+	{ n:"Dark Dome", s:"DD", i:"dark_dome", u:[2,50] },
+	{ n:"Droid Assembly Complex", s:"DAC", i:"droid_assembly_complex", u:[1,2,3,8,19] },
+	{ n:"Drug Station", s:"DS", i:"drug_station", u:[1,2,3,17,50] },
+	{ n:"Electronics Facility", s:"EF", i:"electronics_facility", u:[1,2,3,6,9] },
+	{ n:"Energy Well", s:"EW", i:"energy_well", u:[1,3] },
+	{ n:"Fuel Collector", s:"FC", i:"fuel_collector", u:[2,13] },
+	{ n:"Gas Collector", s:"GC", i:"gas_collector", u:[1,2,3] },
+	{ n:"Handweapons Factory", s:"HWF", i:"handweapons_factory", u:[1,2,3,7,9,18] },
+	{ n:"Leech Nursery", s:"LN", i:"leech_nursery", u:[1,2,3,19,23] },
+	{ n:"Medical Laboratory", s:"ML", i:"medical_laboratory", u:[1,2,3,12] },
+	{ n:"Military Outpost", s:"MO", i:"military_outpost", u:[2,16,19] },
+	{ n:"Nebula Plant", s:"NP", i:"nebula_plant", u:[1,3,17] },
+	{ n:"Neural Laboratory", s:"NL", i:"neural_laboratory", u:[1,2,3,4,11] },
+	{ n:"Optics Research Center", s:"ORC", i:"optics_research_center", u:[1,2,3,14] },
+	{ n:"Plastics Facility", s:"PF", i:"plastics_facility", u:[1,2,3,12,13] },
+	{ n:"Radiation Collector", s:"RC", i:"radiation_collector", u:[1,2,3] },
+	{ n:"Recyclotron", s:"Rcy", i:"recyclotron", u:[2,13,21] },
+	{ n:"Robot Factory", s:"RF", i:"robot_factory", u:[1,2,3,6,7,18] },
+	{ n:"Slave Camp", s:"SC", i:"slave_camp", u:[1,2,3,11,15] },
+	{ n:"Smelting Facility", s:"Sm", i:"smelting_facility", u:[1,2,3,5] },
+	{ n:"Space Farm", s:"SF", i:"space_farm", u:[2,4] },
+	{ n:"Stim Chip Mill", s:"SCM", i:"stim_chip_mill", u:[1,3,7,17,28] }
+];
 
 // Convenience for the current time in seconds, so K's heart doesn't break that
 // hard...
@@ -109,7 +111,7 @@ Building.seconds = function( millis ) {
 // use the instance's methods instead, getTypeName etc.
 
 Building.getType = function( typeId ) {
-	return CATALOGUE[ typeId ];
+	return Building.CATALOGUE[ typeId ];
 }
 
 // If you have the name of a building type (e.g. "Medical Laboratory"), this
@@ -118,7 +120,7 @@ Building.getType = function( typeId ) {
 
 Building.getTypeId = function( name ) {
 	if ( NAME_IDS === undefined ) {
-		NAME_IDS = CATALOGUE.reduce(
+		NAME_IDS = Building.CATALOGUE.reduce(
 			function( name_ids, data, id ) {
 				name_ids[ data.n ] = id;
 				return name_ids;
@@ -135,7 +137,7 @@ Building.getTypeId = function( name ) {
 
 Building.getTypeIdByIcon = function( icon ) {
 	if ( ICON_IDS === undefined ) {
-		ICON_IDS = CATALOGUE.reduce(
+		ICON_IDS = Building.CATALOGUE.reduce(
 			function( icon_ids, data, id ) {
 				icon_ids[ data.i ] = id;
 				return icon_ids;
