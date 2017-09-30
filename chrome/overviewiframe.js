@@ -9,9 +9,12 @@ function onDOM() {
 }
 
 function onHaveOptions( opts ) {
-	Overview.makeForNav( opts.ukey, document, onReady );
+	var overview = new Overview( opts.ukey, document, 'Nav' );
+	overview.configure( undefined, onReady );
 
 	function onReady( table ) {
-		document.body.appendChild( table.elements.container );
+		overview.table.elements.container.className = 'nav';
+
+		document.body.appendChild( overview.containerElement );
 	}
 }

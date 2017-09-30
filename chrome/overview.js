@@ -57,7 +57,7 @@ Overview.prototype.configure = function( universeList, callback ) {
 	// Get data from local storage
 
 	keys = [
-		'sector',
+		'sector', 'x', 'y',
 		this.options.filterKey,
 		this.options.sortIdKey,
 		this.options.sortAscKey
@@ -69,9 +69,15 @@ Overview.prototype.configure = function( universeList, callback ) {
 		this.filterInput.value = query;
 		this.sortId = data[ this.options.sortIdKey ];
 		this.sortAsc = !!data[ this.options.sortAscKey ];
-		this.currentSector = data.sector;
-		this.currentSectorId = Sector.getId( sector );
+		this.currentSector = data.sector || '';
+		this.currentSectorId = Sector.getId( this.currentSector );
 		this.filter.parseQuery( query );
+
+		// Build an example query
+		this.filterInput.placeholder =
+			'SF ' + this.currentSector + ' 3 ' +
+			data.x + ',' + data.y;
+
 		applyFilter.call( this, universeList, onReady.bind(this) );
 	}
 
