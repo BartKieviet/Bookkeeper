@@ -132,6 +132,9 @@ function onMessage( event ) {
 	// This is needed.
 	if ( ticksEnabled )
 		showTicks();
+	
+	addTipDiv();
+
 }
 
 function showTicks() {
@@ -232,12 +235,13 @@ function addTickThingies( cached ) {
 	if (cached.stocked) {
 		elt.classList.add( 'grey' );
 	}
+
 	elt.textContent = cached.ticks;
 	cached.td.appendChild( elt );
 	elt.addEventListener( 'click', onSkittleClick, false );
 }
 
-function hideTicks() {
+  function hideTicks() {
 	var elts = getNavArea().getElementsByClassName( 'bookkeeper-ticks' );
 	while ( elts.length > 0 )
 		elts[0].remove();
@@ -251,6 +255,7 @@ function getNavArea() {
 		navTable = document.getElementById( 'navarea' );
 	return navTable;
 }
+
 
 // XXX - The following two handlers are too similar, combine common
 // functionality in one call.
@@ -400,6 +405,5 @@ function onSkittleClick( event ) {
 		bbox.src = url;
 		document.body.appendChild( bbox );
 	}
-}
 
 })();

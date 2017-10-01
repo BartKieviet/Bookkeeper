@@ -21,7 +21,7 @@
 		},
 		{
 			"matches": [ "*://*.pardus.at/main.php*" ],
-			"js": [ "nav.js" ],
+			"js": [ "info-min.js", "nav.js" ],
 			"css": [ "nav.css" ],
 			"all_frames": true
 		},
