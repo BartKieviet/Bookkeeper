@@ -168,12 +168,18 @@ function estimateLevel( typeId ) {
 		perCommodity[key] = parseInt(fontList[fontList.length-1].innerHTML);
 		
 		if (Math.abs( perCommodity [ key ]) > max ) {
-			maxKey = key;
-			max = Math.abs( perCommodity [ key ]);
+			if (divCheck === -1) {
+				// For non-diversity buildings we take both upkeep and production
+				maxKey = key;
+				max = Math.abs( perCommodity [ key ]);
+			} else if (res_upkeep [ key ] != undefined) {
+				// This is true for diversity buildings and upkeep key's 
+				maxKey = key;
+				max = Math.abs( perCommodity [ key ]);
+			}
 		}
 		
 /*		if (perCommodity[key] > 0) { // > 0 means production
-			if (divCheck === -1) {
 				levelEst[key] = ((((perCommodity[key] / res_production[key]) - 1) / 0.5) + 1);
 				level += levelEst[key];
 			}

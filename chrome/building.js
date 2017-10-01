@@ -45,6 +45,73 @@ function Building( loc, sectorId, typeId, time, owner, level, ticksLeft,
 	this.maximum = Building.makeCommodityArray( maximum );
 }
 
+// Don't change the order of this array; add new types at the bottom.  The index
+// of each object in the array is actually a type ID already kept in
+// chrome.storage, so changing this would make a mess of current users' data.
+//
+// `n` is the building name, `s` is the building short name, `i` is the URL of
+// the building image without the image pack prefix and the '.png' suffix.  `bu`
+// is the base upkeep for buildings of this type, `bp` is the base production.
+
+Building.CATALOGUE = [
+	, // unused index 0
+	{ n: 'Alliance Command Station', s: 'ACS',
+	  i: 'alliance_command_station', bu: {2:6,19:2}, bp: {} },
+	{ n: 'Asteroid Mine', s: 'AM', i: 'asteroid_mine',
+	  bu: {1:1,2:1,3:1}, bp: {5:9,14:2} },
+	{ n: 'Battleweapons Factory', s: 'BWF', i: 'battleweapons_factory',
+	  bu: {1:1,2:2,3:1,6:3,7:3,18:4}, bp: {27:2} },
+	{ n: 'Brewery', s: 'Br', i: 'brewery',
+	  bu: {1:2,2:2,3:2,13:4}, bp: {15:4} },
+	{ n: 'Chemical Laboratory', s: 'CL', i: 'chemical_laboratory',
+	  bu: {1:1,2:3,3:1}, bp: {13:9} },
+	{ n: 'Clod Generator', s: 'CG', i: 'clod_generator',
+	  bu: {2:4,13:4,21:18}, bp: {23:5} },
+	{ n: 'Dark Dome', s: 'DD', i: 'dark_dome',
+	  bu: {2:1,50:2}, bp: {21:4,203:12} },
+	{ n: 'Droid Assembly Complex', s: 'DAC', i: 'droid_assembly_complex',
+	  bu: {1:1,2:3,3:1,8:2,19:3}, bp: {20:1} },
+	{ n: 'Drug Station', s: 'DS', i: 'drug_station',
+	  bu: {1:3,2:1,3:3,17:3,50:3}, bp: {51:1} },
+	{ n: 'Electronics Facility', s: 'EF', i: 'electronics_facility',
+	  bu: {1:1,2:4,3:1,6:3,9:2}, bp: {7:6} },
+	{ n: 'Energy Well', s: 'EW', i: 'energy_well',
+	  bu: {1:1,3:1}, bp: {2:6} },
+	{ n: 'Fuel Collector', s: 'FC', i: 'fuel_collector',
+	  bu: {2:4,13:1}, bp: {16:30} },
+	{ n: 'Gas Collector', s: 'GC', i: 'gas_collector',
+	  bu: {1:2,2:2,3:2}, bp: {12:20} },
+	{ n: 'Handweapons Factory', s: 'HWF', i: 'handweapons_factory',
+	  bu: {1:1,2:2,3:1,7:3,9:3,18:3}, bp: {10:2} },
+	{ n: 'Leech Nursery', s: 'LN', i: 'leech_nursery',
+	  bu: {1:2,2:6,3:10,19:6,23:40}, bp: {21:3,22:1} },
+	{ n: 'Medical Laboratory', s: 'ML', i: 'medical_laboratory',
+	  bu: {1:2,2:2,3:2,12:7}, bp: {11:4} },
+	{ n: 'Military Outpost', s: 'MO', i: 'military_outpost',
+	  bu: {2:5,16:5}, bp: {} },
+	{ n: 'Nebula Plant', s: 'NP', i: 'nebula_plant',
+	  bu: {1:2,3:2,17:3}, bp: {2:35,12:4} },
+	{ n: 'Neural Laboratory', s: 'NL', i: 'neural_laboratory',
+	  bu: {1:2,2:2,3:2,4:12,11:2}, bp: {28:16} },
+	{ n: 'Optics Research Center', s: 'ORC', i: 'optics_research_center',
+	  bu: {1:1,2:3,3:1,14:2}, bp: {18:10} },
+	{ n: 'Plastics Facility', s: 'PF', i: 'plastics_facility',
+	  bu: {1:2,2:2,3:2,12:3,13:3}, bp: {9:6} },
+	{ n: 'Radiation Collector', s: 'RC', i: 'radiation_collector',
+	  bu: {1:1,2:3,3:1}, bp: {19:6} },
+	{ n: 'Recyclotron', s: 'Rcy', i: 'recyclotron',
+	  bu: {2:3,13:1,21:5}, bp: {1:7,3:5} },
+	{ n: 'Robot Factory', s: 'RF', i: 'robot_factory',
+	  bu: {1:2,2:2,3:2,6:1,7:4,18:2}, bp: {8:3} },
+	{ n: 'Slave Camp', s: 'SC', i: 'slave_camp',
+	  bu: {1:3,2:1,3:3,11:2,15:2}, bp: {50:3} },
+	{ n: 'Smelting Facility', s: 'Sm', i: 'smelting_facility',
+	  bu: {1:2,2:2,3:2,5:4}, bp: {6:6} },
+	{ n: 'Space Farm', s: 'SF', i: 'space_farm',
+	  bu: {2:4,4:5}, bp: {1:8,3:2,21:1} },
+	{ n: 'Stim Chip Mill', s: 'SCM', i: 'stim_chip_mill',
+	  bu: {1:3,3:3,7:2,17:2,28:44}, bp: {29:2} }
+];
 
 
 // 1. Properties and methods of the Building object.
@@ -163,11 +230,71 @@ Building.getTypeShortName = function( typeId ) {
 	return t !== undefined ? t.s : undefined;
 }
 
-// Get an array of commodity ids that buildings of the given type consume.
+// Get the base upkeep for "normal" buildings of the given type.
+// Return an object where keys are commodity ids, and values are integers.
+
+Building.getBaseUpkeep = function( typeId ) {
+	var t = Building.getType( typeId );
+	return t !== undefined ? t.bu : undefined;
+}
+
+// Get the base production for "normal" buildings of the given type.
+// Return an object where keys are commodity ids, and values are integers.
+
+Building.getBaseProduction = function( typeId ) {
+	var t = Building.getType( typeId );
+	return t !== undefined ? t.bp : undefined;
+}
+
+// Get an array of commodity ids that buildings of the given type consume.  Note
+// you get an array of strings; map to integers if you care about order.
 
 Building.getUpkeepCommodities = function( typeId ) {
 	var t = Building.getType( typeId );
-	return t !== undefined ? t.u : undefined;
+	return t !== undefined ? Object.keys(t.bu) : undefined;
+}
+
+// Get an array of commodity ids that buildings of the given type consume.  Note
+// you get an array of strings; map to integers if you care about order.  Note
+// also that stim chip mills and dark domes (XXX - only those?) can produce
+// things not listed in these values.
+
+Building.getProductionCommodities = function( typeId ) {
+	var t = Building.getType( typeId );
+	return t !== undefined ? Object.keys(t.bp) : undefined;
+}
+
+// Get the "normal" upkeep of a building of the given type and bonus.  This may
+// not match the actual upkeep seen in the wild, because of AT bonuses, special
+// events, and TSS membership status.  Return an object where keys are commodity
+// ids, and values are integers.
+
+Building.getNormalUpkeep = function( typeId, level ) {
+	return computeUpPr( Building.getType(typeId), 'bu', level, 0.4 );
+}
+
+// Get the "normal" production of a building of the given type and bonus.  This
+// may not match the actual production because of AT bonuses, special events.
+// Return an object where keys are commodity ids, and values are integers.
+
+Building.getNormalProduction = function( typeId, level ) {
+	return computeUpPr( Building.getType(typeId), 'bp', level, 0.5 );
+}
+
+// Return true if the given commodity id is consumed by buildings of the given
+// type.
+
+Building.isUpkeep = function( typeId, commodityId ) {
+	var t = Building.getType( typeId );
+	return t !== undefined ? t.bu[commodityId] !== undefined : undefined;
+}
+
+// Return true if the given commodity id is produced by buildings of the given
+// type (with the SCM, DD caveats).
+
+Building.isProduction = function( typeId, commodityId ) {
+	var t = Building.getType( typeId );
+	return t !== undefined ? t.bp[commodityId] !== undefined : undefined;
 }
 
 // Compute the storage key of a building at the given location and universe.
@@ -337,22 +464,51 @@ Building.removeStorage = function( loc, ukey, callback ) {
 
 
 
-// Get the name of buildings of this type.
+// The following methods do the same as the Building ones, only for the
+// instance.
+
+Building.prototype.getType = function() {
+	return Building.getType( this.typeId );
+}
 
 Building.prototype.getTypeName = function() {
 	return Building.getTypeName( this.typeId );
 }
 
-// Get the short name of buildings of this type.
-
 Building.prototype.getTypeShortName = function() {
 	return Building.getTypeShortName( this.typeId );
 }
 
-// Get an array with the ids of all the commodities that this building consumes.
+Building.prototype.getBaseUpkeep = function( typeId ) {
+	return Building.getBaseUpkeep( this.typeId );
+}
 
-Building.prototype.getUpkeepCommodities = function() {
+Building.prototype.getBaseProduction = function( typeId ) {
+	return Building.getBaseProduction( this.typeId );
+}
+
+Building.prototype.getUpkeepCommodities = function( typeId ) {
 	return Building.getUpkeepCommodities( this.typeId );
+}
+
+Building.prototype.getProductionCommodities = function( typeId ) {
+	return Building.getProductionCommodities( this.typeId );
+}
+
+Building.prototype.getNormalUpkeep = function( typeId ) {
+	return Building.getNormalUpkeep( this.typeId, this.level );
+}
+
+Building.prototype.getNormalProduction = function( typeId ) {
+	return Building.getNormalProduction( this.typeId, this.level );
+}
+
+Building.prototype.isUpkeep = function( commodityId ) {
+	return Building.isUpkeep( this.typeId, commodityId );
+}
+
+Building.prototype.isProduction = function( commodityId ) {
+	return Building.isProduction( this.typeId, commodityId );
 }
 
 // Check if this building stores minimums and maximums.  That is not often the
@@ -361,13 +517,6 @@ Building.prototype.getUpkeepCommodities = function() {
 
 Building.prototype.hasMinMax = function() {
 	return this.minimum.length > 0 && this.maximum.length > 0;
-}
-
-// Test if a given commodity id is consumed by this building.
-
-Building.prototype.isUpkeep = function( commodityId ) {
-	return this.getUpkeepCommodities().
-		indexOf( parseInt(commodityId) ) !== -1;
 }
 
 // Compute how many ticks of upkeep remain at time `now`, which should be after
@@ -423,9 +572,10 @@ Building.prototype.toStorage = function() {
 }
 
 // Return an array of commodity ids for commodities that appear in either
-// this.toBuy or this.forSale.
-//
-// XXX - should this be moved to overview.js?
+// this.toBuy or this.forSale.  Note this is not exactly equivalent to
+// getUpkeepCommodities + getProductionCommodities, because things like stim
+// chip mills and dark domes produce commodities that are not actually listed in
+// the type's base figures.
 
 Building.prototype.getCommoditiesInUse = function() {
 	var seen = [], r = [];
@@ -486,6 +636,21 @@ function storageCommodityMap( a ) {
 		[]
 	);
 }
+
+// Compute a normal building upkeep/production from base values and level, using
+// formulae from http://www.pardus.at/index.php?section=manual_ref020
+
+function computeUpPr( spec, prop, level, factor ) {
+	var base, k, r;
+	if ( spec === undefined || level === undefined )
+		return undefined;
+	base = spec[ prop ];
+	r = {};
+	for ( k in base )
+		r[ k ] = Math.round( base[k] * ( 1 + factor * (level - 1) ) );
+	return r;
+}
+
 
 return Building;
 

@@ -13,18 +13,21 @@ function setup() {
 
 	form = document.forms.planet_trade || document.forms.starbase_trade;
 
-	td = document.evaluate(
-		'./table/tbody/tr/td[position()=2]', form, null,
-		XPathResult.FIRST_ORDERED_NODE_TYPE,
-		null).singleNodeValue;
+	// td = document.evaluate(
+		// './table/tbody/tr/td[position()=2]', form, null,
+		// XPathResult.FIRST_ORDERED_NODE_TYPE,
+		// null).singleNodeValue;
 
 	// Pardus actually leaves this TD empty, with a single &nbsp;.  So we'll
 	// remove it and add our button there.
 	//
 	// If some other script ever uses this TD for their own UI... man
 	// they'll be cross with us, haha.
-	while ( td.firstChild )
-		td.removeChild( td.firstChild );
+	// 
+	// Our button interferes with enter = transfer. Pretty annoying. So I'm moving it down.
+	
+	// while ( td.firstChild )
+	// td.removeChild( td.firstChild );
 
 	container = document.createElement( 'div' );
 	container.id = 'bookkeeper-ui';
@@ -40,7 +43,7 @@ function setup() {
 	overviewToggle.addEventListener( 'click', onToggleOverview, false );
 	container.appendChild( overviewToggle );
 
-	td.appendChild( container );
+	document.getElementById("quickButtonsTbl").parentNode.appendChild( container );
 }
 
 // XXX - The code below is going to change.  Right now, it's just cut & paste
