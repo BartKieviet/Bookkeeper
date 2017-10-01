@@ -152,11 +152,10 @@ function parseInfo() {
 }
 
 function estimateLevel( typeId ) {
-	var perCommodity, levelEst, level, key, divCheck;
+	var perCommodity, levelEst, level = 0, key, divCheck, max = 0, maxKey;
 
 	perCommodity = new Object();
 	levelEst = new Object();
-	level = 0;
 
 	// We compare our building with the list of buildings that get a 
 	// diversity bonus. If the building is on this list, we take only the 
@@ -167,19 +166,35 @@ function estimateLevel( typeId ) {
 	for (key in amount_max) {
 		var fontList = document.getElementById('baserow'+key).getElementsByTagName("font");
 		perCommodity[key] = parseInt(fontList[fontList.length-1].innerHTML);
-		if (perCommodity[key] > 0) {
+		
+		if (Math.abs( perCommodity [ key ]) > max ) {
 			if (divCheck === -1) {
+				// For non-diversity buildings we take both upkeep and production
+				maxKey = key;
+				max = Math.abs( perCommodity [ key ]);
+			} else if (res_upkeep [ key ] != undefined) {
+				// This is true for diversity buildings and upkeep key's 
+				maxKey = key;
+				max = Math.abs( perCommodity [ key ]);
+			}
+		}
+		
+/*		if (perCommodity[key] > 0) { // > 0 means production
 				levelEst[key] = ((((perCommodity[key] / res_production[key]) - 1) / 0.5) + 1);
 				level += levelEst[key];
 			}
 		} else {
 			levelEst[key] = ((((-perCommodity[key] / res_upkeep[key]) - 1) / 0.4) + 1);
 			level += levelEst[key];
-		}
+		}*/
 	}
-	// The average of the estimated levels is most likely correct.
-	level = Math.round(level / Object.keys(levelEst).length);
-
+	
+	if (perCommodity [ maxKey ] > 0) {
+		level = Math.round((((Math.abs( perCommodity[maxKey] ) / res_production[maxKey] ) - 1) / 0.5) + 1);
+	} else {
+		level = Math.round((((Math.abs( perCommodity[maxKey] ) / res_upkeep[maxKey] ) - 1) / 0.4) + 1);
+	}
+	
 	// here we double check the level by calculating the upkeep.
 	var levelCheck = 0;
 	for (key in res_upkeep) {

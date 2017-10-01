@@ -16,7 +16,8 @@ var BLDGTILE_XPATH = document.createExpression(
 // will be ""navAjax(142080)"; if it's disabled, it will be "nav(142080)".
 var TILEID_RX = /^nav(?:Ajax)?\((\d+)\)$/;
 
-var bldgTileCache, ticksToggle, ticksEnabled, userloc;
+var bldgTileCache, ticksToggle, ticksEnabled, bbox, userloc,
+    overviewToggle, overview, resizeRunning;
 
 chrome.storage.local.get( 'navticks', configure );
 
@@ -52,6 +53,13 @@ function configure( data ) {
 	e.textContent = 'TICKS';
 	e.addEventListener( 'click', onToggleTicks, false );
 	ticksToggle = e;
+	ui.appendChild( e );
+
+	e = document.createElement( 'button' );
+	e.id = 'bookkeeper-overview-toggle';
+	e.textContent = 'OPEN';
+	e.addEventListener( 'click', onToggleOverview, false );
+	overviewToggle = e;
 	ui.appendChild( e );
 
 	// Wish we could insert directly in the cargo box, but partial refresh
@@ -124,9 +132,6 @@ function onMessage( event ) {
 	// This is needed.
 	if ( ticksEnabled )
 		showTicks();
-	
-	addTipDiv();
-
 }
 
 function showTicks() {
@@ -177,7 +182,7 @@ function showTicks() {
 		}
 		else {
 			needed.push( loc );
-			cached = { td: td, ticks: -1 };
+			cached = { loc: loc, td: td, ticks: -1 };
 		}
 
 		newCache[ loc ] = cached;
@@ -188,7 +193,7 @@ function showTicks() {
 
 	for ( i = 0, end = needTicksDisplay.length; i < end; i++ ) {
 		cached = needTicksDisplay[ i ];
-		addTickThingies( cached.td, cached.ticks , cached.stocked );
+		addTickThingies( cached );
 	}
 
 	if ( needed.length === 0 )
@@ -212,25 +217,25 @@ function onHaveTicks( r ) {
 		cached = bldgTileCache[ key ];
 		cached.ticks = ticks;
 		cached.stocked = stocked;
-		addTickThingies( cached.td, ticks , stocked );
+		addTickThingies( cached );
 	}
 }
 
-function addTickThingies( td, ticks, stocked ) {
+function addTickThingies( cached ) {
 	var elt = document.createElement( 'div' );
 	elt.className = 'bookkeeper-ticks';
-	if ( ticks === 0 )
+	elt.dataset.bookkeeperLoc = cached.loc;
+	if ( cached.ticks === 0 )
 		elt.classList.add( 'red' );
-	else if ( ticks === 1 )
+	else if ( cached.ticks === 1 )
 		elt.classList.add( 'yellow' );
-	if (stocked) {
+	if (cached.stocked) {
 		elt.classList.add( 'grey' );
 	}
-	elt.textContent = ticks;
-	td.appendChild( elt );
-	elt.addEventListener('click', function () { tip(this, 'Food', 'Food', 'r') } );
-	elt.addEventListener('mouseout', nukeTip )
-	}
+	elt.textContent = cached.ticks;
+	cached.td.appendChild( elt );
+	elt.addEventListener( 'click', onSkittleClick, false );
+}
 
 function hideTicks() {
 	var elts = getNavArea().getElementsByClassName( 'bookkeeper-ticks' );
@@ -247,59 +252,154 @@ function getNavArea() {
 	return navTable;
 }
 
+// XXX - The following two handlers are too similar, combine common
+// functionality in one call.
 
-function addTipDiv() {
-	
-	//var table, tr, td, divTip;
-	// var description = 'test';
-	// var title = 'titletest';
-	// var source = 'Pardus Bookkeer';
-	
-	// table = document.createElement( 'table' );
-	// table.class = 'messagestyle';
-	// table.cellspacing = '0';
-	// table.cellpadding = '3';
-	// table.width = '100%';
-	// table.style = 'background:url("//static.pardus.at/img/std/bgd.gif")'
+function onToggleOverview( event ) {
+	var op;
 
-	// tr = document.createElement( 'tr' );
-	// tr.appendChild ( document.createElement( 'b' ) );
-	// td = document.createElement( 'td' );
-	// td.style = 'text-align:left;background:#000000;';
-	// td.textContent = title
-	// tr.firstChild.appendChild( td );
-	// table.appendChild ( tr );	
-	
-	// tr = document.createElement( 'tr' );
-	// td = document.createElement( 'td' );
-	// td.style = 'text-align:left;';
-	// td.textContent = description
-	// tr.appendChild( td );
-	// table.appendChild ( tr );	
+	event.preventDefault();
 
-	// tr = document.createElement( 'tr' );
-	// td = document.createElement( 'td' );
-	// td.height = '5';
-	// var spacer = document.createElement( 'spacer' );
-	// spacer.type = 'block';
-	// spacer.width = '1';
-	// spacer.height = '1';
-	// td.appendChild( spacer );
-	// tr.appendChild( td );
-	// table.appendChild ( tr );	
-	
-	// tr = document.createElement( 'tr' );
-	// td = document.createElement( 'td' );
-	// td.style = 'text-align:right;background:#31313A;';
-	// td.textContent = source
-	// tr.appendChild( td );
-	// table.appendChild ( tr );
-	
-	var divTip = document.createElement( 'div' );
-	divTip.id = "tipBox";
-	//divTip.appendChild ( table );
-	divTip.style.visibility="hidden"
-	document.body.appendChild ( divTip );
+	// XXX - We really should create the iframe the first time it's
+	// requested, and just hide/show it afterward, telling it to refresh
+	// when it's reshown.  That would avoid a visible reflow I'm still
+	// seeing.  However, for that, we need communication with the iframe,
+	// which is something I'm not going to do now.  One day I'll add that,
+	// and I'll fix the sizing issue too (see comment in setOverviewSize).
+
+	if ( overview === undefined ) {
+		// Show it
+		overviewToggle.disabled = true;
+		// open the overview
+		op = {
+			op: 'setPopUpData',
+			data: {
+				ukey: document.location.hostname[0].
+					toUpperCase(),
+				mode: 'nav-embedded'
+			}
+		};
+		chrome.runtime.sendMessage( op, onItsSet );
+	}
+	else {
+		// hide it
+		overview.remove();
+		overview = undefined;
+		overviewToggle.classList.remove( 'on' );
+		document.defaultView.removeEventListener(
+			'resize', onWindowResize );
+	}
+
+	function onItsSet() {
+		var url;
+		url = chrome.extension.getURL( '/html/overview.html' );
+		overview = document.createElement( 'iframe' );
+		overview.id = 'bookkeeper-overview-box';
+		setOverviewSize();
+		overview.src = url;
+		document.body.appendChild( overview );
+		overviewToggle.classList.add( 'on' );
+		overviewToggle.disabled = false;
+		document.defaultView.addEventListener(
+			'resize', onWindowResize );
+	}
+}
+
+function onWindowResize( event ) {
+	if ( resizeRunning )
+		return;
+	resizeRunning = true;
+	document.defaultView.requestAnimationFrame( setOverviewSize );
+}
+
+// This is called initially, and also every time the Window changes size (window
+// resizing, or device rotation).
+//
+// XXX - It's not the best we could do, but, for that we'd need to know how big
+// the document inside the iframe wants to be, and for *that* we'd need
+// communication with the overview page, so more mesaaging, and rather low-level
+// DOM hacking.  No time now.  Some day.
+
+function setOverviewSize() {
+	var window, fw, fh, nav, navw, navh, y, h;
+
+	resizeRunning = false;
+
+	if ( !overview )
+		return;
+
+	// The whole tab when running out of the frameset; otherwise the main
+	// Pardus frame.
+	window = document.defaultView;
+
+	// This is the real estate we have available to play with.
+	fw = window.innerWidth;
+	fh = window.innerHeight;
+
+	// I would love to use
+	//
+	//   document.getElementById( 'nav' ).getBoundingClientRect()
+	//
+	// and just measure the *actual* size of the nav TD.  That, however,
+	// would force a reflow which is nasty.  So instead we get the style of
+	// of the `navarea` table, and use width+28, height+25 to it, cause it
+	// seems that's the result of Pardus styling regardless of screen size.
+	nav = getNavArea();
+	navw = parseInt( nav.style.width ) || 704;
+	navh = parseInt( nav.style.height ) || 576;
+	navh += 25;
+	navw += 28;
+
+	// This is the y coordinate of the bottom edge of the nav grid, relative
+	// to the document.  Ideally, we'd want our iframe's top edge there.
+	y = navh + 8;
+
+	// And we'd like our iframe's bottom to sit 5px above the bottom of the
+	// window.
+
+	h = fh - 5 - y;
+
+	// If this results in a box too stumpy, then we'll invade the nav grid.
+	// Completely making up these numbers here btw, maybe K can come up with
+	// better ones, one day, in his fancy big monitor.
+	if ( h < 320 ) {
+		// Since now we don't need to fit so tightly, we can be a bit
+		// more ambitious and we'll ask for 480px.  But in no case we'll
+		// be taller than the nav grid, or the available height - 5.
+		h = Math.min( 480, navh, fh - 5 );
+		y = fh - 5 -h;
+	}
+
+	overview.style.top = y + 'px';
+	overview.style.left = '180px';
+	overview.width = Math.max( navw, fw - 360 );
+	overview.height = h;
+}
+
+// Like the above, but we have loc
+function onSkittleClick( event ) {
+	var op;
+
+	event.preventDefault();
+
+	if ( bbox )
+		bbox.remove();
+
+	op = {
+		op: 'setPopUpData',
+		data: document.location.hostname[0].toUpperCase() +
+			event.target.dataset.bookkeeperLoc
+	};
+	chrome.runtime.sendMessage( op, onItsSet );
+
+	function onItsSet() {
+		var url;
+		url = chrome.extension.getURL( '/html/bbox.html' );
+		bbox = document.createElement( 'iframe' );
+		bbox.id = 'bookkeeper-building-box';
+		bbox.src = url;
+		document.body.appendChild( bbox );
+	}
 }
 
 })();

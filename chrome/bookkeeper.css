@@ -1,5 +1,3 @@
-/* -*- css-indent-offset: 8; indent-tabs-mode: t -*- */
-
 h1.bookkeeper img {
 	vertical-align: -2px;
 	margin-right: 4px;
@@ -11,10 +9,10 @@ h1.bookkeeper img {
 	border: outset 1px #A0B1C9;
 	margin-bottom: 2ex;
 	padding: 5px;
+	background: url('//static.pardus.at/img/stdhq/bg.gif');
 }
 
 #bookkeeper-overview table {
-	text-align: inherit;
 	border-collapse: collapse;
 }
 
@@ -35,6 +33,23 @@ h1.bookkeeper img {
 
 #bookkeeper-overview th.sort {
 	cursor: pointer;
+}
+
+#bookkeeper-overview th.asc::after {
+	content: "▲"
+}
+
+#bookkeeper-overview th.dsc::after {
+	content: "▼"
+}
+
+/* keep this a bit wide or it starts to wrap */
+#bookkeeper-overview th.time {
+	min-width: 5em;
+}
+
+#bookkeeper-overview th img {
+	vertical-align: middle;
 }
 
 #bookkeeper-overview tbody {

@@ -14,13 +14,14 @@
 		{
 			"matches": [ "*://*.pardus.at/overview_buildings.php*" ],
 			"js": [ "functions.js", "sector.js", "building.js",
-				"commodity.js", "overview.js" ],
+				"commodity.js", "table.js", "overview.js",
+				"overviewbuildings.js" ],
 			"css": [ "bookkeeper.css" ],
 			"all_frames": true
 		},
 		{
 			"matches": [ "*://*.pardus.at/main.php*" ],
-			"js": [ "info-min.js", "nav.js" ],
+			"js": [ "nav.js" ],
 			"css": [ "nav.css" ],
 			"all_frames": true
 		},
@@ -41,8 +42,16 @@
 			"js": [ "functions.js", "building.js", "management.js" ],
 			"css": [ "bookkeeper.css" ],
 			"all_frames": true
+		},
+		{
+			"matches": [
+				"*://*.pardus.at/planet_trade.php*",
+				"*://*.pardus.at/starbase_trade.php*"
+			],
+			"js": [ "starbasetrade.js" ],
+			"css": [ "nav.css" ],
+			"all_frames": true
 		}
-
 	],
 	"description": "User trade interface enhancements for the online game Pardus",
 	"manifest_version": 2,
@@ -72,6 +81,8 @@
 		"icons/minus.svg",
 		"icons/mingray.svg",
 		"icons/plus.svg",
-		"icons/plusgray.svg"
+		"icons/plusgray.svg",
+		"html/bbox.html",
+		"html/overview.html"
 	]
 }

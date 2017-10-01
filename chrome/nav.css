@@ -52,3 +52,19 @@ div.bookkeeper-ticks {
 div.bookkeeper-ticks.yellow { background: #f90 }
 div.bookkeeper-ticks.red { background: #900 }
 div.bookkeeper-ticks.grey { background: #808080 }
+
+iframe#bookkeeper-overview-box,
+iframe#bookkeeper-building-box {
+	position: fixed;
+	border: none;
+	z-index: 1;
+}
+
+iframe#bookkeeper-building-box {
+	background: #666;
+	color: #a1a1af;
+	width: 300px;
+	height: 200px;
+	top: 100px;
+	left: 100px;
+}
