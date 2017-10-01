@@ -256,7 +256,7 @@ function migrateV19Storage() {
 function onMessage( message, sender, sendResponse ) {
 	var handler = OpHandlers[ message.op ];
 	if ( handler )
-		return handler( message, sendResponse );
+		return handler( message, sendResponse, sender );
 	return false;
 }
 
@@ -318,4 +318,47 @@ OpHandlers.setPopUpData = function( message, sendResponse ) {
 OpHandlers.queryPopUpData = function( message, sendResponse ) {
 	sendResponse( currentPopUpData );
 	return false;
+}
+
+// This is magic.
+
+OpHandlers.injectMeHard = function( message, sendResponse, sender ) {
+	var scripts, stylesheets, tabId, frameId;
+
+	console.log( 'inject request', message, sender );
+
+	tabId = sender.tab.id;
+	frameId = sender.frameId;
+	stylesheets = message.stylesheets || [];
+	scripts = message.scripts || [];
+
+	injectStylesheet();
+
+	return true;
+
+	function injectStylesheet() {
+		var stylesheet;
+		if ( stylesheets.length > 0 ) {
+			stylesheet = stylesheets.shift();
+			chrome.tabs.insertCSS(
+				tabId,
+				{ file: stylesheet, frameId: frameId },
+				injectStylesheet );
+		}
+		else
+			injectScript();
+	}
+
+	function injectScript() {
+		var script;
+		if ( scripts.length > 0 ) {
+			script = scripts.shift();
+			chrome.tabs.executeScript(
+				tabId,
+				{ file: script, frameId: frameId },
+				injectScript );
+		}
+		else
+			sendResponse();
+	}
 }

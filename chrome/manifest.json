@@ -57,7 +57,7 @@
 	"manifest_version": 2,
 	"minimum_chrome_version": "42",
 	"name": "Pardus Bookkeeper",
-	"permissions": [ "notifications", "storage" ],
+	"permissions": [ "notifications", "storage", "*://*.pardus.at/*" ],
 	"version": "2.1",
 	"browser_action": {
 		"default_title": "Trade info",
