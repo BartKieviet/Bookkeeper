@@ -13,7 +13,7 @@ function onHaveOptions( opts ) {
 	overview.configure( undefined, onReady );
 
 	function onReady( table ) {
-		overview.table.elements.container.className = 'nav';
+		overview.table.elements.container.classList.add( 'nav' );
 
 		document.body.appendChild( overview.containerElement );
 	}

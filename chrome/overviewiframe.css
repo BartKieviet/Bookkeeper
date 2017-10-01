@@ -25,6 +25,11 @@ div.bookkeeper-overview.nav {
 	transform: translate(-50%,0);
 }
 
+div.bookkeeper-overview-filter input {
+	background: #00001C;
+	color: #A1A1AF;
+}
+
 div.bookkeeper-overview.nav table {
 	margin: 0 auto 8px auto;
 }

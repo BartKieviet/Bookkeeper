@@ -3,6 +3,26 @@ h1.bookkeeper img {
 	margin-right: 4px;
 }
 
+div.bookkeeper-overview-container {
+	display: inline-block;
+}
+
+div.bookkeeper-overview-filter {
+	margin: 3px auto;
+	text-align: left;
+}
+
+div.bookkeeper-overview-filter input {
+	width: 92%;
+	border: none;
+	outline: none;
+	font-size: 12px;
+	font-weight: bold;
+	font-family: Helvetica, Arial, sans-serif;
+	padding: 2px 5px;
+	background: transparent;
+}
+
 div.bookkeeper-overview {
 	display: inline-block;
 	width: auto;

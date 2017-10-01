@@ -30,6 +30,7 @@ var Overview = function( ukey, document, storageKey ) {
 	this.containerElement.className = 'bookkeeper-overview-container';
 
 	div = document.createElement( 'div' );
+	div.className = 'bookkeeper-overview-filter'
 	this.filterInput = document.createElement( 'input' )
 	div.appendChild( this.filterInput );
 	this.containerElement.appendChild( div );
@@ -50,7 +51,7 @@ Overview.prototype.configure = function( universeList, callback ) {
 	// Get data from local storage
 
 	keys = [
-		'sector', 'x', 'y',
+		'sector',
 		this.options.filterKey,
 		this.options.sortIdKey,
 		this.options.sortAscKey
@@ -73,8 +74,7 @@ Overview.prototype.configure = function( universeList, callback ) {
 
 		// Build an example query
 		this.filterInput.placeholder =
-			'SF ' + this.currentSector + ' 3 ' +
-			data.x + ',' + data.y;
+			'SF 3 ' + this.currentSector;
 
 		applyFilter.call(
 			this, universeList, sort, onReady.bind(this) );
