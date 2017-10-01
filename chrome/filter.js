@@ -137,7 +137,7 @@ Filter.prototype.filter = function( buildings, now ) {
 
 		return match;
 
-		function checkString( building, s ) {
+		function checkString( s ) {
 			var sector;
 			if ( building.owner !== undefined &&
 			     building.owner.toLowerCase().includes(s) )

@@ -15,10 +15,9 @@ var BKTable = (function() {
 //
 // `options`, if supplied, is an object.  Options property `defaultSortId`
 // provides a fallback id to use by BKTable.prototype.sort in case the id passed
-// there is not recognised.  Options properties `id` and `className` set the DOM
-// id and class name of the container element.  Options property `noFooter`, if
-// true, specifies that a table footer will never be needed so no TFOOT element
-// should be created.
+// there is not recognised.  Options property `noFooter`, if true, specifies
+// that a table footer will never be needed so no TFOOT element should be
+// created.
 //
 // A reference to the options object is kept in the `options` instance property,
 // so it may be accessed by spec functions (see below).
@@ -41,11 +40,6 @@ function BKTable( document, options ) {
 		head: this.doc.createElement('thead'),
 		rows: this.doc.createElement('tbody')
 	};
-
-	if( this.options.id )
-		elements.container.id = this.options.id;
-	if( this.options.className )
-		elements.container.className = this.options.className;
 
 	elements.table.appendChild( elements.head );
 	elements.table.appendChild( elements.rows );

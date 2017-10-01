@@ -17,7 +17,6 @@ var Overview = function( ukey, document, storageKey ) {
 
 	// XXX we should take an options object, and merge with this:
 	this.options = {
-		id: 'bookkeeper-overview',
 		mode: 'full',
 		ukey: ukey,
 		filterKey: ukey + storageKey + 'Filter',
@@ -25,25 +24,19 @@ var Overview = function( ukey, document, storageKey ) {
 		sortAscKey: ukey + storageKey + 'OverviewSortAsc'
 	};
 
-	tableOptions = {
-		id: this.options.id,
-		// className: 'nav',
-		ukey: ukey,
-		defaultSortId: 'time'
-	}
-
 	this.filter = new Filter();
 
 	this.containerElement = document.createElement( 'div' );
-	this.containerElement.className = this.options.id + '-container';
+	this.containerElement.className = 'bookkeeper-overview-container';
 
 	div = document.createElement( 'div' );
 	this.filterInput = document.createElement( 'input' )
 	div.appendChild( this.filterInput );
 	this.containerElement.appendChild( div );
 
-	this.table = new BKTable( document, tableOptions );
+	this.table = new BKTable( document, {defaultSortId: 'time'} );
 	this.table.onRefresh = onTableRefresh;
+	this.table.elements.container.className = 'bookkeeper-overview';
 	this.containerElement.appendChild( this.table.elements.container );
 }
 
@@ -65,10 +58,15 @@ Overview.prototype.configure = function( universeList, callback ) {
 	chrome.storage.local.get( keys, onStorageLocalData.bind(this) );
 
 	function onStorageLocalData( data ) {
-		var query = data[ this.options.filterKey ] || '';
+		var query, sort;
+
+		query = data[ this.options.filterKey ] || '';
+		sort = {
+			id: data[ this.options.sortIdKey ],
+			asc: !!data[ this.options.sortAscKey ]
+		};
+
 		this.filterInput.value = query;
-		this.sortId = data[ this.options.sortIdKey ];
-		this.sortAsc = !!data[ this.options.sortAscKey ];
 		this.currentSector = data.sector || '';
 		this.currentSectorId = Sector.getId( this.currentSector );
 		this.filter.parseQuery( query );
@@ -78,13 +76,14 @@ Overview.prototype.configure = function( universeList, callback ) {
 			'SF ' + this.currentSector + ' 3 ' +
 			data.x + ',' + data.y;
 
-		applyFilter.call( this, universeList, onReady.bind(this) );
+		applyFilter.call(
+			this, universeList, sort, onReady.bind(this) );
 	}
 
 	function onReady() {
 		// At this point, the table is sorted by the initial sort.  Now
 		// we want to be notified of any re-sorting.
-		this.table.onSort = onSort;
+		this.table.onSort = onSort.bind( this );
 
 		// And we want to know if the user types a filter
 		this.filterTimeout = undefined;
@@ -97,7 +96,7 @@ Overview.prototype.configure = function( universeList, callback ) {
 	}
 }
 
-function applyFilter( universeList, callback ) {
+function applyFilter( universeList, sort, callback ) {
 	if ( universeList === undefined ) {
 		// The usual case: get the building list from sync
 		chrome.storage.sync.get(
@@ -106,6 +105,9 @@ function applyFilter( universeList, callback ) {
 	else
 		// Skip that sync.get
 		fetchBuildingData.call( this );
+
+	if ( sort === undefined )
+		sort = { id: this.table.sortId, asc: this.table.sortAsc };
 
 	// XXX - if no building list we should show something, "no elements to
 	// display" or whatever.  Now more important, with filters.
@@ -135,7 +137,7 @@ function applyFilter( universeList, callback ) {
 		buildings = this.filter.filter( buildings, Building.now() );
 		spec = makeSpec.call( this, buildings );
 		this.table.refresh( spec, buildings );
-		this.table.sort( this.sortId, this.sortAsc );
+		this.table.sort( sort.id, sort.asc );
 
 		console.log( 'applyFilter', this );
 
@@ -573,8 +575,8 @@ function compare( a, b ) {
 
 function onSort() {
 	var items = {};
-	items[ this.options.sortIdKey ] = this.sortId;
-	items[ this.options.sortAscKey ] = this.sortAsc;
+	items[ this.options.sortIdKey ] = this.table.sortId;
+	items[ this.options.sortAscKey ] = this.table.sortAsc;
 	chrome.storage.local.set( items );
 }
 

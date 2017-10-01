@@ -3,7 +3,7 @@ h1.bookkeeper img {
 	margin-right: 4px;
 }
 
-#bookkeeper-overview {
+div.bookkeeper-overview {
 	display: inline-block;
 	width: auto;
 	border: outset 1px #A0B1C9;
@@ -12,11 +12,11 @@ h1.bookkeeper img {
 	background: url('//static.pardus.at/img/stdhq/bg.gif');
 }
 
-#bookkeeper-overview table {
+div.bookkeeper-overview table {
 	border-collapse: collapse;
 }
 
-#bookkeeper-overview th {
+div.bookkeeper-overview th {
 	padding: 0 2px;
 	background: #a1a1af;
 	color: #00001c;
@@ -26,68 +26,68 @@ h1.bookkeeper img {
 	border-right: solid 2px #00001c;
 }
 
-#bookkeeper-overview th.c {
+div.bookkeeper-overview th.c {
 	background: #3b3b49;
 	border: none;
 }
 
-#bookkeeper-overview th.sort {
+div.bookkeeper-overview th.sort {
 	cursor: pointer;
 }
 
-#bookkeeper-overview th.asc::after {
+div.bookkeeper-overview th.asc::after {
 	content: "▲"
 }
 
-#bookkeeper-overview th.dsc::after {
+div.bookkeeper-overview th.dsc::after {
 	content: "▼"
 }
 
 /* keep this a bit wide or it starts to wrap */
-#bookkeeper-overview th.time {
+div.bookkeeper-overview th.time {
 	min-width: 5em;
 }
 
-#bookkeeper-overview th img {
+div.bookkeeper-overview th img {
 	vertical-align: middle;
 }
 
-#bookkeeper-overview tbody {
+div.bookkeeper-overview tbody {
 	cursor: crosshair;
 }
 
-#bookkeeper-overview tbody tr:hover {
+div.bookkeeper-overview tbody tr:hover {
 	background-color: #1a1a36;
 }
 
-#bookkeeper-overview td {
+div.bookkeeper-overview td {
 	border: solid 1px #1a1a36;
 }
 
-#bookkeeper-overview td.r,
-#bookkeeper-overview td.c {
+div.bookkeeper-overview td.r,
+div.bookkeeper-overview td.c {
 	text-align: right;
 }
 
 /* Colours for profit/deficit from the trade log screens */
-#bookkeeper-overview td.lime {
+div.bookkeeper-overview td.lime {
 	color: #8AB797;
 }
-#bookkeeper-overview td.pink {
+div.bookkeeper-overview td.pink {
 	color: #B78A8E;
 }
 
-#bookkeeper-overview td.red {
+div.bookkeeper-overview td.red {
 	color: red;
 	font-weight: bold;
 }
 
-#bookkeeper-overview td.yellow {
+div.bookkeeper-overview td.yellow {
 	color: yellow;
 	font-weight: bold;
 }
 
-#bookkeeper-overview img.bookkeeper-small-button {
+div.bookkeeper-overview img.bookkeeper-small-button {
 	margin-left: 5px;
 }
 

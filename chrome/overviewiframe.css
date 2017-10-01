@@ -11,7 +11,7 @@ body {
 	overflow: hidden;
 }
 
-#bookkeeper-overview.nav {
+div.bookkeeper-overview.nav {
 	/* XXX test if no warnings when playing under HTTPS */
 	background: url('http://static.pardus.at/img/stdhq/bg.gif');
 	display: block;
@@ -25,6 +25,6 @@ body {
 	transform: translate(-50%,0);
 }
 
-#bookkeeper-overview.nav table {
+div.bookkeeper-overview.nav table {
 	margin: 0 auto 8px auto;
 }
