@@ -48,14 +48,6 @@ function Filter() {
 //   the sector name or the owner's name contain any of the given strings, case
 //   insensitive.
 
-function reset() {
-	this.coords = undefined;
-	this.ticks = undefined;
-	this.tags = [];
-	this.btypes = [];
-	this.strings = [];
-}
-
 Filter.prototype.parseQuery = function( q ) {
 	var m, numbers;
 
@@ -110,10 +102,18 @@ Filter.prototype.parseQuery = function( q ) {
 
 Filter.prototype.filter = function( buildings, now ) {
 	var result;
-	if ( this.filtering )
-		result = buildings.filter( testBuilding.bind(this) );
-	else
+
+	if ( !this.filtering )
 		result = buildings;
+	else
+		result = buildings.filter( testBuilding.bind(this) );
+
+	this.resultCount = result.length;
+	if ( this.resultCount > 0 ) {
+		this.matchedOwners = dedupe( this.matchedOwners );
+		this.matchedSectors = dedupe( this.matchedSectors );
+	}
+
 	return result;
 
 	// end of compute(), below are function defs
@@ -131,23 +131,35 @@ Filter.prototype.filter = function( buildings, now ) {
 		if ( match !== false && this.btypes.length > 0 )
 			match = this.btypes.includes( building.typeId );
 		if ( match !== false && this.strings.length > 0 )
-			match = this.strings.some( checkString.bind(this) );
+			match = testStrings.call( this );
 
 		// Include the building if it was accepted by some rule.
 
 		return match;
 
-		function checkString( s ) {
-			var sector;
-			if ( building.owner !== undefined &&
-			     building.owner.toLowerCase().includes(s) )
-				return true;
+		function testStrings() {
+			var sector, ownerMatch, sectorMatch;
+
 			sector = Sector.getName(building.sectorId);
-			if ( sector !== undefined &&
-			     sector.toLowerCase().includes(s) )
-				return true;
-			return false;
+			this.strings.forEach( testString.bind(this) );
+
+			return ownerMatch || sectorMatch;
+
+			function testString( s ) {
+				if ( building.owner !== undefined &&
+				     building.owner.toLowerCase().includes(s) ) {
+					this.matchedOwners.push(building.owner);
+					ownerMatch = true;
+				}
+
+				if ( sector !== undefined &&
+				     sector.toLowerCase().includes(s) ) {
+					this.matchedSectors.push( sector );
+					sectorMatch = true;
+				}
+			}
 		}
+
 	}
 }
 
@@ -194,10 +206,64 @@ Filter.prototype.makeHumanDescription = function() {
 	else
 		parts.push( humanBTypes(this.btypes) );
 
+	if ( this.resultCount > 0 ) {
+		// If we found results, and there were strings to match, then
+		// each string must have matched at least one sector or
+		// building.
+		if ( this.strings.length > 0 )
+			parts.push( ownerSectorPart.call(this) );
+	}
+	else {
+		// If nothing matched, and there were strings to search, then
+		// add that so the user knows why their query had no matches.
+		if ( this.strings.length > 0 ) {
+			parts.push( 'matching '
+				  + humanEnumeration(
+					  this.strings.map(
+						  function(s) {
+							  return quote(s);
+						  } ) )
+				  );
+		}
+	}
+
 	if ( this.ticks !== undefined )
 		parts.push( humanTicks(this.ticks) );
 
 	return parts.join( ' ' ) + '.';
+
+	function ownerSectorPart() {
+		var parts = [];
+
+		// XXX this will change with coords
+		if ( this.matchedSectors.length > 0 ) {
+			parts.push( 'in '
+				  + humanEnumeration(
+					  this.matchedSectors, 'or') );
+		}
+
+		if ( this.matchedOwners.length > 0 ) {
+			parts.push( 'owned by '
+				  + humanEnumeration(
+					  this.matchedOwners, 'or') );
+		}
+
+		return parts.join( ' or ' );
+	}
+}
+
+// Set all instance properties to initial values.  Except `filtering`, that one
+// is set in either constructor or parseQuery.
+
+function reset() {
+	this.coords = undefined;
+	this.ticks = undefined;
+	this.tags = [];
+	this.btypes = [];
+	this.strings = [];
+	this.matchedSectors = [];
+	this.matchedOwners = [];
+	this.resultCount = NaN;
 }
 
 function humanBTypes( btypes ) {
@@ -216,22 +282,22 @@ function humanTicks( n ) {
 	return 'with ' + n + ' or fewer ticks of upkeep remaining';
 }
 
-function humanEnumeration( things ) {
+function humanEnumeration( things, conjunction ) {
 	if ( things.length === 0 )
 		return null;
+
 	if ( things.length === 1 )
 		return things[0];
-	if ( things.length === 2 )
-		return things.join( ' and ' );
-	return [ things.slice(0, -1).join(', '), things[things.length-1] ].
-		join( ', and ' );
-}
 
-function plural( s ) {
-	var p = PLURALS[s];
-	if ( p )
-		return p;
-	return s + 's';
+	if ( conjunction === undefined )
+		conjunction = ' and ';
+	else
+		conjunction = ' ' + conjunction + ' ';
+
+	if ( things.length === 2 )
+		return things.join( conjunction );
+	return [ things.slice(0, -1).join(', '), things[things.length-1] ].
+		join( ',' + conjunction );
 }
 
 // Search for a building type whose short name is the given string, case
@@ -255,6 +321,20 @@ function getBuildingTypeId( s ) {
 	return BUILDING_IDS[ s ];
 }
 
+// Remove duplicates from an array.
+
+function dedupe( a ) {
+	var dic = {};
+	a.forEach( function( item ) { dic[ item ] = true; } );
+	return Object.keys( dic );
+}
+
+// Add quotes to a string. This is flaky and just for display, don't rely on it.
+function quote( s ) {
+	var q = s.indexOf( '"' ) === -1 ? '"' : "'";
+	return q + s + q;
+}
+
 // Because we don't want to say factorys in public.
 
 var PLURALS = {
@@ -271,6 +351,13 @@ var PLURALS = {
 	'Robot Factory': 'Robot Factories',
 	'Smelting Facility': 'Smelting Facilities'
 };
+
+function plural( s ) {
+	var p = PLURALS[s];
+	if ( p )
+		return p;
+	return s + 's';
+}
 
 return Filter;
 
