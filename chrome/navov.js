@@ -6,7 +6,9 @@
 var Building, Overview;
 
 // Globals
-var openButton, overviewElement;
+var ukey, openButton, overlay;
+
+ukey = document.location.hostname[0].toUpperCase();
 
 // The first time this runs, it is assumed that a click on OPEN just happened,
 // and nav.js already removed its event handler.  So we react to the click, and
@@ -22,24 +24,25 @@ function onClick( event ) {
 	if ( event )
 		event.preventDefault();
 
-	if ( overviewElement ) {
+	if ( overlay ) {
 		// Hide the overview and restore the button.
-		overviewElement.remove();
-		overviewElement = undefined;
+		overlay.remove();
+		overlay = undefined;
 		openButton.classList.remove( 'on' );
 	}
 	else {
 		openButton.disabled = true;
 		openButton.classList.add( 'on' );
-		overview = new Overview( 'P', document, 'Nav' );
-		// XXX this is ugly
-		//overview.table.elements.container.classList.add( 'nav' );
-		overviewElement = overview.container;
+		overlay = document.createElement( 'div' );
+		overlay.id = 'bookkeeper-overlay';
+
+		overview = new Overview( ukey, document, 'Nav' );
 		overview.configure( undefined, onReady );
 	}
 
 	function onReady( table ) {
-		document.body.appendChild( overviewElement );
+		overlay.appendChild( overview.container );
+		document.body.appendChild( overlay );
 		openButton.disabled = false;
 	}
 }

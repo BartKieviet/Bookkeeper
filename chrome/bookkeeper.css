@@ -123,6 +123,26 @@ div.bookkeeper-overview > table img.bookkeeper-small-button {
 	margin-left: 5px;
 }
 
+/* OVERLAY */
+#bookkeeper-overlay {
+	position: fixed;
+	top: 50vh;
+	right: 210px;
+	max-width: 79vw;
+	max-height: 96vh;
+	transform: translate(0,-50%);
+	border: ridge 3px #99a;
+	border-radius: 8px;
+	box-shadow: 0 0 10px 5px rgba(0,0,0,0.75);
+	background: url('//static.pardus.at/img/stdhq/bgoutspace1.gif');
+	padding: 8px;
+	overflow: auto;
+}
+
+#bookkeeper-overlay > div.bookkeeper-overview {
+	border: none;
+}
+
 
 .bookkeeper-small-button {
 	width: 16px;
