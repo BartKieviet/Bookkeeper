@@ -6,7 +6,7 @@
 var Building, Overview;
 
 // Globals
-var openButton, overviewContainer;
+var openButton, overviewElement;
 
 // The first time this runs, it is assumed that a click on OPEN just happened,
 // and nav.js already removed its event handler.  So we react to the click, and
@@ -22,10 +22,10 @@ function onClick( event ) {
 	if ( event )
 		event.preventDefault();
 
-	if ( overviewContainer ) {
+	if ( overviewElement ) {
 		// Hide the overview and restore the button.
-		overviewContainer.remove();
-		overviewContainer = undefined;
+		overviewElement.remove();
+		overviewElement = undefined;
 		openButton.classList.remove( 'on' );
 	}
 	else {
@@ -34,12 +34,12 @@ function onClick( event ) {
 		overview = new Overview( 'P', document, 'Nav' );
 		// XXX this is ugly
 		//overview.table.elements.container.classList.add( 'nav' );
-		overviewContainer = overview.containerElement;
+		overviewElement = overview.container;
 		overview.configure( undefined, onReady );
 	}
 
 	function onReady( table ) {
-		document.body.appendChild( overviewContainer );
+		document.body.appendChild( overviewElement );
 		openButton.disabled = false;
 	}
 }

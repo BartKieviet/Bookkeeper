@@ -3,40 +3,48 @@ h1.bookkeeper img {
 	margin-right: 4px;
 }
 
-div.bookkeeper-overview-container {
-	display: inline-block;
-}
-
-div.bookkeeper-overview-filter {
-	margin: 3px auto;
-	text-align: left;
-}
-
-div.bookkeeper-overview-filter input {
-	width: 92%;
-	border: none;
-	outline: none;
-	font-size: 12px;
-	font-weight: bold;
-	font-family: Helvetica, Arial, sans-serif;
-	padding: 2px 5px;
-	background: transparent;
-}
+/* OVERVIEW */
 
 div.bookkeeper-overview {
-	display: inline-block;
-	width: auto;
-	border: outset 1px #A0B1C9;
-	margin-bottom: 2ex;
+	border: outset 2px #A0B1C9;
 	padding: 5px;
+	display: inline-flex;
+	flex-direction: column;
+	align-items: stretch;
+}
+
+div.bookkeeper-overview > div {
+	flex: none;
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+}
+
+div.bookkeeper-overview > div > input {
+	flex: auto;
+	border: none;
+	background: transparent;
+	outline: none;
+	font-family: Helvetica, Arial, sans-serif;
+	font-size: 12px;
+	font-weight: bold;
+}
+
+div.bookkeeper-overview > div > img {
+	flex: 0;
+	width: 16px;
+	height: 16px;
+	cursor: pointer;
+}
+
+div.bookkeeper-overview > table {
+	flex: auto;
+	align-self: stretch;
+	border-collapse: collapse;
 	background: url('//static.pardus.at/img/stdhq/bg.gif');
 }
 
-div.bookkeeper-overview table {
-	border-collapse: collapse;
-}
-
-div.bookkeeper-overview th {
+div.bookkeeper-overview > table th {
 	padding: 0 2px;
 	background: #a1a1af;
 	color: #00001c;
@@ -46,70 +54,75 @@ div.bookkeeper-overview th {
 	border-right: solid 2px #00001c;
 }
 
-div.bookkeeper-overview th.c {
+div.bookkeeper-overview > table th:first-child {
+	border-left: none;
+}
+
+div.bookkeeper-overview > table th.c {
 	background: #3b3b49;
 	border: none;
 }
 
-div.bookkeeper-overview th.sort {
+div.bookkeeper-overview > table th.sort {
 	cursor: pointer;
 }
 
-div.bookkeeper-overview th.asc::after {
+div.bookkeeper-overview > table th.asc::after {
 	content: "▲"
 }
 
-div.bookkeeper-overview th.dsc::after {
+div.bookkeeper-overview  > table th.dsc::after {
 	content: "▼"
 }
 
 /* keep this a bit wide or it starts to wrap */
-div.bookkeeper-overview th.time {
+div.bookkeeper-overview > table th.time {
 	min-width: 5em;
 }
 
-div.bookkeeper-overview th img {
+div.bookkeeper-overview > table th img {
 	vertical-align: middle;
 }
 
-div.bookkeeper-overview tbody {
+div.bookkeeper-overview > table tbody {
 	cursor: crosshair;
 }
 
-div.bookkeeper-overview tbody tr:hover {
+div.bookkeeper-overview > table > tbody > tr:hover {
 	background-color: #1a1a36;
 }
 
-div.bookkeeper-overview td {
+div.bookkeeper-overview > table td {
 	border: solid 1px #1a1a36;
 }
 
-div.bookkeeper-overview td.r,
-div.bookkeeper-overview td.c {
+div.bookkeeper-overview > table td.r,
+div.bookkeeper-overview > table td.c {
 	text-align: right;
 }
 
 /* Colours for profit/deficit from the trade log screens */
-div.bookkeeper-overview td.lime {
+div.bookkeeper-overview > table td.lime {
 	color: #8AB797;
 }
-div.bookkeeper-overview td.pink {
+div.bookkeeper-overview > table td.pink {
 	color: #B78A8E;
 }
 
-div.bookkeeper-overview td.red {
+div.bookkeeper-overview > table td.red {
 	color: red;
 	font-weight: bold;
 }
 
-div.bookkeeper-overview td.yellow {
+div.bookkeeper-overview > table td.yellow {
 	color: yellow;
 	font-weight: bold;
 }
 
-div.bookkeeper-overview img.bookkeeper-small-button {
+div.bookkeeper-overview > table img.bookkeeper-small-button {
 	margin-left: 5px;
 }
+
 
 .bookkeeper-small-button {
 	width: 16px;

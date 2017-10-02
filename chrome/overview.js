@@ -1,8 +1,10 @@
 // From other scripts:
-var Building, Commodities, CalendarNames, Sector, BKTable, Filter;
+var Building, Commodities, CalendarNames, Sector, SortableTable, Filter;
 
-// Overview is a UI component that contains a Filter and a BKTable, and mediates
-// the interaction between those.
+
+// Overview is a UI component that contains a Filter and a SortableTable, and
+// mediates the interaction between those.
+
 
 var Overview = (function() {
 
@@ -10,10 +12,10 @@ var Overview = (function() {
 // it to the document.  That should be done after the instance is configured,
 // with something like:
 //
-// someNode.appendChild( overviewInstance.containerElement );
+//   someNode.appendChild( overviewInstance.container );
 
 var Overview = function( ukey, document, storageKey ) {
-	var div, options, tableOptions;
+	var options, div;
 
 	// XXX we should take an options object, and merge with this:
 	this.options = {
@@ -26,19 +28,20 @@ var Overview = function( ukey, document, storageKey ) {
 
 	this.filter = new Filter();
 
-	this.containerElement = document.createElement( 'div' );
-	this.containerElement.className = 'bookkeeper-overview-container';
+	this.container = document.createElement( 'div' );
+	this.container.className = 'bookkeeper-overview';
 
 	div = document.createElement( 'div' );
-	div.className = 'bookkeeper-overview-filter'
 	this.filterInput = document.createElement( 'input' )
 	div.appendChild( this.filterInput );
-	this.containerElement.appendChild( div );
+	this.clearIcon = document.createElement( 'img' );
+	this.clearIcon.src = chrome.extension.getURL( 'icons/backsp.svg' );
+	div.appendChild( this.clearIcon );
+	this.container.appendChild( div );
 
-	this.table = new BKTable( document, {defaultSortId: 'time'} );
-	this.table.onRefresh = onTableRefresh;
-	this.table.elements.container.className = 'bookkeeper-overview';
-	this.containerElement.appendChild( this.table.elements.container );
+	this.sorTable = new SortableTable( document, {defaultSortId: 'time'} );
+	this.sorTable.onRefresh = onTableRefresh;
+	this.container.appendChild( this.sorTable.table );
 }
 
 // If the list of building ids in this universe is already available (like, it
@@ -83,7 +86,7 @@ Overview.prototype.configure = function( universeList, callback ) {
 	function onReady() {
 		// At this point, the table is sorted by the initial sort.  Now
 		// we want to be notified of any re-sorting.
-		this.table.onSort = onSort.bind( this );
+		this.sorTable.onSort = onSort.bind( this );
 
 		// And we want to know if the user types a filter
 		this.filterTimeout = undefined;
@@ -107,7 +110,7 @@ function applyFilter( universeList, sort, callback ) {
 		fetchBuildingData.call( this );
 
 	if ( sort === undefined )
-		sort = { id: this.table.sortId, asc: this.table.sortAsc };
+		sort = { id: this.sorTable.sortId, asc: this.sorTable.sortAsc };
 
 	// XXX - if no building list we should show something, "no elements to
 	// display" or whatever.  Now more important, with filters.
@@ -136,8 +139,8 @@ function applyFilter( universeList, sort, callback ) {
 
 		buildings = this.filter.filter( buildings, Building.now() );
 		spec = makeSpec.call( this, buildings );
-		this.table.refresh( spec, buildings );
-		this.table.sort( sort.id, sort.asc );
+		this.sorTable.refresh( spec, buildings );
+		this.sorTable.sort( sort.id, sort.asc );
 
 		console.log( 'applyFilter', this );
 
@@ -146,7 +149,7 @@ function applyFilter( universeList, sort, callback ) {
 	}
 }
 
-// Called in the context of the BKTable.  Set properties nowDate and now, for
+// Called in the context of the SortableTable.  Set properties nowDate and now, for
 // use in spec functions.
 function onTableRefresh() {
 	this.nowDate = new Date();
@@ -175,7 +178,7 @@ function onFilterInput( event ) {
 
 
 
-// This is a catalogue of "column specifications", as expected by BKTable.
+// This is a catalogue of "column specifications", as expected by SortableTable.
 
 var COLUMN_SPECS = {
 	location: {
@@ -327,13 +330,13 @@ function makeSpec( buildings ) {
 	}
 
 	// Add properties to the table for use in its spec functions
-	this.table.totals = [];
-	this.table.beforeTotals = before.length;
-	this.table.afterTotals = after.length;
-	this.table.commodities = getCommoditiesInUse( buildings );
+	this.sorTable.totals = [];
+	this.sorTable.beforeTotals = before.length;
+	this.sorTable.afterTotals = after.length;
+	this.sorTable.commodities = getCommoditiesInUse( buildings );
 
 	Array.prototype.push.apply( spec.columns, before );
-	this.table.commodities.forEach( pushCommSpec );
+	this.sorTable.commodities.forEach( pushCommSpec );
 	Array.prototype.push.apply( spec.columns, after );
 
 	return spec;
@@ -350,7 +353,7 @@ function makeSpec( buildings ) {
 }
 
 // Another three functs that construct functions.  They synthesise the spec
-// callbacks for each commodity (see BKTable).
+// callbacks for each commodity (see SortableTable).
 
 function makeCommHeaderFn( commId ) {
 	return function( th ) {
@@ -458,7 +461,7 @@ function foot() {
 		}
 	append( 'td' );
 	cell.colSpan = this.afterTotals;
-	this.elements.foot.appendChild( tr );
+	this.tfoot.appendChild( tr );
 
 	// Arbitrary limit
 	if ( this.items.length > 24 ) {
@@ -467,7 +470,7 @@ function foot() {
 			append( 'th' )
 			columns[ i ].header.call( this, cell );
 		}
-		this.elements.foot.appendChild( tr );
+		this.tfoot.appendChild( tr );
 	}
 }
 
@@ -571,12 +574,12 @@ function compare( a, b ) {
 	return 1;
 }
 
-// Called when the table is re-sorted, in the context of the BKTable instance.
+// Called when the table is re-sorted, in the context of the Overview instance.
 
 function onSort() {
 	var items = {};
-	items[ this.options.sortIdKey ] = this.table.sortId;
-	items[ this.options.sortAscKey ] = this.table.sortAsc;
+	items[ this.options.sortIdKey ] = this.sorTable.sortId;
+	items[ this.options.sortAscKey ] = this.sorTable.sortAsc;
 	chrome.storage.local.set( items );
 }
 

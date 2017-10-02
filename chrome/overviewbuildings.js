@@ -1,12 +1,9 @@
 // This is a content script.  It runs on overview_buildings.php.
 
 // From other files
-
-var Universe, Building, Commodities, CalendarNames,  Sector,
-    BKTable, Filter, Overview;
+var Universe, Building, Commodities, Sector, Overview;
 
 // Global used here XXX K you were right, Universe shouldn't be an object.
-
 var universe = Universe.fromDocument( document );
 
 // Start the ball.
@@ -50,8 +47,7 @@ function setup() {
 		h1.appendChild( document.createTextNode('Bookkeeping') );
 
 		anchor.parentNode.insertBefore( h1, anchor );
-		anchor.parentNode.insertBefore(
-			overview.containerElement, anchor );
+		anchor.parentNode.insertBefore( overview.container, anchor );
 	}
 }
 
