@@ -126,7 +126,7 @@ div.bookkeeper-overview > table img.bookkeeper-small-button {
 /* OVERLAY */
 #bookkeeper-overlay {
 	position: fixed;
-	top: 8px;
+	bottom: 8px;
 	right: 210px;
 	max-width: 78%;
 	max-height: 95%;
