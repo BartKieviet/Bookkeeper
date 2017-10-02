@@ -305,21 +305,6 @@ OpHandlers.queryTicksLeft = function( message, sendResponse ) {
 	}
 }
 
-// When we load bbox.html in an iframe, we can't talk to it from the containing
-// page to pass it information it may need.  So we mediate.
-
-var currentPopUpData;
-OpHandlers.setPopUpData = function( message, sendResponse ) {
-	currentPopUpData = message.data;
-	sendResponse( true );
-	return false;
-}
-
-OpHandlers.queryPopUpData = function( message, sendResponse ) {
-	sendResponse( currentPopUpData );
-	return false;
-}
-
 // This is magic.
 
 OpHandlers.injectMeHard = function( message, sendResponse, sender ) {
