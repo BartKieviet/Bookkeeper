@@ -165,6 +165,17 @@ function estimateLevel( typeId ) {
 
 	for (key in amount_max) {
 		var fontList = document.getElementById('baserow'+key).getElementsByTagName("font");
+		
+		if (fontList.length === 0) {
+			// Something is wrong, scramble!
+			continue;
+		}
+		
+		if (key == '28') {
+			//Neural tissue does not play nice
+			continue; 
+		}
+		
 		perCommodity[key] = parseInt(fontList[fontList.length-1].innerHTML);
 		
 		if (Math.abs( perCommodity [ key ]) > max ) {
@@ -179,14 +190,6 @@ function estimateLevel( typeId ) {
 			}
 		}
 		
-/*		if (perCommodity[key] > 0) { // > 0 means production
-				levelEst[key] = ((((perCommodity[key] / res_production[key]) - 1) / 0.5) + 1);
-				level += levelEst[key];
-			}
-		} else {
-			levelEst[key] = ((((-perCommodity[key] / res_upkeep[key]) - 1) / 0.4) + 1);
-			level += levelEst[key];
-		}*/
 	}
 	
 	if (perCommodity [ maxKey ] > 0) {
@@ -197,10 +200,14 @@ function estimateLevel( typeId ) {
 	
 	// here we double check the level by calculating the upkeep.
 	var levelCheck = 0;
+	// Stim Mills break our level check below.
+	var commBlackList = ['28', '211', '212', '213'];
+	
 	for (key in res_upkeep) {
-		levelCheck += Math.round(res_upkeep[key]*(1+0.4*(level - 1))) + perCommodity[key];
+		if (commBlackList.indexOf( key ) === -1) { 
+			levelCheck += Math.round(res_upkeep[key]*(1+0.4*(level - 1))) + perCommodity[key];
+		}
 	}
-
 	if (levelCheck === 0) {
 		return level;
 	}
