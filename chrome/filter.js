@@ -151,15 +151,82 @@ Filter.prototype.filter = function( buildings, now ) {
 	}
 }
 
-// Here we gather information from the result set, relevant for the overview to
-// decide whether to paint some columns or not, and also used to build the human
-// description here.
+// Here we build strings like:
+//
+// Showing smelters.
+// Showing smelters owned by Susan Popham in Cor Caroli.
+// Showing smelters owned by Susan Popham within 2 tiles of Cor Caroli [9,20].
+// Showing smelters owned by 2 people within 8 tiles of Cor Caroli [10,30].
+// Showing smelters and electronic factories owned by 3 people in Cor Caroli and Labela
+// Showing buildings in Cor Caroli
+// Showing buildings within 5 tiles of Cor Caroli [10,20].
+// Showing handweapon factories tagged #ccw.
+//
+// So rules.  Always start with "Showing".
+//
+// Then follows _what_.  If any building type criteria was given, then spell
+// them out.  Otherwise, it's "buildings".
+//
+// Then follows _tagged_.  If no tags were given, omit this part.
+//
+// Then follows _owned by_.  If any matches were due to owners, spell them out;
+// otherwise omit this part.
+//
+// Then follows _where_.  This can take one of two forms.  If no coordinates
+// were given, and any matches were due to sectors, then it's "in" and spell out
+// the sectors.  If coordinates were given, then it's "within N tiles from"
+// sector and coordinates.
+//
+// Finally, _state_.  If a tick count filter is on, then it's "with N ticks of
+// upkeep left"; otherwise omit this part.
+//
 
-function analyseResult( result ) {
+Filter.prototype.makeHumanDescription = function() {
+	var parts;
 
+	if ( !this.filtering )
+		return 'Showing all tracked buildings.';
+
+	parts = [ 'Showing' ];
+
+	if ( this.btypes.length === 0 )
+		parts.push( 'buildings' );
+	else
+		parts.push( humanBTypes(this.btypes) );
+
+	if ( this.ticks !== undefined )
+		parts.push( humanTicks(this.ticks) );
+
+	return parts.join( ' ' ) + '.';
 }
 
-// Assume s is lower case.
+function humanBTypes( btypes ) {
+	return humanEnumeration( btypes.map(pluralName) );
+
+	function pluralName( typeId ) {
+		return plural( Building.getTypeName(typeId) );
+	}
+}
+
+function humanTicks( n ) {
+	if ( n === 0 )
+		return 'without upkeep';
+	if ( n === 1 )
+		return 'without upkeep or with one tick of upkeep remaining';
+	return 'with ' + n + ' or fewer ticks of upkeep remaining';
+}
+
+function humanEnumeration( things ) {
+	if ( things.length === 0 )
+		return null;
+	if ( things.length === 1 )
+		return things[0];
+	if ( things.length === 2 )
+		return things.join( ' and ' );
+	return [ things.slice(0, -1).join(', '), things[things.length-1] ].
+		join( ', and ' );
+}
+
 function plural( s ) {
 	var p = PLURALS[s];
 	if ( p )

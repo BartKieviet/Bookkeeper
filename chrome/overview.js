@@ -40,7 +40,6 @@ var Overview = function( ukey, document, storageKey ) {
 	this.container.appendChild( div );
 
 	this.filterInfo = document.createElement( 'p' );
-	this.filterInfo.textContent = "Here we'll display a description of the current filter."
 	this.container.appendChild( this.filterInfo );
 
 
@@ -143,6 +142,9 @@ function applyFilter( universeList, sort, callback ) {
 		}
 
 		buildings = this.filter.filter( buildings, Building.now() );
+		this.filterInfo.textContent =
+			this.filter.makeHumanDescription();
+
 		spec = makeSpec.call( this, buildings );
 		this.sorTable.refresh( spec, buildings );
 		this.sorTable.sort( sort.id, sort.asc );

@@ -8,9 +8,10 @@ h1.bookkeeper img {
 div.bookkeeper-overview {
 	border: outset 2px #A0B1C9;
 	padding: 5px;
-	display: inline-flex;
+	display: flex;
 	flex-direction: column;
 	align-items: stretch;
+	width: min-content;
 }
 
 div.bookkeeper-overview > div {
@@ -18,6 +19,7 @@ div.bookkeeper-overview > div {
 	display: flex;
 	flex-direction: row;
 	align-items: center;
+	border-bottom: solid 1px #a1a1af;
 }
 
 div.bookkeeper-overview > div > input {
@@ -37,7 +39,14 @@ div.bookkeeper-overview > div > img {
 	cursor: pointer;
 }
 
+div.bookkeeper-overview > p {
+	color: #777;
+	font-size: x-small;
+	margin: 8px 0;
+}
+
 div.bookkeeper-overview > table {
+	width: max-content;
 	flex: auto;
 	align-self: stretch;
 	border-collapse: collapse;
