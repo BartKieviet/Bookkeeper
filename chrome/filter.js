@@ -151,6 +151,14 @@ Filter.prototype.filter = function( buildings, now ) {
 	}
 }
 
+// Here we gather information from the result set, relevant for the overview to
+// decide whether to paint some columns or not, and also used to build the human
+// description here.
+
+function analyseResult( result ) {
+
+}
+
 // Assume s is lower case.
 function plural( s ) {
 	var p = PLURALS[s];

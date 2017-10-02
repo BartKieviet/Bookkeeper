@@ -39,6 +39,11 @@ var Overview = function( ukey, document, storageKey ) {
 	div.appendChild( this.clearIcon );
 	this.container.appendChild( div );
 
+	this.filterInfo = document.createElement( 'p' );
+	this.filterInfo.textContent = "Here we'll display a description of the current filter."
+	this.container.appendChild( this.filterInfo );
+
+
 	this.sorTable = new SortableTable( document, {defaultSortId: 'time'} );
 	this.sorTable.onRefresh = onTableRefresh;
 	this.container.appendChild( this.sorTable.table );

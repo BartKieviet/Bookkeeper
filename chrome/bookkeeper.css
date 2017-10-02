@@ -136,6 +136,7 @@ div.bookkeeper-overview > table img.bookkeeper-small-button {
 	background: url('//static.pardus.at/img/stdhq/bgoutspace1.gif');
 	padding: 8px;
 	overflow: auto;
+	z-index: 2;
 }
 
 #bookkeeper-overlay > div.bookkeeper-overview {
