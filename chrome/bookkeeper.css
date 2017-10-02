@@ -152,6 +152,19 @@ div.bookkeeper-overview > table img.bookkeeper-small-button {
 	border: none;
 }
 
+/* STARBASE OVERLAY */
+#bookkeeper-ui.bookkeeper-starbasetrade {
+	position: absolute;
+	top: 0;
+	right: 0;
+}
+
+#bookkeeper-overlay.bookkeeper-starbasetrade {
+	bottom: unset;
+	top: 60px;
+	max-height: 85%;
+}
+
 .bookkeeper-small-button {
 	width: 16px;
 	height: 16px;

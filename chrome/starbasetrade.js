@@ -1,133 +1,74 @@
 // This is a content script, it runs on starbase_trade.php and planet_trade.php.
 
-var overviewToggle, overview, resizeRunning;
+// From other files:
+var Building, Overview;
+
+// Globals
+var ukey, openButton, overlay;
+
+ukey = document.location.hostname[0].toUpperCase();
 
 setup();
 
 // End of script execution.
 
 function setup() {
-	var form, td, container, img;
+	var form, container, img;
 
 	// Insert a BK button.  That's all our UI.
 
 	form = document.forms.planet_trade || document.forms.starbase_trade;
 
-	// td = document.evaluate(
-		// './table/tbody/tr/td[position()=2]', form, null,
-		// XPathResult.FIRST_ORDERED_NODE_TYPE,
-		// null).singleNodeValue;
-
-	// Pardus actually leaves this TD empty, with a single &nbsp;.  So we'll
-	// remove it and add our button there.
-	//
-	// If some other script ever uses this TD for their own UI... man
-	// they'll be cross with us, haha.
-	// 
-	// Our button interferes with enter = transfer. Pretty annoying. So I'm moving it down.
-	
-	// while ( td.firstChild )
-	// td.removeChild( td.firstChild );
-
 	container = document.createElement( 'div' );
 	container.id = 'bookkeeper-ui';
+	container.className = 'bookkeeper-starbasetrade';
 
 	img = document.createElement( 'img' );
 	img.title = 'Pardus Bookkeeper';
 	img.src = chrome.extension.getURL( 'icons/16.png' );
 	container.appendChild( img );
 
-	overviewToggle = document.createElement( 'button' );
-	overviewToggle.id = 'bookkeeper-overview-toggle';
-	overviewToggle.textContent = 'OPEN';
-	overviewToggle.addEventListener( 'click', onToggleOverview, false );
-	container.appendChild( overviewToggle );
+	openButton = document.createElement( 'button' );
+	openButton.id = 'bookkeeper-overview-toggle';
+	openButton.textContent = 'OPEN';
+	openButton.addEventListener( 'click', onClick, false );
+	container.appendChild( openButton );
 
-	document.getElementById("quickButtonsTbl").parentNode.appendChild( container );
+	// Button injection take 3.  There's just no good spot to paste in, but
+	// I really don't want it near the centre of the page where it can be
+	// covered.  Add as previous sibling of the form.
+	form.parentElement.style.position = 'relative';
+	form.parentElement.insertBefore( container, form );
 }
 
-// XXX - The code below is going to change.  Right now, it's just cut & paste
-// from nav.js, just as a proof of concept that now we can open overviews
-// everywhere.  But planet/base trade screens don't need the overview flotaing
-// fixed like nav does, we should position absolute and just make it as tall as
-// the page.  And in any case, any code below that ends up shared with nav.js
-// should really be segregated into its own file, avoid repetition.
+// Lifted from navov.js
 
-function onToggleOverview( event ) {
-	var op;
+function onClick( event ) {
+	var overview;
 
-	event.preventDefault();
+	if ( event )
+		event.preventDefault();
 
-	if ( overview === undefined ) {
-		// Show it
-		overviewToggle.disabled = true;
-		// open the overview
-		op = {
-			op: 'setPopUpData',
-			data: {
-				ukey: document.location.hostname[0].
-					toUpperCase(),
-				mode: 'nav-embedded'
-			}
-		};
-		chrome.runtime.sendMessage( op, onItsSet );
+	if ( overlay ) {
+		// Hide the overview and restore the button.
+		overlay.remove();
+		overlay = undefined;
+		openButton.classList.remove( 'on' );
 	}
 	else {
-		// hide it
-		overview.remove();
-		overview = undefined;
-		overviewToggle.classList.remove( 'on' );
-		document.defaultView.removeEventListener(
-			'resize', onWindowResize );
+		openButton.disabled = true;
+		openButton.classList.add( 'on' );
+		overlay = document.createElement( 'div' );
+		overlay.id = 'bookkeeper-overlay';
+		overlay.className = 'bookkeeper-starbasetrade';
+
+		overview = new Overview( ukey, document, 'Nav' );
+		overview.configure( undefined, onReady );
 	}
 
-	function onItsSet() {
-		var url;
-		url = chrome.extension.getURL( '/html/overview.html' );
-		overview = document.createElement( 'iframe' );
-		overview.id = 'bookkeeper-overview-box';
-		setOverviewSize();
-		overview.src = url;
-		document.body.appendChild( overview );
-		overviewToggle.classList.add( 'on' );
-		overviewToggle.disabled = false;
-		document.defaultView.addEventListener(
-			'resize', onWindowResize );
+	function onReady( table ) {
+		overlay.appendChild( overview.container );
+		document.body.appendChild( overlay );
+		openButton.disabled = false;
 	}
-}
-
-function onWindowResize( event ) {
-	if ( resizeRunning )
-		return;
-	resizeRunning = true;
-	document.defaultView.requestAnimationFrame( setOverviewSize );
-}
-
-function setOverviewSize() {
-	var window, fw, fh, nav, navw, navh, y, h;
-
-	resizeRunning = false;
-
-	if ( !overview )
-		return;
-
-	// The whole tab when running out of the frameset; otherwise the main
-	// Pardus frame.
-	window = document.defaultView;
-
-	// This is the real estate we have available to play with.
-	fw = window.innerWidth;
-	fh = window.innerHeight;
-
-	y = 139;
-
-	// And we'd like our iframe's bottom to sit 5px above the bottom of the
-	// window.
-
-	h = fh - 5 - y;
-
-	overview.style.top = y + 'px';
-	overview.style.left = '50px';
-	overview.width = fw - 100;
-	overview.height = h;
 }

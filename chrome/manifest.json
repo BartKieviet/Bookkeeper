@@ -48,8 +48,11 @@
 				"*://*.pardus.at/planet_trade.php*",
 				"*://*.pardus.at/starbase_trade.php*"
 			],
-			"js": [ "starbasetrade.js" ],
-			"css": [ "nav.css" ],
+			"js": [	"/functions.js", "/commodity.js", "/sector.js",
+				"/building.js", "/table.js", "/filter.js",
+				"/overview.js", "starbasetrade.js"
+			      ],
+			"css": [ "nav.css", "bookkeeper.css" ],
 			"all_frames": true
 		}
 	],
