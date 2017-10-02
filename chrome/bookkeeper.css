@@ -126,11 +126,10 @@ div.bookkeeper-overview > table img.bookkeeper-small-button {
 /* OVERLAY */
 #bookkeeper-overlay {
 	position: fixed;
-	top: 50vh;
+	top: 8px;
 	right: 210px;
-	max-width: 79vw;
-	max-height: 96vh;
-	transform: translate(0,-50%);
+	max-width: 78%;
+	max-height: 95%;
 	border: ridge 3px #99a;
 	border-radius: 8px;
 	box-shadow: 0 0 10px 5px rgba(0,0,0,0.75);
@@ -142,7 +141,6 @@ div.bookkeeper-overview > table img.bookkeeper-small-button {
 #bookkeeper-overlay > div.bookkeeper-overview {
 	border: none;
 }
-
 
 .bookkeeper-small-button {
 	width: 16px;
