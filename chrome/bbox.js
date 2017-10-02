@@ -15,10 +15,12 @@ function onDOM() {
 }
 
 function onHaveData( data ) {
-	var e = document.createElement( 'h1' );
+	
+	
+	/*var e = document.createElement( 'h1' );
 	e.textContent = 'Hello!';
 	document.body.appendChild( e );
-
+	
 	e = document.createElement( 'p' );
 	e.textContent = 'It is now ' + Building.now() + ' seconds past Jan 1 1970 00:00';
 	document.body.appendChild( e );
@@ -33,5 +35,5 @@ function onHaveData( data ) {
 		var p = document.createElement( 'p' );
 		p.textContent = 'Bytes in use: ' + bytes;
 		document.body.appendChild( p );
-	}
+	}*/
 }
