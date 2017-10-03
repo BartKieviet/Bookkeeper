@@ -41,20 +41,33 @@ var Overview = function( ukey, document, options ) {
 	this.container.className = 'bookkeeper-overview';
 
 	div = document.createElement( 'div' );
+	this.curPosIcon = makeIcon.call(
+		this, 'pos', 'Set current position', onPosClick );
+	div.appendChild( this.curPosIcon );
 	this.filterInput = document.createElement( 'input' )
 	div.appendChild( this.filterInput );
-	this.clearIcon = document.createElement( 'img' );
-	this.clearIcon.src = chrome.extension.getURL( 'icons/backsp.svg' );
+	this.clearIcon = makeIcon.call(
+		this, 'clear', 'Clear filter', onClearClick );
 	div.appendChild( this.clearIcon );
 	this.container.appendChild( div );
 
 	this.filterInfo = document.createElement( 'p' );
 	this.container.appendChild( this.filterInfo );
 
-
 	this.sorTable = new SortableTable( document, {defaultSortId: 'time'} );
 	this.sorTable.onRefresh = onTableRefresh;
 	this.container.appendChild( this.sorTable.table );
+
+	function makeIcon( cmd, title, handler ) {
+		var img = document.createElement( 'img' );
+		img.dataset.cmd = cmd;
+		img.title = title;
+		img.addEventListener( 'mouseover', onCmdMouseOver );
+		img.addEventListener( 'mouseout', onCmdMouseOut );
+		img.addEventListener( 'click', handler.bind(this) );
+		setImgSrc( img, true );
+		return img;
+	}
 }
 
 // If the list of building ids in this universe is already available (like, it
@@ -172,27 +185,12 @@ function onTableRefresh() {
 }
 
 function onFilterInput( event ) {
-
 	// Throttle the input: wait until the user hasn't typed anything for a
 	// full second, before triggering a filter recompute.
 
 	if ( this.filterTimeout )
 		window.clearTimeout( this.filterTimeout );
-	this.filterTimeout = window.setTimeout( doIt.bind(this), 1000 );
-
-	function doIt() {
-		var query, storageItems;
-
-		this.filterTimeout = undefined;
-		query = event.target.value.trim();
-		this.filter.parseQuery( query );
-		if ( !this.filter.filtering )
-			query = '';
-		storageItems = {};
-		storageItems[ this.options.filterKey ] = query;
-		chrome.storage.local.set( storageItems );
-		applyFilter.call( this );
-	}
+	this.filterTimeout = window.setTimeout( setFilter.bind(this), 1000 );
 }
 
 
@@ -200,6 +198,23 @@ function onFilterInput( event ) {
 // Private functions and utilities.
 
 
+
+// Take the value of the filter input, and use it.
+
+function setFilter() {
+	var query, storageItems;
+
+	query = this.filterInput.value;
+	this.filter.parseQuery( query );
+	if ( !this.filter.filtering )
+		query = '';
+
+	storageItems = {};
+	storageItems[ this.options.filterKey ] = query;
+	chrome.storage.local.set( storageItems );
+
+	applyFilter.call( this );
+}
 
 // This is a catalogue of "column specifications", as expected by SortableTable.
 
@@ -323,9 +338,6 @@ function rCell( fn ) {
 	}
 }
 
-var grayIconSrc = chrome.extension.getURL( 'icons/mingray.svg' ),
-    iconSrc = chrome.extension.getURL( 'icons/minus.svg' );
-
 // Create the spec for the table, based on the current filter.
 
 function makeSpec( buildings ) {
@@ -438,7 +450,7 @@ function makeCommSortFn( commId ) {
 
 function makeDistanceSpec( filter ) {
 	return {
-		header: simpleHeader( 'Dist' ),
+		header: simpleHeader( 'Dis' ),
 		cell: rCell( function( b ) {
 			      b = Sector.getCoords( b.sectorId, b.loc );
 			      return filter.distance( b.x, b.y )
@@ -461,19 +473,16 @@ function makeDistanceSpec( filter ) {
 	}
 }
 
-// grayIconSrc = chrome.extension.getURL( 'icons/mingray.svg' ),
-// iconSrc = chrome.extension.getURL( 'icons/minus.svg' );
-
 function removeCell( building, td ) {
 	var button;
-
 	button = this.doc.createElement( 'img' );
 	button.className = 'bookkeeper-small-button';
-	button.src = grayIconSrc;
+	button.dataset.cmd = 'remove';
+	setImgSrc( button, true );
 	button.dataset.loc = building.loc;
 	button.addEventListener( 'click', onRemoveClick.bind(this) );
-	button.addEventListener( 'mouseover', onRemoveMouseOver );
-	button.addEventListener( 'mouseout', onRemoveMouseOut );
+	button.addEventListener( 'mouseover', onCmdMouseOver );
+	button.addEventListener( 'mouseout', onCmdMouseOut );
 	td.appendChild( button );
 }
 
@@ -496,8 +505,37 @@ function onRemoveClick( event ) {
 	this.items.splice( index, 1 );
 	Building.removeStorage( loc, this.options.ukey );
 }
-function onRemoveMouseOver( event ) { event.target.src = iconSrc; }
-function onRemoveMouseOut( event ) { event.target.src = grayIconSrc; }
+
+function onPosClick() {
+	chrome.storage.local.get( [ 'sector', 'x', 'y' ], onData.bind(this) );
+
+	function onData( data ) {
+		if ( data.sector === undefined ||
+		     data.x === undefined || data.y === undefined )
+			return;
+
+		this.filterInput.value = Filter.quoteIfNeeded( data.sector ) +
+			' ' + data.x + ',' + data.y;
+		setFilter.call( this );
+	}
+}
+
+function onClearClick() {
+	this.filterInput.value = '';
+	setFilter.call( this );
+}
+
+function onCmdMouseOver( event ) { setImgSrc( event.target, false ); }
+function onCmdMouseOut( event ) { setImgSrc( event.target, true ); }
+
+function setImgSrc( img, dim ) {
+	var cmd = img.dataset.cmd;
+	if ( cmd ) {
+		if ( dim )
+			cmd += 'dim';
+		img.src = chrome.extension.getURL( 'icons/' + cmd + '.svg' );
+	}
+}
 
 // The spec.footer function, added as is (it's already a closure, accesses
 // variables defined above.

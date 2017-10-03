@@ -25,6 +25,18 @@ Filter.distance = function( x1, y1, x2, y2 ) {
 	return Math.max( Math.abs(x2 - x1), Math.abs(y2 - y1) );
 }
 
+// Quote a string if it contains whitespace, or a quote.  This is flaky, don't
+// use for actual data.
+
+Filter.quoteIfNeeded = function( s ) {
+	var q, m;
+
+	m = /(['"\s])/.exec( s );
+	if ( !m )
+		return s;
+	q = m[1] === '"' ? "'" : '"';
+	return q + s + q;
+}
 
 
 // Instance methods.

@@ -108,7 +108,7 @@ SortableTable.prototype.refresh = function( spec, items ) {
 SortableTable.prototype.sort = function( sortId, asc ) {
 	var sort, fn;
 
-	if ( this.sortId !== undefined )
+	if ( this.sorts[ this.sortId ] !== undefined )
 		this.sorts[ this.sortId ].th.classList.remove( 'asc', 'dsc' );
 
 	sort = this.sorts[ sortId ];

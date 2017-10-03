@@ -81,12 +81,12 @@
 		"icons/16.png",
 		"icons/24.png",
 		"icons/48.png",
-		"icons/minus.svg",
-		"icons/mingray.svg",
-		"icons/plus.svg",
-		"icons/plusgray.svg",
-		"icons/backsp.svg",
-		"html/bbox.html",
-		"html/overview.html"
+		"icons/clear.svg",
+		"icons/cleardim.svg",
+		"icons/pos.svg",
+		"icons/posdim.svg",
+		"icons/remove.svg",
+		"icons/removedim.svg",
+		"html/bbox.html"
 	]
 }
