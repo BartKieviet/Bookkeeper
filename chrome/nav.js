@@ -277,6 +277,7 @@ function onToggleOverview( event ) {
 			'/table.js',
 			'/filter.js',
 			'/overview.js',
+			'/overlay.js',
 			'/navov.js'
 		]
 	}

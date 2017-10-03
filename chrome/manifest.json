@@ -50,7 +50,7 @@
 			],
 			"js": [	"/functions.js", "/commodity.js", "/sector.js",
 				"/building.js", "/table.js", "/filter.js",
-				"/overview.js", "starbasetrade.js"
+				"/overview.js", "overlay.js", "starbasetrade.js"
 			      ],
 			"css": [ "nav.css", "bookkeeper.css" ],
 			"all_frames": true

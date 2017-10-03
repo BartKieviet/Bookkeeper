@@ -1,19 +1,14 @@
 // This is a content script, it runs on starbase_trade.php and planet_trade.php.
 
 // From other files:
-var Building, Overview;
-
-// Globals
-var ukey, openButton, overlay;
-
-ukey = document.location.hostname[0].toUpperCase();
+var Overlay;
 
 setup();
 
 // End of script execution.
 
 function setup() {
-	var form, container, img;
+	var ukey, form, container, img, button;
 
 	// Insert a BK button.  That's all our UI.
 
@@ -28,48 +23,21 @@ function setup() {
 	img.src = chrome.extension.getURL( 'icons/16.png' );
 	container.appendChild( img );
 
-	openButton = document.createElement( 'button' );
-	openButton.id = 'bookkeeper-overview-toggle';
-	openButton.textContent = 'OPEN';
-	openButton.addEventListener( 'click', onClick, false );
-	container.appendChild( openButton );
+	button = document.createElement( 'button' );
+	button.id = 'bookkeeper-overview-toggle';
+	button.textContent = 'OPEN';
+	container.appendChild( button );
 
 	// Button injection take 3.  There's just no good spot to paste in, but
 	// I really don't want it near the centre of the page where it can be
 	// covered.  Add as previous sibling of the form.
 	form.parentElement.style.position = 'relative';
 	form.parentElement.insertBefore( container, form );
-}
 
-// Lifted from navov.js
-
-function onClick( event ) {
-	var overview;
-
-	if ( event )
-		event.preventDefault();
-
-	if ( overlay ) {
-		// Hide the overview and restore the button.
-		overlay.remove();
-		overlay = undefined;
-		openButton.classList.remove( 'on' );
-	}
-	else {
-		openButton.disabled = true;
-		openButton.classList.add( 'on' );
-		overlay = document.createElement( 'div' );
-		overlay.id = 'bookkeeper-overlay';
-		overlay.className = 'bookkeeper-starbasetrade';
-
-		overview = new Overview(
-			ukey, document, { storageKey: 'SB' } );
-		overview.configure( undefined, onReady );
-	}
-
-	function onReady( table ) {
-		overlay.appendChild( overview.container );
-		document.body.appendChild( overlay );
-		openButton.disabled = false;
-	}
+	ukey = document.location.hostname[0].toUpperCase();
+	new Overlay(
+		ukey, document, button,
+		{ overlayClassName: 'bookkeeper-starbasetrade',
+		  mode: 'compact',
+		  storageKey: 'SB' } );
 }
