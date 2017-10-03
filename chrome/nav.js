@@ -149,7 +149,9 @@ function showTicks() {
 
 	xpr = BLDGTILE_XPATH.evaluate(
 		navTable, XPathResult.UNORDERED_NODE_ITERATOR_TYPE, null );
+
 	while ( (a = xpr.iterateNext()) !== null ) {
+		//Skittle & Capri stim break here, while loop is not executed. 
 		onclkstr = a.getAttribute( 'onclick' );
 		if ( onclkstr ) {
 			m = TILEID_RX.exec( onclkstr );
@@ -168,6 +170,9 @@ function showTicks() {
 			continue;
 
 		td = a.parentElement;
+		// if (td.tagName == "div") {
+				// td = td.parentElement;
+		// }
 		cached = bldgTileCache[ loc ];
 		if ( cached ) {
 			cached.td = td;
