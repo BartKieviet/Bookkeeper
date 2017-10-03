@@ -380,6 +380,7 @@ function makeSpec( buildings ) {
 		after.push( COLUMN_SPECS.remove );
 
 	// Add properties to the table for use in its spec functions
+	this.sorTable.ukey = this.options.ukey;
 	this.sorTable.totals = [];
 	this.sorTable.beforeTotals = before.length;
 	this.sorTable.afterTotals = after.length;
@@ -503,7 +504,7 @@ function onRemoveClick( event ) {
 		tr = tr.parentElement;
 	tr.remove();
 	this.items.splice( index, 1 );
-	Building.removeStorage( loc, this.options.ukey );
+	Building.removeStorage( loc, this.ukey );
 }
 
 function onPosClick() {

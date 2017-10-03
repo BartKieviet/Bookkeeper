@@ -102,8 +102,6 @@ function migrateV19Storage() {
 			}
 		}
 
-		//console.log( 'migration', items );
-
 		// Nuke the old data -- feel the willies here
 		chrome.storage.sync.clear( onOldBusted );
 	}
@@ -149,7 +147,6 @@ function migrateV19Storage() {
 			forSale = [];
 			toBuy = [];
 
-			//console.log( 'loc', loc, 'res_prod', res_production, 'amt', amount, 'min', amount_min );
 			// for each commodity in res_production, compute forSale
 			// as amount - minimum
 			for ( id in res_production ) {
@@ -309,8 +306,6 @@ OpHandlers.queryTicksLeft = function( message, sendResponse ) {
 
 OpHandlers.injectMeHard = function( message, sendResponse, sender ) {
 	var scripts, stylesheets, tabId, frameId;
-
-	console.log( 'inject request', message, sender );
 
 	tabId = sender.tab.id;
 	frameId = sender.frameId;

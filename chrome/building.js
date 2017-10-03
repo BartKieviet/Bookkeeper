@@ -564,6 +564,8 @@ Building.prototype.removeStorage = function( ukey, callback ) {
 
 // Return true if the building was fully stocked at the time it was last
 // updated.  This means that it won't buy any of the commodities it consumes.
+// However, if we don't see it buying any commodities at all, then we haven't
+// actually recorded it's stocks, so we can't know if it's fully stocked.
 
 Building.prototype.isFullyStocked = function() {
 
@@ -574,10 +576,11 @@ Building.prototype.isFullyStocked = function() {
 	//   are none.
 	// * isFullyStocked returns true if find returns undefined.
 
-	return this.getUpkeepCommodities().find(
-		function( commId ) { return this[commId] > 0; },
-		this.toBuy
-	) === undefined;
+	return this.toBuy.length > 0 &&
+		this.getUpkeepCommodities().find(
+			function( commId ) { return this[commId] > 0; },
+			this.toBuy
+		) === undefined;
 }
 
 
