@@ -171,8 +171,9 @@ function estimateLevel( typeId ) {
 			continue;
 		}
 		
-		if (key == '28') {
-			//Neural tissue does not play nice
+		if (key == '28' || key == '50') {
+			//28 -> Neural tissue does not play nice
+			//50 -> TSS vs non TSS DS? Skip.
 			continue; 
 		}
 		
@@ -200,8 +201,8 @@ function estimateLevel( typeId ) {
 	
 	// here we double check the level by calculating the upkeep.
 	var levelCheck = 0;
-	// Stim Mills break our level check below.
-	var commBlackList = ['28', '211', '212', '213'];
+	// Stim Mills & non-TSS DS's break our level check below.
+	var commBlackList = ['28', '50', '211', '212', '213'];
 	
 	for (key in res_upkeep) {
 		if (commBlackList.indexOf( key ) === -1) { 
