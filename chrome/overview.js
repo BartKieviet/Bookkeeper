@@ -153,6 +153,7 @@ function applyFilter( universeList, sort, callback ) {
 		buildings = this.filter.filter( buildings, Building.now() );
 		this.filterInfo.textContent =
 			this.filter.makeHumanDescription();
+		this.sorTable.coords = this.filter.coords;
 
 		spec = makeSpec.call( this, buildings );
 		this.sorTable.refresh( spec, buildings );
@@ -163,8 +164,8 @@ function applyFilter( universeList, sort, callback ) {
 	}
 }
 
-// Called in the context of the SortableTable.  Set properties nowDate and now, for
-// use in spec functions.
+// Called in the context of the SortableTable.  Set properties nowDate, now,
+// coords, for use in spec functions.
 function onTableRefresh() {
 	this.nowDate = new Date();
 	this.now = Building.seconds( this.nowDate.getTime() );
@@ -330,26 +331,41 @@ var grayIconSrc = chrome.extension.getURL( 'icons/mingray.svg' ),
 function makeSpec( buildings ) {
 	var spec, before, after;
 
-	spec = { columns: [] };
+	spec = { columns: [], foot: foot };
+	before = [];
+	after = [];
 
-	if ( this.options.mode === 'compact' ) {
-		before = [
-			COLUMN_SPECS.coords, COLUMN_SPECS.type,
-			COLUMN_SPECS.owner ],
-		after = [ COLUMN_SPECS.time, COLUMN_SPECS.ticksNow ];
-	}
-	else {
-		// Full
-		before = [
-			COLUMN_SPECS.location, COLUMN_SPECS.type,
-			COLUMN_SPECS.owner, COLUMN_SPECS.level
-		];
-		after = [
-			COLUMN_SPECS.time, COLUMN_SPECS.ticksLeft,
-			COLUMN_SPECS.ticksNow, COLUMN_SPECS.remove
-		];
-		spec.foot = foot;
-	}
+	// In compact mode, if all buildings are in the same sector, then we
+	// want to show only cooords.
+	if ( this.options.mode === 'compact' && this.filter.singleSector )
+		before.push( COLUMN_SPECS.coords );
+	else
+		before.push( COLUMN_SPECS.location );
+
+	// If we have coords, show a "distance" column.
+	if ( this.filter.coords )
+		before.push( makeDistanceSpec(this.filter) );
+
+	// Always show type and owner.
+	before.push( COLUMN_SPECS.type, COLUMN_SPECS.owner );
+
+	// In full mode, show the level, too.
+	if ( this.options.mode !== 'compact' )
+		before.push( COLUMN_SPECS.level );
+
+	// Always show the time
+	after.push( COLUMN_SPECS.time );
+
+	// In full mode, show ticks left at last update
+	if ( this.options.mode !== 'compact' )
+		after.push( COLUMN_SPECS.ticksLeft );
+
+	// Always show ticks now
+	after.push( COLUMN_SPECS.ticksNow );
+
+	// In full mode, show the "remove" button
+	if ( this.options.mode !== 'compact' )
+		after.push( COLUMN_SPECS.remove );
 
 	// Add properties to the table for use in its spec functions
 	this.sorTable.totals = [];
@@ -415,6 +431,33 @@ function makeCommSortFn( commId ) {
 
 	function sortval( n ) {
 		return n === undefined ? -Infinity : n;
+	}
+}
+
+// Synthesise a "distance" column spec from the given filter
+
+function makeDistanceSpec( filter ) {
+	return {
+		header: simpleHeader( 'Dist' ),
+		cell: rCell( function( b ) {
+			      b = Sector.getCoords( b.sectorId, b.loc );
+			      return filter.distance( b.x, b.y )
+		      } ),
+		sortId: 'dst',
+		sort: function( a, b ) {
+			var r;
+			// Sort by distance, then y, then x
+			a = Sector.getCoords( a.sectorId, a.loc );
+			b = Sector.getCoords( b.sectorId, b.loc );
+			r = filter.distance( a.x, a.y ) -
+				filter.distance( b.x, b.y );
+			if ( r === 0 ) {
+				r = a.y - b.y;
+				if ( r === 0 )
+					r = a.x - b.x;
+			}
+			return r;
+		}
 	}
 }
 
@@ -519,6 +562,17 @@ function overviewFigure( building, commId ) {
 		return building.forSale[ commId ];
 
 	return undefined;
+}
+
+// Compute the manhattan distance from building `b` to the filter coords.
+// XXX - move to Filter
+
+function manhattan( b ) {
+	var bc = Sector.getCoords( b.sectorId, b.loc );
+
+	return Math.max(
+		Math.abs(bc.x - this.coords.x),
+		Math.abs(bc.y - this.coords.y) );
 }
 
 // Return an array of ids of commodities that are consumed or produced by at

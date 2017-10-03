@@ -11,6 +11,26 @@ function Filter() {
 	this.filtering = false;
 }
 
+
+
+// Methods.
+
+
+
+// Utility function to compute Manhattan distances between two points.  If you
+// need to do that, might as well use this and know you're doing it just like
+// the filter (not that this is a hard function to implement, ha).
+
+Filter.distance = function( x1, y1, x2, y2 ) {
+	return Math.max( Math.abs(x2 - x1), Math.abs(y2 - y1) );
+}
+
+
+
+// Instance methods.
+
+
+
 // Parse a query.  Return true if the query was understood.
 //
 // A query is a string of tokens separated by white space.  Tokens can be:
@@ -109,10 +129,11 @@ Filter.prototype.filter = function( buildings, now ) {
 		result = buildings.filter( testBuilding.bind(this) );
 
 	this.resultCount = result.length;
-	if ( this.resultCount > 0 ) {
-		this.matchedOwners = dedupe( this.matchedOwners );
-		this.matchedSectors = dedupe( this.matchedSectors );
-	}
+	this.matchedOwners = dedupe( this.matchedOwners );
+	this.matchedSectors = dedupe( this.matchedSectors );
+	this.singleSector = singleSector( result );
+	if ( !this.singleSector )
+		this.coords = undefined;
 
 	return result;
 
@@ -163,35 +184,7 @@ Filter.prototype.filter = function( buildings, now ) {
 	}
 }
 
-// Here we build strings like:
-//
-// Showing smelters.
-// Showing smelters owned by Susan Popham in Cor Caroli.
-// Showing smelters owned by Susan Popham within 2 tiles of Cor Caroli [9,20].
-// Showing smelters owned by 2 people within 8 tiles of Cor Caroli [10,30].
-// Showing smelters and electronic factories owned by 3 people in Cor Caroli and Labela
-// Showing buildings in Cor Caroli
-// Showing buildings within 5 tiles of Cor Caroli [10,20].
-// Showing handweapon factories tagged #ccw.
-//
-// So rules.  Always start with "Showing".
-//
-// Then follows _what_.  If any building type criteria was given, then spell
-// them out.  Otherwise, it's "buildings".
-//
-// Then follows _tagged_.  If no tags were given, omit this part.
-//
-// Then follows _owned by_.  If any matches were due to owners, spell them out;
-// otherwise omit this part.
-//
-// Then follows _where_.  This can take one of two forms.  If no coordinates
-// were given, and any matches were due to sectors, then it's "in" and spell out
-// the sectors.  If coordinates were given, then it's "within N tiles from"
-// sector and coordinates.
-//
-// Finally, _state_.  If a tick count filter is on, then it's "with N ticks of
-// upkeep left"; otherwise omit this part.
-//
+// Construct an English description of the last filter operation.
 
 Filter.prototype.makeHumanDescription = function() {
 	var parts;
@@ -252,6 +245,20 @@ Filter.prototype.makeHumanDescription = function() {
 	}
 }
 
+// If the Filter has coordinates, then return the Manhattan distance from the
+// filter coords to the given point.  It'll error if no coords, so check first.
+
+Filter.prototype.distance = function( x, y ) {
+	return Filter.distance( this.coords.x, this.coords.y, x, y );
+}
+
+
+
+// Private methods and utilities.
+
+
+
+
 // Set all instance properties to initial values.  Except `filtering`, that one
 // is set in either constructor or parseQuery.
 
@@ -264,6 +271,7 @@ function reset() {
 	this.matchedSectors = [];
 	this.matchedOwners = [];
 	this.resultCount = NaN;
+	this.singleSector = undefined;
 }
 
 function humanBTypes( btypes ) {
@@ -319,6 +327,18 @@ function getBuildingTypeId( s ) {
 	}
 
 	return BUILDING_IDS[ s ];
+}
+
+// Test if all buildings in the collection are in the same sector.
+
+function singleSector( buildings ) {
+	var id;
+
+	if ( buildings.length === 0 )
+		return false;
+
+	id = buildings[0].sectorId;
+	return buildings.every( function(b) { return b.sectorId === id } );
 }
 
 // Remove duplicates from an array.
