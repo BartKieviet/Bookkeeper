@@ -26,7 +26,7 @@ function setup() {
 	}
 
 	function onOwnBuildingsAdded( universeList ) {
-		overview = new Overview( universe.key, document, '' );
+		overview = new Overview( universe.key, document );
 		overview.configure( universeList, onReady );
 	}
 

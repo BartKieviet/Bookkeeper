@@ -13,21 +13,30 @@ var Overview = (function() {
 // with something like:
 //
 //   someNode.appendChild( overviewInstance.container );
+//
+// `ukey` is a string specifying the one-letter universe key for storage.
+// `options`, if supplied, provides some tweakable settings that one day I'll
+// document.
 
-var Overview = function( ukey, document, storageKey ) {
-	var options, div;
+var Overview = function( ukey, document, options ) {
+	var storageKey, div;
 
-	// XXX we should take an options object, and merge with this:
+	if ( !options )
+		options = {};
+	storageKey = options.storageKey || '';
 	this.options = {
-		mode: 'full',
 		ukey: ukey,
-		filterKey: ukey + storageKey + 'Filter',
-		sortIdKey: ukey + storageKey + 'OverviewSortCrit',
-		sortAscKey: ukey + storageKey + 'OverviewSortAsc'
+		mode: options.mode || 'full',
+		storageKey: storageKey,
+		filterKey: options.filterKey
+			|| ukey + storageKey + 'Filter',
+		sortIdKey: options.filterKey
+			|| ukey + storageKey + 'OverviewSortCrit',
+		sortAscKey: options.filterKey
+			 || ukey + storageKey + 'OverviewSortAsc'
 	};
 
 	this.filter = new Filter();
-
 	this.container = document.createElement( 'div' );
 	this.container.className = 'bookkeeper-overview';
 
@@ -149,8 +158,6 @@ function applyFilter( universeList, sort, callback ) {
 		this.sorTable.refresh( spec, buildings );
 		this.sorTable.sort( sort.id, sort.asc );
 
-		console.log( 'applyFilter', this );
-
 		if ( callback )
 			callback( this );
 	}
@@ -173,8 +180,16 @@ function onFilterInput( event ) {
 	this.filterTimeout = window.setTimeout( doIt.bind(this), 1000 );
 
 	function doIt() {
+		var query, storageItems;
+
 		this.filterTimeout = undefined;
-		this.filter.parseQuery( event.target.value );
+		query = event.target.value.trim();
+		this.filter.parseQuery( query );
+		if ( !this.filter.filtering )
+			query = '';
+		storageItems = {};
+		storageItems[ this.options.filterKey ] = query;
+		chrome.storage.local.set( storageItems );
 		applyFilter.call( this );
 	}
 }

@@ -62,7 +62,8 @@ function onClick( event ) {
 		overlay.id = 'bookkeeper-overlay';
 		overlay.className = 'bookkeeper-starbasetrade';
 
-		overview = new Overview( ukey, document, 'Nav' );
+		overview = new Overview(
+			ukey, document, { storageKey: 'SB' } );
 		overview.configure( undefined, onReady );
 	}
 

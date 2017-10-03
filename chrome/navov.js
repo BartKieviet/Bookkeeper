@@ -36,7 +36,8 @@ function onClick( event ) {
 		overlay = document.createElement( 'div' );
 		overlay.id = 'bookkeeper-overlay';
 
-		overview = new Overview( ukey, document, 'Nav' );
+		overview = new Overview(
+			ukey, document, { storageKey: 'Nav' } );
 		overview.configure( undefined, onReady );
 	}
 
