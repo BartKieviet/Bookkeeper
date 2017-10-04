@@ -44,14 +44,14 @@ would be awful:
 
 See that's exactly 11 commas between that "2" and the "44", because the former
 is array index 17, and the latter is 28, and 28 - 17 = 11 (you wouldn't want to
-see the literal for a Dark Dome, heh).  And no, this doesn't mean Javascipt
+see the literal for a Dark Dome, heh).  And no, this doesn't mean Javascript
 would allocate space for 29 numbers to store this array; it's still only 5
 values stored (arrays are "sparse"), it's just the syntax of literals that is
 awkward.
 
 So.  When using or implementing objects that operate on integer-keyed
 dictionaries, do try to note which representation is used.  See comments on
-methods of `Building`, for example.
+methods of `Building`, for example.  And prefer arrays if you can choose.
 
 ## Firefox CSS workarounds
 
