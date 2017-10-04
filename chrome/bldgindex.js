@@ -332,8 +332,8 @@ function updateBuildingFromEntry( entry ) {
 	building.time = now;
 	building.owner = entry.owner;
 	building.ticksLeft = entry.ticksLeft;
-	building.forSale = entry.selling;
-	building.toBuy = entry.buying;
+	building.selling = entry.selling;
+	building.buying = entry.buying;
 }
 
 function inferBuildingFromEntry( entry ) {

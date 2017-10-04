@@ -20,7 +20,7 @@ var NAME_IDS, ICON_IDS;
 //
 // `owner`, if provided, should be a string.
 //
-// `forSale`, `toBuy`, `minimum`, and `maximum`, if provided, can be arrays or
+// `selling`, `buying`, `minimum`, and `maximum`, if provided, can be arrays or
 // objects.  See makeCommodityArray below.
 //
 // Note that `time` is expected as a Unix timestamp in *seconds*, not
@@ -31,7 +31,7 @@ var NAME_IDS, ICON_IDS;
 // properties to the instance later using the same names as these parameters.
 
 function Building( loc, sectorId, typeId, time, owner, level, ticksLeft,
-		   forSale, toBuy, minimum, maximum ) {
+		   selling, buying, minimum, maximum ) {
 	this.loc = loc;
 	this.sectorId = sectorId;
 	this.typeId = typeId;
@@ -39,8 +39,8 @@ function Building( loc, sectorId, typeId, time, owner, level, ticksLeft,
 	this.owner = owner;
 	this.level = level;
 	this.ticksLeft = ticksLeft;
-	this.forSale = Building.makeCommodityArray( forSale );
-	this.toBuy = Building.makeCommodityArray( toBuy );
+	this.selling = Building.makeCommodityArray( selling );
+	this.buying = Building.makeCommodityArray( buying );
 	this.minimum = Building.makeCommodityArray( minimum );
 	this.maximum = Building.makeCommodityArray( maximum );
 }
@@ -265,7 +265,8 @@ Building.storageKey = function( universeKey, location ) {
 }
 
 // Create a Building instance from data obtained from storage. `key` is the
-// storage key used to retrieve the building; `a` is data retrieved from storage.
+// storage key used to retrieve the building; `a` is data retrieved from
+// storage.
 //
 // Do not use building data from storage directly; always create an instance
 // with this function, manipulate that, and use its toStorage method if you need
@@ -283,8 +284,8 @@ Building.createFromStorage = function( key, a ) {
 		a[3], // owner
 		a[4], // level
 		a[5], // ticksLeft
-		a[6], // forSale
-		a[7], // toBuy
+		a[6], // selling
+		a[7], // buying
 		a[8], // minimum
 		a[9]  // maximum
 	);
@@ -312,16 +313,16 @@ Building.ticksPassed = function( time, now ) {
 // are always numbers; using objects would force conversions back and forth).
 //
 // Getting and setting values is straightforward:
-// `var foodForSale = building.forSale[ foodId ];`
+// `var foodForSale = building.selling[ foodId ];`
 //
 // However, sparse arrays are harder to enumerate, because naïve "for 0 to
 // length" scans would visit all the "holes"; for..in loops can't be used, and
 // for..of loops are too modern for our compatibility requirements.
 //
 // So, this utility converts to object any of the arrays held by the Building
-// instance (`forSale`, `toBuy`, `minimum`, `maximum`).
+// instance (`selling`, `buying`, `minimum`, `maximum`).
 //
-// You may want to consider using things like `building.forSale.forEach()`
+// You may want to consider using things like `building.selling.forEach()`
 // instead anyway, and avoid creating objects.
 
 Building.makeDictionary = function( array ) {
@@ -336,9 +337,9 @@ Building.makeDictionary = function( array ) {
 
 // Converts commodity data (associative collections of commodity id to integer)
 // into the sparse arrays that we hold in Building instances.  You can use it to
-// set the `forSale`, `toBuy`, `minimum`, `maximum` properties of an instance:
+// set the `selling`, `buying`, `minimum`, `maximum` properties of an instance:
 //
-// `building.toBuy = Building.makeCommodityArray( {foodId: 50, waterId: 80} );`
+// `building.buying = Building.makeCommodityArray( {foodId: 50, waterId: 80} );`
 //
 // `arg` can be one of:
 //
@@ -517,8 +518,8 @@ Building.prototype.toStorage = function() {
 		this.owner,
 		this.level,
 		this.ticksLeft,
-		storageCommodityMap(this.forSale),
-		storageCommodityMap(this.toBuy),
+		storageCommodityMap(this.selling),
+		storageCommodityMap(this.buying),
 		storageCommodityMap(this.minimum),
 		storageCommodityMap(this.maximum)
 	];
@@ -533,7 +534,7 @@ Building.prototype.toStorage = function() {
 }
 
 // Return an array of commodity ids for commodities that appear in either
-// this.toBuy or this.forSale.  Note this is not exactly equivalent to
+// this.buying or this.selling.  Note this is not exactly equivalent to
 // getUpkeepCommodities + getProductionCommodities, because things like stim
 // chip mills and dark domes produce commodities that are not actually listed in
 // the type's base figures.
@@ -541,10 +542,10 @@ Building.prototype.toStorage = function() {
 Building.prototype.getCommoditiesInUse = function() {
 	var seen = [], r = [];
 
-	if ( this.toBuy )
-		this.toBuy.forEach( pushc );
-	if ( this.forSale )
-		this.forSale.forEach( pushc );
+	if ( this.buying )
+		this.buying.forEach( pushc );
+	if ( this.selling )
+		this.selling.forEach( pushc );
 	return r.sort( compare );
 
 	function pushc( v, i ) {
@@ -571,15 +572,15 @@ Building.prototype.isFullyStocked = function() {
 
 	// * this.getUpkeepCommodities() returns an array of commodity ids.
 	// * find runs the anonymous function for each commodity, with `this`
-	//   set as the the building's `toBuy`; returns a commodity id if there
-	//   is one for which toBuy is greater than zero, or undefined if there
+	//   set as the the building's `buying`; returns a commodity id if there
+	//   is one for which buying is greater than zero, or undefined if there
 	//   are none.
 	// * isFullyStocked returns true if find returns undefined.
 
-	return this.toBuy.length > 0 &&
+	return this.buying.length > 0 &&
 		this.getUpkeepCommodities().find(
 			function( commId ) { return this[commId] > 0; },
-			this.toBuy
+			this.buying
 		) === undefined;
 }
 

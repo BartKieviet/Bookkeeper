@@ -157,55 +157,55 @@ function estimateLevel( typeId ) {
 	perCommodity = new Object();
 	levelEst = new Object();
 
-	// We compare our building with the list of buildings that get a 
-	// diversity bonus. If the building is on this list, we take only the 
+	// We compare our building with the list of buildings that get a
+	// diversity bonus. If the building is on this list, we take only the
 	// upkeep into account to get the level.
 	var divList = [ "SF", "NL", "Sm", "EF", "SC", "DD", "Br", "ML", "PF" ];
 	divCheck = divList.indexOf ( Building.getTypeShortName ( typeId ) );
 
 	for (key in amount_max) {
 		var fontList = document.getElementById('baserow'+key).getElementsByTagName("font");
-		
+
 		if (fontList.length === 0) {
 			// Something is wrong, scramble!
 			continue;
 		}
-		
+
 		if (key == '28' || key == '50') {
 			//28 -> Neural tissue does not play nice
 			//50 -> TSS vs non TSS DS? Skip.
-			continue; 
+			continue;
 		}
-		
+
 		perCommodity[key] = parseInt(fontList[fontList.length-1].innerHTML);
-		
+
 		if (Math.abs( perCommodity [ key ]) > max ) {
 			if (divCheck === -1) {
 				// For non-diversity buildings we take both upkeep and production
 				maxKey = key;
 				max = Math.abs( perCommodity [ key ]);
 			} else if (res_upkeep [ key ] != undefined) {
-				// This is true for diversity buildings and upkeep key's 
+				// This is true for diversity buildings and upkeep key's
 				maxKey = key;
 				max = Math.abs( perCommodity [ key ]);
 			}
 		}
-		
+
 	}
-	
+
 	if (perCommodity [ maxKey ] > 0) {
 		level = Math.round((((Math.abs( perCommodity[maxKey] ) / res_production[maxKey] ) - 1) / 0.5) + 1);
 	} else {
 		level = Math.round((((Math.abs( perCommodity[maxKey] ) / res_upkeep[maxKey] ) - 1) / 0.4) + 1);
 	}
-	
+
 	// here we double check the level by calculating the upkeep.
 	var levelCheck = 0;
 	// Stim Mills & non-TSS DS's break our level check below.
 	var commBlackList = ['28', '50', '211', '212', '213'];
-	
+
 	for (key in res_upkeep) {
-		if (commBlackList.indexOf( key ) === -1) { 
+		if (commBlackList.indexOf( key ) === -1) {
 			levelCheck += Math.round(res_upkeep[key]*(1+0.4*(level - 1))) + perCommodity[key];
 		}
 	}
@@ -355,16 +355,16 @@ function updateBuilding( items, building, callback ) {
 	building.level = estimateLevel( info.typeId );
 	building.ticksLeft = computeTicksLeft();
 
-	building.forSale.length = 0;
-	building.toBuy.length = 0;
+	building.selling.length = 0;
+	building.buying.length = 0;
 
 	for ( id in amount ) {
 		amt = amount[ id ];
 		max = amount_max[ id ];
 		min = amount_min[ id ];
 
-		building.forSale[ id ] = Math.max( 0, amt - min );
-		building.toBuy[ id ] = Math.max( 0, max - amt );
+		building.selling[ id ] = Math.max( 0, amt - min );
+		building.buying[ id ] = Math.max( 0, max - amt );
 	}
 
 	items[ buildingKey ] = building.toStorage();

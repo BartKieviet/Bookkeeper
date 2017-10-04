@@ -33,8 +33,8 @@ if(typeof(addUserFunction)=='function')addUserFunction(fn);fn();})();";
 	}
 }
 
-// Arrival of a message means the page contents were updated.  The
-// message contains the value of our variables, too.
+// Arrival of a message means the page contents were updated.  The message
+// contains the value of our variables, too.
 function onGameMessage( event ) {
 	var data = event.data;
 
@@ -136,9 +136,12 @@ function requestUpdateGUI() {
 	div.appendChild( document.createElement('br') );
 	div.appendChild( getMins );
 	div.appendChild( document.createElement('br') );
-	document.forms.building_man.elements.trade_ship.parentElement.appendChild( div );
+	document.forms.building_man.elements.trade_ship.parentElement.
+		appendChild( div );
 	getMins.addEventListener( 'click' , function() {
-		window.open('/building_trade_settings.php?object=' + userloc, '_blank' )
+		window.open(
+			'/building_trade_settings.php?object=' + userloc,
+			'_blank' )
 	} );
 }
 
@@ -154,26 +157,26 @@ function onPrefsData( data ) {
 function updateBuilding() {
 	building.time = Building.now();
 	building.ticksLeft = pageData.ticksLeft;
-	building.forSale = building.minimum.reduce(
-		function( forSale, min, id ) {
+	building.selling = building.minimum.reduce(
+		function( selling, min, id ) {
 			var amt = pageData.comm[ id ];
 			if ( amt !== undefined )
-				forSale[ id ] = Math.max( 0, amt - min );
+				selling[ id ] = Math.max( 0, amt - min );
 			else
-				forSale[ id ] = 0;
-			return forSale;
+				selling[ id ] = 0;
+			return selling;
 		},
 		[]
 	);
 
-	building.toBuy = building.maximum.reduce(
-		function( toBuy, max, id ) {
+	building.buying = building.maximum.reduce(
+		function( buying, max, id ) {
 			var amt = pageData.stock[ id ];
 			if ( amt !== undefined )
-				toBuy[ id ] = Math.max( 0, max - amt );
+				buying[ id ] = Math.max( 0, max - amt );
 			else
-				toBuy[ id ] = 0;
-			return toBuy;
+				buying[ id ] = 0;
+			return buying;
 		},
 		[]
 	);
@@ -250,7 +253,7 @@ function onAutoSell( event ) {
 	// commodity.  Destination space is the space in the building.
 
 	upkeep = building.getUpkeepCommodities();
-	ship = capAmounts( pageData.ship, building.toBuy );
+	ship = capAmounts( pageData.ship, building.buying );
 	transfer = computeTransfer( upkeep, ship, buildingSpace );
 	sendForm( 'ship_', transfer );
 }
@@ -297,7 +300,7 @@ function onAutoBoth( event ) {
 		},
 		[]
 	);
-	ship = capAmounts( pageData.ship, building.toBuy );
+	ship = capAmounts( pageData.ship, building.buying );
 	s2b = computeTransfer( upkeep, ship, buildingSpace );
 	b2s = computeTransfer(
 		production, pageData.comm, shipSpace + s2b.total );

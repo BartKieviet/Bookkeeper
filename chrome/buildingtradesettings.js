@@ -1,9 +1,9 @@
 // This is a content script. It runs on building_trade_settings.php?object=<id>
 //
 // It extracts maximums and minimums for this building.  It could get more
-// things (type and amount, thus forSale and toBuy), but we don't need that: the
-// building will only be updated if it is already in storage, and in that case
-// it will have those things already (or will get them from overview.js).
+// things (type and amount, thus selling and buying), but we don't need that:
+// the building will only be updated if it is already in storage, and in that
+// case it will have those things already (or will get them from overview.js).
 
 var universe = Universe.fromDocument( document );
 var loc = parseInt( document.location.search.split('=')[1] );

@@ -592,11 +592,11 @@ function setCommodityTD( td, commId, n ) {
 
 function overviewFigure( building, commId ) {
 	if ( building.isUpkeep( commId ) &&
-	     building.toBuy[commId] !== undefined )
-		return -building.toBuy[ commId ];
+	     building.buying[commId] !== undefined )
+		return -building.buying[ commId ];
 
-	if ( building.forSale[commId] !== undefined )
-		return building.forSale[ commId ];
+	if ( building.selling[commId] !== undefined )
+		return building.selling[ commId ];
 
 	return undefined;
 }

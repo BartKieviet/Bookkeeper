@@ -269,7 +269,7 @@ function updateForSale( building, amount ) {
 	if ( building.minimum.length === 0 )
 		return;
 
-	building.forSale.length = 0;
+	building.selling.length = 0;
 	building.minimum.forEach( update );
 
 	function update( min, id ) {
@@ -277,7 +277,7 @@ function updateForSale( building, amount ) {
 		amt = amount[ id ];
 		if ( amt !== undefined ) {
 			n = amt - min;
-			building.forSale[ id ] = n > 0 ? n : 0;
+			building.selling[ id ] = n > 0 ? n : 0;
 		}
 	}
 }
@@ -286,7 +286,7 @@ function updateToBuy( building, amount ) {
 	if ( building.maximum.length === 0 )
 		return;
 
-	building.toBuy.length = 0;
+	building.buying.length = 0;
 	building.maximum.forEach( update );
 
 	function update( max, id ) {
@@ -294,7 +294,7 @@ function updateToBuy( building, amount ) {
 		amt = amount[ id ];
 		if ( amt !== undefined ) {
 			n = max - amt;
-			building.toBuy[ id ] = n > 0 ? n : 0;
+			building.buying[ id ] = n > 0 ? n : 0;
 		}
 	}
 }
