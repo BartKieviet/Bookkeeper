@@ -40,4 +40,62 @@ function setup() {
 		{ overlayClassName: 'bookkeeper-starbasetrade',
 		  mode: 'compact',
 		  storageKey: 'SB' } );
+	
+	function makeButton( id ) {
+		button = document.createElement( 'button' );
+		button.type = 'button';
+		button.id = id;
+		button.style = "width: 175px; height: 35px; margin-left: 3px; margin-right: 3px;";
+		return button
+	}
+
+	if (document.forms.planet_trade) {
+		var middleNode = document.getElementById('quickButtonsTbl').parentNode;
+		middleNode.appendChild( document.createElement( 'br' ));
+		middleNode.appendChild( document.createElement( 'br' ));
+
+		button = makeButton ( 'bookkeeper-transfer-food' ) 
+		button.textContent = '<- Food | Energy ->';
+		middleNode.appendChild ( button ) ;
+		button.addEventListener('click', function() {
+			if ( document.getElementById('shiprow2').getElementsByTagName('a')[1] ) {
+				document.getElementById('shiprow2').getElementsByTagName('a')[1].click();
+			}
+			document.getElementById('baserow1').getElementsByTagName('a')[1].click(); 
+			document.forms.planet_trade.submit();
+		}); 
+		
+		middleNode.appendChild( document.createElement( 'br' ));
+		middleNode.appendChild( document.createElement( 'br' ));
+		button = makeButton ( 'bookkeeper-transfer-water' ) 
+		button.textContent = '<- Water | Energy ->';
+		middleNode.appendChild ( button ) ;		
+		button.addEventListener('click', function() {
+			if ( document.getElementById('shiprow2').getElementsByTagName('a')[1] ) {
+				document.getElementById('shiprow2').getElementsByTagName('a')[1].click();
+			}
+			document.getElementById('baserow3').getElementsByTagName('a')[1].click(); 
+			document.forms.planet_trade.submit();
+		});
+		middleNode.appendChild( document.createElement( 'br' ));
+		middleNode.appendChild( document.createElement( 'br' ));
+
+		button = makeButton ( 'bookkeeper-transfer-FWE' ) 
+		button.textContent = '<-SB FW | Energy ->';
+		middleNode.appendChild ( button ) ;
+		button.addEventListener('click', function() {
+			var ship_cargo = parseInt(document.getElementById('shiprow32').nextElementSibling.nextElementSibling.lastElementChild.textContent.split(/t/g)[0]);
+
+			if (document.getElementById('shiprow2').getElementsByTagName('a')[1] ) {
+				document.getElementById('shiprow2').getElementsByTagName('a')[1].click();
+				ship_cargo += parseInt( document.getElementById('sell_2').value );
+			}
+			var buyFood = Math.floor( ship_cargo / 5 * 3);
+			var buyWater = ship_cargo - buyFood;
+			
+			document.getElementById('buy_1').value = buyFood; 
+			document.getElementById('buy_3').value = buyWater; 
+			document.forms.planet_trade.submit();
+		}); 
+	}
 }
