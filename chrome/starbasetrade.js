@@ -50,6 +50,9 @@ function setup() {
 	}
 
 	if (document.forms.planet_trade) {
+		var previewStatus = document.getElementById('preview_checkbox').checked;
+		document.getElementById('preview_checkbox').addEventListener('click', function() { previewStatus = !previewStatus } );
+		
 		var middleNode = document.getElementById('quickButtonsTbl');
 		middleNode.appendChild( document.createElement( 'br' ));
 
@@ -61,7 +64,9 @@ function setup() {
 				document.getElementById('shiprow2').getElementsByTagName('a')[1].click();
 			}
 			document.getElementById('baserow1').getElementsByTagName('a')[1].click(); 
-			document.forms.planet_trade.submit();
+			if (!previewStatus) {
+				document.forms.planet_trade.submit();
+			}
 		}); 
 		
 		middleNode.appendChild( document.createElement( 'br' ));
@@ -74,7 +79,9 @@ function setup() {
 				document.getElementById('shiprow2').getElementsByTagName('a')[1].click();
 			}
 			document.getElementById('baserow3').getElementsByTagName('a')[1].click(); 
-			document.forms.planet_trade.submit();
+			if (!previewStatus) {
+				document.forms.planet_trade.submit();
+			}
 		});
 		middleNode.appendChild( document.createElement( 'br' ));
 		middleNode.appendChild( document.createElement( 'br' ));
@@ -94,7 +101,9 @@ function setup() {
 			
 			document.getElementById('buy_1').value = buyFood; 
 			document.getElementById('buy_3').value = buyWater; 
-			document.forms.planet_trade.submit();
+			if (!previewStatus) {
+				document.forms.planet_trade.submit();
+			}
 		}); 
 	}
 }
