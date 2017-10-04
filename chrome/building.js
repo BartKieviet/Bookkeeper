@@ -191,16 +191,18 @@ Building.getTypeShortName = function( typeId ) {
 	return t !== undefined ? t.s : undefined;
 }
 
-// Get the base upkeep for "normal" buildings of the given type.
-// Return an object where keys are commodity ids, and values are integers.
+// Get the base upkeep for "normal" buildings of the given type.  Return an
+// object where keys are commodity ids, and values are integers encoded as
+// strings.
 
 Building.getBaseUpkeep = function( typeId ) {
 	var t = Building.getType( typeId );
 	return t !== undefined ? t.bu : undefined;
 }
 
-// Get the base production for "normal" buildings of the given type.
-// Return an object where keys are commodity ids, and values are integers.
+// Get the base production for "normal" buildings of the given type.  Return an
+// object where keys are commodity ids, and values are integers encoded as
+// strings.
 
 Building.getBaseProduction = function( typeId ) {
 	var t = Building.getType( typeId );
@@ -208,7 +210,8 @@ Building.getBaseProduction = function( typeId ) {
 }
 
 // Get an array of commodity ids that buildings of the given type consume.  Note
-// you get an array of strings; map to integers if you care about order.
+// you get an array of strings; map to integers and sort, if you care about
+// order.
 
 Building.getUpkeepCommodities = function( typeId ) {
 	var t = Building.getType( typeId );
@@ -216,9 +219,9 @@ Building.getUpkeepCommodities = function( typeId ) {
 }
 
 // Get an array of commodity ids that buildings of the given type consume.  Note
-// you get an array of strings; map to integers if you care about order.  Note
-// also that stim chip mills and dark domes (XXX - only those?) can produce
-// things not listed in these values.
+// you get an array of strings; map to integers and sort if you care about
+// order.  Note also that stim chip mills and dark domes (XXX - only those?) can
+// produce things not listed in these values.
 
 Building.getProductionCommodities = function( typeId ) {
 	var t = Building.getType( typeId );
@@ -228,7 +231,7 @@ Building.getProductionCommodities = function( typeId ) {
 // Get the "normal" upkeep of a building of the given type and bonus.  This may
 // not match the actual upkeep seen in the wild, because of AT bonuses, special
 // events, and TSS membership status.  Return an object where keys are commodity
-// ids, and values are integers.
+// ids, and values are integers encoded as strings.
 
 Building.getNormalUpkeep = function( typeId, level ) {
 	return computeUpPr( Building.getType(typeId), 'bu', level, 0.4 );
@@ -236,7 +239,8 @@ Building.getNormalUpkeep = function( typeId, level ) {
 
 // Get the "normal" production of a building of the given type and bonus.  This
 // may not match the actual production because of AT bonuses, special events.
-// Return an object where keys are commodity ids, and values are integers.
+// Return an object where keys are commodity ids, and values are integers
+// encoded as strings.
 
 Building.getNormalProduction = function( typeId, level ) {
 	return computeUpPr( Building.getType(typeId), 'bp', level, 0.5 );
@@ -309,21 +313,9 @@ Building.ticksPassed = function( time, now ) {
 }
 
 // Building instances store lists of commodity values as sparse arrays, not
-// objects, because that's faster (object keys are always strings, and our ids
-// are always numbers; using objects would force conversions back and forth).
-//
-// Getting and setting values is straightforward:
-// `var foodForSale = building.selling[ foodId ];`
-//
-// However, sparse arrays are harder to enumerate, because naïve "for 0 to
-// length" scans would visit all the "holes"; for..in loops can't be used, and
-// for..of loops are too modern for our compatibility requirements.
-//
-// So, this utility converts to object any of the arrays held by the Building
-// instance (`selling`, `buying`, `minimum`, `maximum`).
-//
-// You may want to consider using things like `building.selling.forEach()`
-// instead anyway, and avoid creating objects.
+// objects; see dev notes for a discussion on this.  This utility converts to
+// object any of the arrays held by the Building instance (`selling`, `buying`,
+// `minimum`, `maximum`).
 
 Building.makeDictionary = function( array ) {
 	return array.reduce(
@@ -339,7 +331,9 @@ Building.makeDictionary = function( array ) {
 // into the sparse arrays that we hold in Building instances.  You can use it to
 // set the `selling`, `buying`, `minimum`, `maximum` properties of an instance:
 //
-// `building.buying = Building.makeCommodityArray( {foodId: 50, waterId: 80} );`
+// ```
+// building.buying = Building.makeCommodityArray( {1:50, 3:80} );
+// ```
 //
 // `arg` can be one of:
 //
@@ -534,10 +528,10 @@ Building.prototype.toStorage = function() {
 }
 
 // Return an array of commodity ids for commodities that appear in either
-// this.buying or this.selling.  Note this is not exactly equivalent to
-// getUpkeepCommodities + getProductionCommodities, because things like stim
-// chip mills and dark domes produce commodities that are not actually listed in
-// the type's base figures.
+// this.buying or this.selling, in numeric order.  Note this is not exactly
+// equivalent to getUpkeepCommodities + getProductionCommodities, because things
+// like stim chip mills and dark domes produce commodities that are not actually
+// listed in the type's base figures.
 
 Building.prototype.getCommoditiesInUse = function() {
 	var seen = [], r = [];
