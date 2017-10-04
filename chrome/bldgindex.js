@@ -121,8 +121,10 @@ function parsePage( buildingsTable ) {
 
 	// We'll execute these repeatedly; worth to compile
 
-	iconxp = document.createExpression( './td[position()=1]/img/@src', null );
-	ownerxp = document.createExpression( './td[position()=3]/a/text()', null );
+	iconxp = document.createExpression(
+		'./td[position()=1]/img/@src', null );
+	ownerxp = document.createExpression(
+		'./td[position()=3]/a/text()', null );
 	sellxp = document.createExpression(
 		'./td[position()=4]/table/tbody/tr/td[i[text()="selling:"]]/following-sibling::td',
 		null );
@@ -328,12 +330,12 @@ function computeUpdates( updates ) {
 
 function updateBuildingFromEntry( entry ) {
 	var building = entry.building;
-	building.typeId = entry.typeId;
-	building.time = now;
-	building.owner = entry.owner;
-	building.ticksLeft = entry.ticksLeft;
-	building.selling = entry.selling;
-	building.buying = entry.buying;
+	building.setType( entry.typeId );
+	building.setTime( now );
+	building.setOwner( entry.owner );
+	building.setTicksLeft( entry.ticksLeft );
+	building.setSelling( entry.selling );
+	building.setBuying( entry.buying );
 }
 
 function inferBuildingFromEntry( entry ) {

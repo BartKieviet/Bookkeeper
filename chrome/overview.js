@@ -601,17 +601,6 @@ function overviewFigure( building, commId ) {
 	return undefined;
 }
 
-// Compute the manhattan distance from building `b` to the filter coords.
-// XXX - move to Filter
-
-function manhattan( b ) {
-	var bc = Sector.getCoords( b.sectorId, b.loc );
-
-	return Math.max(
-		Math.abs(bc.x - this.coords.x),
-		Math.abs(bc.y - this.coords.y) );
-}
-
 // Return an array of ids of commodities that are consumed or produced by at
 // least one building in the collection given.
 

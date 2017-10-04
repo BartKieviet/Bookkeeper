@@ -10,39 +10,49 @@ var NAME_IDS, ICON_IDS;
 
 // Construct a new Building instance.
 //
-// You can supply as many parameters as you have data for, and/or use undefined
-// for missing data.  Note though: the building will not be fully usable (some
-// instance methods may fail) until at least properties `loc`, `sectorId`, and
-// `typeId`, have been set.
+// Supply as many parameters as available, and/or use undefined for missing
+// data.  Note though: the building will not be fully usable (some instance
+// methods may fail) until at least properties `loc`, `sectorId`, and `typeId`,
+// have been set.
 //
 // `loc`, `sectorId`, `typeId`, `time`, `level`, and `ticksLeft`, if provided,
 // should be integers.
 //
 // `owner`, if provided, should be a string.
 //
-// `selling`, `buying`, `minimum`, and `maximum`, if provided, can be arrays or
-// objects.  See makeCommodityArray below.
+// `selling`, `buying`, `minimum`, `maximum`, `upkeep`, and `production`, if
+// provided, should be arrays of integer values.
 //
 // Note that `time` is expected as a Unix timestamp in *seconds*, not
 // milliseconds.  You can use Building.seconds to convert the result of
 // Date.now().
 //
-// If you don't initialise the instance fully here, you can assign the missing
-// properties to the instance later using the same names as these parameters.
+// If the instance is not initialised fully here, supply the missing properties
+// later using the set* methods.
+//
+// `upkeep` and `production` should only be set when they can't be calculated
+// from the building's level, or the when level cannot be estimated.  Usually
+// these two properties won't be read directly; methods getUpkeep and
+// getProduction can be used instead, which will give these values if available,
+// or defer to getNormalUpkeep and getNormalProduction if not.
 
 function Building( loc, sectorId, typeId, time, owner, level, ticksLeft,
-		   selling, buying, minimum, maximum ) {
-	this.loc = loc;
-	this.sectorId = sectorId;
-	this.typeId = typeId;
-	this.time = time || Building.now();
-	this.owner = owner;
-	this.level = level;
-	this.ticksLeft = ticksLeft;
-	this.selling = Building.makeCommodityArray( selling );
-	this.buying = Building.makeCommodityArray( buying );
-	this.minimum = Building.makeCommodityArray( minimum );
-	this.maximum = Building.makeCommodityArray( maximum );
+		   selling, buying, minimum, maximum, upkeep, production ) {
+	this.loc = intPropVal( loc );
+	this.sectorId = intPropVal( sectorId );
+	this.typeId = intPropVal( typeId );
+	this.time = intPropVal( time ) || Building.now();
+	this.owner = owner ? String(owner) : undefined;
+	this.level = intPropVal( level );
+	this.ticksLeft = intPropVal( ticksLeft );
+	this.selling = selling || [];
+	this.buying = buying || [];
+	this.minimum = minimum || [];
+	this.maximum = maximum || [];
+	this.upkeep = upkeep || [];
+	this.production = production || [];
+	this.cachedUpkeep = undefined;
+	this.cachedProduction = undefined;
 }
 
 
@@ -192,8 +202,8 @@ Building.getTypeShortName = function( typeId ) {
 }
 
 // Get the base upkeep for "normal" buildings of the given type.  Return an
-// object where keys are commodity ids, and values are integers encoded as
-// strings.
+// object where keys are commodity ids encoded as strings, and values are
+// integers.
 
 Building.getBaseUpkeep = function( typeId ) {
 	var t = Building.getType( typeId );
@@ -201,8 +211,8 @@ Building.getBaseUpkeep = function( typeId ) {
 }
 
 // Get the base production for "normal" buildings of the given type.  Return an
-// object where keys are commodity ids, and values are integers encoded as
-// strings.
+// object where keys are commodity ids encoded as strings, and values are
+// integers.
 
 Building.getBaseProduction = function( typeId ) {
 	var t = Building.getType( typeId );
@@ -231,7 +241,7 @@ Building.getProductionCommodities = function( typeId ) {
 // Get the "normal" upkeep of a building of the given type and bonus.  This may
 // not match the actual upkeep seen in the wild, because of AT bonuses, special
 // events, and TSS membership status.  Return an object where keys are commodity
-// ids, and values are integers encoded as strings.
+// ids encoded as strings, and values are integers.
 
 Building.getNormalUpkeep = function( typeId, level ) {
 	return computeUpPr( Building.getType(typeId), 'bu', level, 0.4 );
@@ -239,8 +249,8 @@ Building.getNormalUpkeep = function( typeId, level ) {
 
 // Get the "normal" production of a building of the given type and bonus.  This
 // may not match the actual production because of AT bonuses, special events.
-// Return an object where keys are commodity ids, and values are integers
-// encoded as strings.
+// Return an object where keys are commodity ids encoded as strings, and values
+// are integers.
 
 Building.getNormalProduction = function( typeId, level ) {
 	return computeUpPr( Building.getType(typeId), 'bp', level, 0.5 );
@@ -278,7 +288,7 @@ Building.storageKey = function( universeKey, location ) {
 // modify the app anywhere but here.
 
 Building.createFromStorage = function( key, a ) {
-	// V2.1 format is a 3- to 10-element array.
+	// V2.2 format is a 3- to 12-element array.
 	var loc = parseInt( key.substr(1) );
 	return new Building(
 		loc,
@@ -288,10 +298,12 @@ Building.createFromStorage = function( key, a ) {
 		a[3], // owner
 		a[4], // level
 		a[5], // ticksLeft
-		a[6], // selling
-		a[7], // buying
-		a[8], // minimum
-		a[9]  // maximum
+		unpackArray( a[6] ), // selling
+		unpackArray( a[7] ), // buying
+		unpackArray( a[8] ), // minimum
+		unpackArray( a[9] ), // maximum
+		unpackArray( a[10] ), // upkeep
+		unpackArray( a[11] )  //production
 	);
 }
 
@@ -310,77 +322,6 @@ Building.ticksPassed = function( time, now ) {
 	ticksPassed = ( timePassed > timeToTick ) ? 1 : 0;
 	ticksPassed += Math.floor( timePassed / (6 * 3600) );
 	return ticksPassed;
-}
-
-// Building instances store lists of commodity values as sparse arrays, not
-// objects; see dev notes for a discussion on this.  This utility converts to
-// object any of the arrays held by the Building instance (`selling`, `buying`,
-// `minimum`, `maximum`).
-
-Building.makeDictionary = function( array ) {
-	return array.reduce(
-		function( o, n, id ) {
-			o[ id ] = n;
-			return o;
-		},
-		{}
-	);
-}
-
-// Converts commodity data (associative collections of commodity id to integer)
-// into the sparse arrays that we hold in Building instances.  You can use it to
-// set the `selling`, `buying`, `minimum`, `maximum` properties of an instance:
-//
-// ```
-// building.buying = Building.makeCommodityArray( {1:50, 3:80} );
-// ```
-//
-// `arg` can be one of:
-//
-//  * An array: we assume `arg` contains an even number of integer items: the
-//    first a commodity id, the second a value, the third another commodity id,
-//    and so forth.  This form is used to load objects from storage, which needs
-//    to run fast (sometimes we're just constructing an instance to look at some
-//    stored datum, not because we need the full Building functionality.  So no
-//    checking is performed here, for speed.
-//
-//  * An object: we expect the enumerable keys of `arg` to be commodity ids, and
-//    the associated values, integers.  Return a sparse array with the exact
-//    same keys the given object had (only as integers not strings).  This
-//    doesn't need to run that fast, instead we want correctness, so we do
-//    validate a few things.
-//
-//  * null or undefined: return an empty array.
-//
-// Any other type will throw an error, because that's useful for debugging.
-
-Building.makeCommodityArray = function( arg ) {
-	var a, i, end, key, val;
-
-	if ( arg === null || arg === undefined )
-		return [];
-
-	if ( arg instanceof Array ) {
-		for ( a = [], i = 0, end = arg.length; i < end; i += 2 )
-			a[ arg[i] ] = arg[ i + 1 ];
-		return a;
-	}
-
-	if ( typeof arg !== 'object' )
-		throw 'Invalid commodity map: ' + JSON.stringify(arg);
-
-	a = [];
-	for ( key in arg ) {
-		key = parseInt( key );
-		val = parseInt( arg[key] );
-		if ( isNaN(key) || isNaN(val) ) {
-			throw 'Invalid commodity map pair: ' +
-				JSON.stringify( key ) + ' -> ' +
-				JSON.stringify( arg[key] );
-		}
-		a[ key ] = val;
-	}
-	return a;
 }
 
 // Removes the building at location `loc` from storage.  `ukey` is the universe
@@ -467,6 +408,92 @@ Building.prototype.isProduction = function( commodityId ) {
 	return Building.isProduction( this.typeId, commodityId );
 }
 
+Building.prototype.getUpkeep = function() {
+	if ( this.cachedUpkeep )
+		return this.cachedUpkeep;
+	if ( this.upkeep.length > 0 )
+		this.cachedUpkeep = this.upkeep;
+	else if ( this.level !== undefined )
+		this.cachedUpkeep = Building.makeCommodityArray(
+			this.getNormalUpkeep() );
+	else
+		this.cachedUpkeep = [];
+	return this.cachedUpkeep;
+}
+
+Building.prototype.getProduction = function() {
+	if ( this.cachedProduction )
+		return this.cachedProduction;
+	if ( this.production.length > 0 )
+		this.cachedProduction = this.production;
+	else if ( this.level !== undefined )
+		this.cachedProduction = Building.makeCommodityArray(
+			this.getNormalProduction() );
+	else
+		this.cachedProduction = [];
+	return this.cachedProduction;
+}
+
+// The following methods set instance properties.  Prefer these to setting the
+// properties directly.
+
+Building.prototype.setLocation = function( loc, sectorId ) {
+	this.loc = intPropVal( loc );
+	this.sectorId = intPropVal( sectorId );
+}
+
+Building.prototype.setType = function( typeId ) {
+	this.typeId = intPropVal( typeId );
+	this.cachedUpkeep = undefined;
+	this.cachedProduction = undefined;
+}
+
+Building.prototype.setLevel = function( level ) {
+	this.level = intPropVal( level );
+	this.cachedUpkeep = undefined;
+	this.cachedProduction = undefined;
+}
+
+Building.prototype.setTime = function( t ) {
+	this.time = intPropVal( t ) || Building.now();
+}
+
+Building.prototype.setTicksLeft = function( n ) {
+	this.ticksLeft = intPropVal( n );
+}
+
+Building.prototype.setOwner = function( owner ) {
+	if ( owner !== undefined ) {
+		owner = String( owner );
+		if ( owner.length > 0 )
+			owner = undefined;
+	}
+	this.owner = owner;
+}
+
+Building.prototype.setSelling = function( a ) { this.selling = a || []; }
+Building.prototype.setBuying = function( a ) { this.buying = a || []; }
+Building.prototype.setMinimum = function( a ) { this.minimum = a || []; }
+Building.prototype.setMaximum = function( a ) { this.maximum = a || []; }
+
+Building.prototype.setUpkeep = function( a ) {
+	if ( a )
+		this.cachedUpkeep = this.upkeep = a;
+	else {
+		this.cachedUpkeep = undefined;
+		this.upkeep = [];
+	}
+}
+
+Building.prototype.setProduction = function( a ) {
+	if ( a )
+		this.cachedProduction = this.production = a;
+	else {
+		this.cachedProduction = undefined;
+		this.production = [];
+	}
+}
+
 // Check if this building stores minimums and maximums.  That is not often the
 // case: currently bookie only stores that for your own buildings, when it
 // watches you set the limits in the "trade settings" page.
@@ -504,7 +531,7 @@ Building.prototype.storageKey = function( universeKey ) {
 // anywhere but here.
 
 Building.prototype.toStorage = function() {
-	// V2.1 format is a 3 to 10-element array.
+	// V2.2 format is a 3 to 12-element array.
 	var a = [
 		this.sectorId,
 		this.typeId,
@@ -512,15 +539,17 @@ Building.prototype.toStorage = function() {
 		this.owner,
 		this.level,
 		this.ticksLeft,
-		storageCommodityMap(this.selling),
-		storageCommodityMap(this.buying),
-		storageCommodityMap(this.minimum),
-		storageCommodityMap(this.maximum)
+		packArray( this.selling ),
+		packArray( this.buying ),
+		packArray( this.minimum ),
+		packArray( this.maximum ),
+		packArray( this.upkeep ),
+		packArray( this.production )
 	];
 
 	// Shave off the last undefined elements of this.  a.length should never
 	// go below 3 here, but we'll check just in case because if we're wrong
-	// thing would get ugly.
+	// things would get ugly.
 	while ( a.length > 3 && a[ a.length - 1 ] === undefined )
 		a.length = a.length - 1;
 
@@ -563,14 +592,6 @@ Building.prototype.removeStorage = function( ukey, callback ) {
 // actually recorded it's stocks, so we can't know if it's fully stocked.
 
 Building.prototype.isFullyStocked = function() {
-
-	// * this.getUpkeepCommodities() returns an array of commodity ids.
-	// * find runs the anonymous function for each commodity, with `this`
-	//   set as the the building's `buying`; returns a commodity id if there
-	//   is one for which buying is greater than zero, or undefined if there
-	//   are none.
-	// * isFullyStocked returns true if find returns undefined.
-
 	return this.buying.length > 0 &&
 		this.getUpkeepCommodities().find(
 			function( commId ) { return this[commId] > 0; },
@@ -584,7 +605,19 @@ Building.prototype.isFullyStocked = function() {
 
 
 
-function storageCommodityMap( a ) {
+// We want our integer properties consistently numbers or undefined.
+
+function intPropVal( v ) {
+	if ( v !== undefined ) {
+		if ( isNaN( v = parseInt(v) ) )
+			v = undefined;
+	}
+	return v;
+}
+
+// Convert a sparse array to the form we send to storage.
+
+function packArray( a ) {
 	if ( a.length === 0 )
 		return undefined;
 	return a.reduce(
@@ -594,6 +627,17 @@ function storageCommodityMap( a ) {
 		},
 		[]
 	);
+}
+
+// Convert an array from storage to a sparse array.
+
+function unpackArray( a ) {
+	var r, i, end;
+	if ( a === undefined )
+		return [];
+	for ( r = [], i = 0, end = a.length; i < end; i += 2 )
+		r[ a[i] ] = a[ i + 1 ];
+	return r;
 }
 
 // Compute a normal building upkeep/production from base values and level, using

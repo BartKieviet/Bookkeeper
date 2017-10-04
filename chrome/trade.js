@@ -343,29 +343,31 @@ function onBuildingUntracked() {
 }
 
 function updateBuilding( items, building, callback ) {
-	var info, id, amt, max, min;
+	var info, id, amt, max, min, selling, buying;
 
 	info = parseInfo();
 	if ( !info )
 		return;
 
-	building.typeId = info.typeId;
-	building.time = Building.seconds( time );
-	building.owner = info.owner;
-	building.level = estimateLevel( info.typeId );
-	building.ticksLeft = computeTicksLeft();
+	building.setType( info.typeId );
+	building.setTime( Building.seconds(time) );
+	building.setOwner( info.owner );
+	building.setLevel( estimateLevel(info.typeId) );
+	building.setTicksLeft( computeTicksLeft() );
 
-	building.selling.length = 0;
-	building.buying.length = 0;
+	selling = [];
+	buying = [];
 
 	for ( id in amount ) {
 		amt = amount[ id ];
 		max = amount_max[ id ];
 		min = amount_min[ id ];
 
-		building.selling[ id ] = Math.max( 0, amt - min );
-		building.buying[ id ] = Math.max( 0, max - amt );
+		selling[ id ] = Math.max( 0, amt - min );
+		buying[ id ] = Math.max( 0, max - amt );
 	}
+	building.setSelling( selling );
+	building.setBuying( buying );
 
 	items[ buildingKey ] = building.toStorage();
 

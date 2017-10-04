@@ -5,6 +5,8 @@
 // the building will only be updated if it is already in storage, and in that
 // case it will have those things already (or will get them from overview.js).
 
+var Universe, Building;
+
 var universe = Universe.fromDocument( document );
 var loc = parseInt( document.location.search.split('=')[1] );
 var buildingID;

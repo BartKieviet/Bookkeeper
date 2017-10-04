@@ -155,31 +155,32 @@ function onPrefsData( data ) {
 }
 
 function updateBuilding() {
-	building.time = Building.now();
-	building.ticksLeft = pageData.ticksLeft;
-	building.selling = building.minimum.reduce(
-		function( selling, min, id ) {
-			var amt = pageData.comm[ id ];
-			if ( amt !== undefined )
-				selling[ id ] = Math.max( 0, amt - min );
-			else
-				selling[ id ] = 0;
-			return selling;
-		},
-		[]
-	);
+	building.setTime();
+	building.setTicksLeft( pageData.ticksLeft );
+	building.setSelling(
+		building.minimum.reduce(
+			function( selling, min, id ) {
+				var amt = pageData.comm[ id ];
+				if ( amt !== undefined )
+					selling[ id ] = Math.max(
+						0, amt - min );
+				else
+					selling[ id ] = 0;
+				return selling;
+			},
+			[] ) );
 
-	building.buying = building.maximum.reduce(
-		function( buying, max, id ) {
-			var amt = pageData.stock[ id ];
-			if ( amt !== undefined )
-				buying[ id ] = Math.max( 0, max - amt );
-			else
-				buying[ id ] = 0;
-			return buying;
-		},
-		[]
-	);
+	building.setBuying(
+		building.maximum.reduce(
+			function( buying, max, id ) {
+				var amt = pageData.stock[ id ];
+				if ( amt !== undefined )
+					buying[ id ] = Math.max( 0, max - amt );
+				else
+					buying[ id ] = 0;
+				return buying;
+			},
+			[] ) );
 
 	var data = {};
 	data[ buildingKey ] = building.toStorage();

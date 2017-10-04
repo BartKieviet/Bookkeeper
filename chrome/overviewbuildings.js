@@ -246,12 +246,12 @@ function addOwnBuildings( universeList, ownEntries, callback ) {
 		// the data we have here.  Otherwise create a new one.
 
 		if ( building ) {
-			building.time = now;
-			building.typeId = entry.typeId;
-			building.level = entry.level;
-			building.ticksLeft = entry.ticksLeft;
-			updateForSale( building, entry.amount );
-			updateToBuy( building, entry.amount );
+			building.setTime( now );
+			building.setType( entry.typeId );
+			building.setLevel( entry.level );
+			building.setTicksLeft( entry.ticksLeft );
+			updateSelling( building, entry.amount );
+			updateBuying( building, entry.amount );
 		}
 		else {
 			building = new Building(
@@ -265,7 +265,7 @@ function addOwnBuildings( universeList, ownEntries, callback ) {
 
 // XXX these two may need to be in building.js
 // `amount` is a sparse array of commodity amounts.
-function updateForSale( building, amount ) {
+function updateSelling( building, amount ) {
 	if ( building.minimum.length === 0 )
 		return;
 
@@ -282,7 +282,7 @@ function updateForSale( building, amount ) {
 	}
 }
 
-function updateToBuy( building, amount ) {
+function updateBuying( building, amount ) {
 	if ( building.maximum.length === 0 )
 		return;
 
