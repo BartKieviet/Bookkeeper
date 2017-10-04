@@ -9,8 +9,12 @@
 var COORDS_RX = /\[(\d+),(\d+)\]/;
 
 // Fetches A elements in TDs of class "navBuilding"
+//
+// The last step is "descendant", rather than "direct child", to deal with a DIV
+// that pardus inserts when you're on blue stims.
 var BLDGTILE_XPATH = document.createExpression(
-	'./tbody/tr/td[@class="navBuilding"]/a', null );
+	'./tbody/tr/td[@class="navBuilding"]//a[@onclick or @id="stdCommand"]',
+	null );
 
 // Match the onclick attribute of a tile.  If partial refresh is enabled, this
 // will be ""navAjax(142080)"; if it's disabled, it will be "nav(142080)".
@@ -151,7 +155,6 @@ function showTicks() {
 		navTable, XPathResult.UNORDERED_NODE_ITERATOR_TYPE, null );
 
 	while ( (a = xpr.iterateNext()) !== null ) {
-		//Skittle & Capri stim break here, while loop is not executed. 
 		onclkstr = a.getAttribute( 'onclick' );
 		if ( onclkstr ) {
 			m = TILEID_RX.exec( onclkstr );
@@ -169,10 +172,12 @@ function showTicks() {
 		else
 			continue;
 
+		// Note: when high on Capri EPS-scum-cookies, the parent element
+		// of the A node will be a div, not the TD itself.  This is fine
+		// for us (and better, we won't try to use the cached elements
+		// when the chip's effect suddenly wears off).
 		td = a.parentElement;
-		// if (td.tagName == "div") {
-				// td = td.parentElement;
-		// }
+
 		cached = bldgTileCache[ loc ];
 		if ( cached ) {
 			cached.td = td;
