@@ -151,34 +151,64 @@ function parseInfo() {
 	};
 }
 
-function guessLevel() {
-	var perCommodity, levelEst, level, key;
+function estimateLevel( typeId ) {
+	var perCommodity, levelEst, level = 0, key, divCheck, max = 0, maxKey;
 
 	perCommodity = new Object();
 	levelEst = new Object();
-	level = 0;
+
+	// We compare our building with the list of buildings that get a 
+	// diversity bonus. If the building is on this list, we take only the 
+	// upkeep into account to get the level.
+	var divList = [ "SF", "NL", "Sm", "EF", "SC", "DD", "Br", "ML", "PF" ];
+	divCheck = divList.indexOf ( Building.getTypeShortName ( typeId ) );
 
 	for (key in amount_max) {
 		var fontList = document.getElementById('baserow'+key).getElementsByTagName("font");
-		perCommodity[key] = parseInt(fontList[fontList.length-1].innerHTML);
-		if (perCommodity[key] > 0) {
-			levelEst[key] = ((((perCommodity[key] / res_production[key]) - 1) / 0.5) + 1);
-		} else {
-			levelEst[key] = ((((-perCommodity[key] / res_upkeep[key]) - 1) / 0.4) + 1);
-			// So thanks to Div we only take the upkeep for level determination.
-			level += levelEst[key];
+		
+		if (fontList.length === 0) {
+			// Something is wrong, scramble!
+			continue;
 		}
+		
+		if (key == '28' || key == '50') {
+			//28 -> Neural tissue does not play nice
+			//50 -> TSS vs non TSS DS? Skip.
+			continue; 
+		}
+		
+		perCommodity[key] = parseInt(fontList[fontList.length-1].innerHTML);
+		
+		if (Math.abs( perCommodity [ key ]) > max ) {
+			if (divCheck === -1) {
+				// For non-diversity buildings we take both upkeep and production
+				maxKey = key;
+				max = Math.abs( perCommodity [ key ]);
+			} else if (res_upkeep [ key ] != undefined) {
+				// This is true for diversity buildings and upkeep key's 
+				maxKey = key;
+				max = Math.abs( perCommodity [ key ]);
+			}
+		}
+		
 	}
-
-	// The average of the estimated levels is most likely correct.
-	level = Math.round(level / Object.keys(res_upkeep).length);
-
+	
+	if (perCommodity [ maxKey ] > 0) {
+		level = Math.round((((Math.abs( perCommodity[maxKey] ) / res_production[maxKey] ) - 1) / 0.5) + 1);
+	} else {
+		level = Math.round((((Math.abs( perCommodity[maxKey] ) / res_upkeep[maxKey] ) - 1) / 0.4) + 1);
+	}
+	
 	// here we double check the level by calculating the upkeep.
 	var levelCheck = 0;
+	// Stim Mills & non-TSS DS's break our level check below.
+	var commBlackList = ['28', '50', '211', '212', '213'];
+	
 	for (key in res_upkeep) {
-		levelCheck += Math.round(res_upkeep[key]*(1+0.4*(level - 1))) + perCommodity[key];
+		if (commBlackList.indexOf( key ) === -1) { 
+			levelCheck += Math.round(res_upkeep[key]*(1+0.4*(level - 1))) + perCommodity[key];
+		}
 	}
-
 	if (levelCheck === 0) {
 		return level;
 	}
@@ -322,7 +352,7 @@ function updateBuilding( items, building, callback ) {
 	building.typeId = info.typeId;
 	building.time = Building.seconds( time );
 	building.owner = info.owner;
-	building.level = guessLevel();
+	building.level = estimateLevel( info.typeId );
 	building.ticksLeft = computeTicksLeft();
 
 	building.forSale.length = 0;

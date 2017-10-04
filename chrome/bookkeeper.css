@@ -1,24 +1,59 @@
-/* -*- css-indent-offset: 8; indent-tabs-mode: t -*- */
-
 h1.bookkeeper img {
 	vertical-align: -2px;
 	margin-right: 4px;
 }
 
-#bookkeeper-overview {
-	display: inline-block;
-	width: auto;
+/* OVERVIEW */
+
+div.bookkeeper-overview {
 	border: outset 1px #A0B1C9;
-	margin-bottom: 2ex;
 	padding: 5px;
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	width: min-content;
 }
 
-#bookkeeper-overview table {
-	text-align: inherit;
+div.bookkeeper-overview > div {
+	flex: none;
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	border-bottom: solid 1px #a1a1af;
+}
+
+div.bookkeeper-overview > div > input {
+	flex: auto;
+	border: none;
+	background: transparent;
+	outline: none;
+	font-family: Helvetica, Arial, sans-serif;
+	font-size: 12px;
+	font-weight: bold;
+}
+
+div.bookkeeper-overview > div > img {
+	flex: 0;
+	width: 16px;
+	height: 16px;
+	cursor: pointer;
+}
+
+div.bookkeeper-overview > p {
+	color: #777;
+	font-size: x-small;
+	margin: 8px 0;
+}
+
+div.bookkeeper-overview > table {
+	width: max-content;
+	flex: auto;
+	align-self: stretch;
 	border-collapse: collapse;
+	background: url('//static.pardus.at/img/stdhq/bg.gif');
 }
 
-#bookkeeper-overview th {
+div.bookkeeper-overview > table th {
 	padding: 0 2px;
 	background: #a1a1af;
 	color: #00001c;
@@ -28,52 +63,111 @@ h1.bookkeeper img {
 	border-right: solid 2px #00001c;
 }
 
-#bookkeeper-overview th.c {
+div.bookkeeper-overview > table th:first-child {
+	border-left: none;
+}
+
+div.bookkeeper-overview > table th:last-child {
+	border-right: none;
+}
+
+div.bookkeeper-overview > table th.c {
 	background: #3b3b49;
 	border: none;
 }
 
-#bookkeeper-overview th.sort {
+div.bookkeeper-overview > table th.sort {
 	cursor: pointer;
 }
 
-#bookkeeper-overview tbody {
+div.bookkeeper-overview > table th.asc::after {
+	content: "▲"
+}
+
+div.bookkeeper-overview  > table th.dsc::after {
+	content: "▼"
+}
+
+/* keep this a bit wide or it starts to wrap */
+div.bookkeeper-overview > table th.time {
+	min-width: 5em;
+}
+
+div.bookkeeper-overview > table th img {
+	vertical-align: middle;
+}
+
+div.bookkeeper-overview > table tbody {
 	cursor: crosshair;
 }
 
-#bookkeeper-overview tbody tr:hover {
+div.bookkeeper-overview > table > tbody > tr:hover {
 	background-color: #1a1a36;
 }
 
-#bookkeeper-overview td {
+div.bookkeeper-overview > table td {
 	border: solid 1px #1a1a36;
 }
 
-#bookkeeper-overview td.r,
-#bookkeeper-overview td.c {
+div.bookkeeper-overview > table td.r,
+div.bookkeeper-overview > table td.c {
 	text-align: right;
 }
 
 /* Colours for profit/deficit from the trade log screens */
-#bookkeeper-overview td.lime {
+div.bookkeeper-overview > table td.lime {
 	color: #8AB797;
 }
-#bookkeeper-overview td.pink {
+div.bookkeeper-overview > table td.pink {
 	color: #B78A8E;
 }
 
-#bookkeeper-overview td.red {
+div.bookkeeper-overview > table td.red {
 	color: red;
 	font-weight: bold;
 }
 
-#bookkeeper-overview td.yellow {
+div.bookkeeper-overview > table td.yellow {
 	color: yellow;
 	font-weight: bold;
 }
 
-#bookkeeper-overview img.bookkeeper-small-button {
+div.bookkeeper-overview > table img.bookkeeper-small-button {
 	margin-left: 5px;
+}
+
+/* OVERLAY */
+#bookkeeper-overlay {
+	position: fixed;
+	bottom: 8px;
+	right: 210px;
+	max-width: 78%;
+	max-height: 95%;
+	border: ridge 3px #99a;
+	border-radius: 8px;
+	box-shadow: 0 0 10px 5px rgba(0,0,0,0.75);
+	background: url('//static.pardus.at/img/stdhq/bgoutspace1.gif');
+	padding: 8px;
+	overflow: auto;
+	z-index: 2;
+}
+
+#bookkeeper-overlay > div.bookkeeper-overview {
+	border: none;
+}
+
+/* STARBASE OVERLAY */
+
+#bookkeeper-ui.bookkeeper-starbasetrade {
+	position: absolute;
+	top: 0;
+	right: 0;
+}
+
+#bookkeeper-overlay.bookkeeper-starbasetrade {
+	bottom: unset;
+	top: 60px;
+	max-height: 85%;
 }
 
 .bookkeeper-small-button {
@@ -87,7 +181,7 @@ h1.bookkeeper img {
 
 /* These are used for the management quick buttons */
 div#bookkeeper-quick-buttons {
-	background: url("//static.pardus.at/img/stdhq/bg.gif");
+	background: url('//static.pardus.at/img/stdhq/bg.gif');
 	border: 1px outset #A0B1C9;
 	margin-left: 3px;
 	margin-right: 3px;
@@ -180,4 +274,25 @@ span.bookkeeper-slider.bookkeeper-round {
 
 span.bookkeeper-slider.bookkeeper-round:before {
 	border-radius: 50%;
+}
+
+/* Firefox workarounds, see dev notes. */
+
+@supports (-moz-appearance: none) {
+	div.bookkeeper-overview > table {
+		background: url('https://static.pardus.at/img/stdhq/bg.gif');
+	}
+	#bookkeeper-overlay {
+		background:
+		  url('https://static.pardus.at/img/stdhq/bgoutspace1.gif');
+	}
+	div#bookkeeper-quick-buttons {
+		background: url('https://static.pardus.at/img/stdhq/bg.gif');
+	}
+}
+
+@supports (not ((width: min-content) and (width: max-content)))
+	  and (width: -moz-min-content) and (width: -moz-max-content) {
+	div.bookkeeper-overview { width: -moz-min-content }
+	div.bookkeeper-overview > table { width: -moz-max-content }
 }

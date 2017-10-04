@@ -9,14 +9,19 @@
 var COORDS_RX = /\[(\d+),(\d+)\]/;
 
 // Fetches A elements in TDs of class "navBuilding"
+//
+// The last step is "descendant", rather than "direct child", to deal with a DIV
+// that pardus inserts when you're on blue stims.
 var BLDGTILE_XPATH = document.createExpression(
-	'./tbody/tr/td[@class="navBuilding"]/a', null );
+	'./tbody/tr/td[@class="navBuilding"]//a[@onclick or @id="stdCommand"]',
+	null );
 
 // Match the onclick attribute of a tile.  If partial refresh is enabled, this
 // will be ""navAjax(142080)"; if it's disabled, it will be "nav(142080)".
 var TILEID_RX = /^nav(?:Ajax)?\((\d+)\)$/;
 
-var bldgTileCache, ticksToggle, ticksEnabled, userloc;
+var bldgTileCache, ticksToggle, ticksEnabled, bbox, userloc,
+    overviewToggle, overview, resizeRunning;
 
 chrome.storage.local.get( 'navticks', configure );
 
@@ -52,6 +57,13 @@ function configure( data ) {
 	e.textContent = 'TICKS';
 	e.addEventListener( 'click', onToggleTicks, false );
 	ticksToggle = e;
+	ui.appendChild( e );
+
+	e = document.createElement( 'button' );
+	e.id = 'bookkeeper-overview-toggle';
+	e.textContent = 'OPEN';
+	e.addEventListener( 'click', onToggleOverview, false );
+	overviewToggle = e;
 	ui.appendChild( e );
 
 	// Wish we could insert directly in the cargo box, but partial refresh
@@ -141,6 +153,7 @@ function showTicks() {
 
 	xpr = BLDGTILE_XPATH.evaluate(
 		navTable, XPathResult.UNORDERED_NODE_ITERATOR_TYPE, null );
+
 	while ( (a = xpr.iterateNext()) !== null ) {
 		onclkstr = a.getAttribute( 'onclick' );
 		if ( onclkstr ) {
@@ -159,7 +172,12 @@ function showTicks() {
 		else
 			continue;
 
+		// Note: when high on Capri EPS-scum-cookies, the parent element
+		// of the A node will be a div, not the TD itself.  This is fine
+		// for us (and better, we won't try to use the cached elements
+		// when the chip's effect suddenly wears off).
 		td = a.parentElement;
+
 		cached = bldgTileCache[ loc ];
 		if ( cached ) {
 			cached.td = td;
@@ -174,7 +192,7 @@ function showTicks() {
 		}
 		else {
 			needed.push( loc );
-			cached = { td: td, ticks: -1 };
+			cached = { loc: loc, td: td, ticks: -1 };
 		}
 
 		newCache[ loc ] = cached;
@@ -185,7 +203,7 @@ function showTicks() {
 
 	for ( i = 0, end = needTicksDisplay.length; i < end; i++ ) {
 		cached = needTicksDisplay[ i ];
-		addTickThingies( cached.td, cached.ticks , cached.stocked );
+		addTickThingies( cached );
 	}
 
 	if ( needed.length === 0 )
@@ -209,22 +227,24 @@ function onHaveTicks( r ) {
 		cached = bldgTileCache[ key ];
 		cached.ticks = ticks;
 		cached.stocked = stocked;
-		addTickThingies( cached.td, ticks , stocked );
+		addTickThingies( cached );
 	}
 }
 
-function addTickThingies( td, ticks, stocked ) {
+function addTickThingies( cached ) {
 	var elt = document.createElement( 'div' );
 	elt.className = 'bookkeeper-ticks';
-	if ( ticks === 0 )
+	elt.dataset.bookkeeperLoc = cached.loc;
+	if ( cached.ticks === 0 )
 		elt.classList.add( 'red' );
-	else if ( ticks === 1 )
+	else if ( cached.ticks === 1 )
 		elt.classList.add( 'yellow' );
-	if (stocked) {
+	if (cached.stocked) {
 		elt.classList.add( 'grey' );
 	}
-	elt.textContent = ticks;
-	td.appendChild( elt );
+	elt.textContent = cached.ticks;
+	cached.td.appendChild( elt );
+	//elt.addEventListener( 'click', onSkittleClick, false );
 }
 
 function hideTicks() {
@@ -240,6 +260,40 @@ function getNavArea() {
 	if ( !navTable )
 		navTable = document.getElementById( 'navarea' );
 	return navTable;
+}
+
+// XXX - The following two handlers are too similar, combine common
+// functionality in one call.
+
+function onToggleOverview( event ) {
+	// Right. So you want the whole enchilada then. Fair enough, bring it
+	// in.
+
+	var op;
+
+	event.preventDefault();
+
+	// We will never handle these clicks again, it'll be handled in navov.js
+	overviewToggle.removeEventListener( 'click', onToggleOverview, false );
+
+	op = {
+		op: 'injectMeHard',
+		stylesheets: [ '/bookkeeper.css' ],
+		scripts: [
+			'/functions.js',
+			'/commodity.js',
+			'/sector.js',
+			'/building.js',
+			'/table.js',
+			'/filter.js',
+			'/overview.js',
+			'/overlay.js',
+			'/navov.js'
+		]
+	}
+
+	// Empty function is actually needed.
+	chrome.runtime.sendMessage( op, function() {} );
 }
 
 })();
