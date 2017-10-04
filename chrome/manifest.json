@@ -58,10 +58,10 @@
 	],
 	"description": "User trade interface enhancements for the online game Pardus",
 	"manifest_version": 2,
-	"minimum_chrome_version": "42",
+	"minimum_chrome_version": "61",
 	"name": "Pardus Bookkeeper",
 	"permissions": [ "notifications", "storage", "*://*.pardus.at/*" ],
-	"version": "2.1",
+	"version": "2.2",
 	"browser_action": {
 		"default_icon": {
 			"16": "icons/16.png",
@@ -97,7 +97,7 @@
 	"applications": {
 		"gecko": {
 			"id": "{47ae433e-161e-4c83-9cc0-12b3bc94e05b}",
-			"strict_min_version": "53.0"
+			"strict_min_version": "55.0"
 		}
 	}
 }
