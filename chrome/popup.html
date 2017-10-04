@@ -4,13 +4,21 @@
   <meta charset="UTF-8">
   <title>Pardus Bookkeeper</title>
   <style>
-   html { font-family: system-ui, sans-serif; min-width: 200px }
+   body {
+       font-family: system-ui, sans-serif;
+       padding: 8px;
+       min-width: 18em;
+   }
+   p { margin: 8px 0 }
+   p.r { text-align: right; }
   </style>
   <script type="text/javascript" src="popup.js"></script>
  </head>
  <body>
   <p>Go to a building and press <em>Track</em> on the trade screen.</p>
-  <p>Go to <em>Overview → Buildings</em> to see all your tracked buildings.</p>
-  <p><button id="bookkeeper-open-options">Bookkeeper options…</button></p>
+  <p>Go to <em>Overview → Buildings</em> to see all your tracked buildings.</p>
+  <p class="r">
+   <button id="bookkeeper-open-options">Bookkeeper Options</button>
+  </p>
  </body>
 </html>

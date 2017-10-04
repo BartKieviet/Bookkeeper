@@ -413,9 +413,7 @@ function makeCommHeaderFn( commId ) {
 		comm = Commodities.getCommodity( commId );
 		img = this.doc.createElement( 'img' );
 
-		// XXX should we have fetched the protocol (HTTP or
-		// HTTPS) from the Pardus page, to use the same here?
-		img.src = 'http://static.pardus.at/img/stdhq/res/'
+		img.src = '//static.pardus.at/img/stdhq/res/'
 			+ comm.i + '.png';
 		img.title = comm.n;
 		th.className = 'c';
