@@ -67,6 +67,10 @@ div.bookkeeper-overview > table th:first-child {
 	border-left: none;
 }
 
+div.bookkeeper-overview > table th:last-child {
+	border-right: none;
+}
+
 div.bookkeeper-overview > table th.c {
 	background: #3b3b49;
 	border: none;
@@ -153,6 +157,7 @@ div.bookkeeper-overview > table img.bookkeeper-small-button {
 }
 
 /* STARBASE OVERLAY */
+
 #bookkeeper-ui.bookkeeper-starbasetrade {
 	position: absolute;
 	top: 0;
@@ -176,7 +181,7 @@ div.bookkeeper-overview > table img.bookkeeper-small-button {
 
 /* These are used for the management quick buttons */
 div#bookkeeper-quick-buttons {
-	background: url("//static.pardus.at/img/stdhq/bg.gif");
+	background: url('//static.pardus.at/img/stdhq/bg.gif');
 	border: 1px outset #A0B1C9;
 	margin-left: 3px;
 	margin-right: 3px;
@@ -269,4 +274,25 @@ span.bookkeeper-slider.bookkeeper-round {
 
 span.bookkeeper-slider.bookkeeper-round:before {
 	border-radius: 50%;
+}
+
+/* Firefox workarounds, see dev notes. */
+
+@supports (-moz-appearance: none) {
+	div.bookkeeper-overview > table {
+		background: url('https://static.pardus.at/img/stdhq/bg.gif');
+	}
+	#bookkeeper-overlay {
+		background:
+		  url('https://static.pardus.at/img/stdhq/bgoutspace1.gif');
+	}
+	div#bookkeeper-quick-buttons {
+		background: url('https://static.pardus.at/img/stdhq/bg.gif');
+	}
+}
+
+@supports (not ((width: min-content) and (width: max-content)))
+	  and (width: -moz-min-content) and (width: -moz-max-content) {
+	div.bookkeeper-overview { width: -moz-min-content }
+	div.bookkeeper-overview > table { width: -moz-max-content }
 }
