@@ -50,8 +50,7 @@ function setup() {
 	}
 
 	if (document.forms.planet_trade) {
-		var middleNode = document.getElementById('quickButtonsTbl').parentNode;
-		middleNode.appendChild( document.createElement( 'br' ));
+		var middleNode = document.getElementById('quickButtonsTbl');
 		middleNode.appendChild( document.createElement( 'br' ));
 
 		button = makeButton ( 'bookkeeper-transfer-food' ) 
@@ -81,7 +80,7 @@ function setup() {
 		middleNode.appendChild( document.createElement( 'br' ));
 
 		button = makeButton ( 'bookkeeper-transfer-FWE' ) 
-		button.textContent = '<-SB FW | Energy ->';
+		button.textContent = '<-PSB FW | Energy ->';
 		middleNode.appendChild ( button ) ;
 		button.addEventListener('click', function() {
 			var ship_cargo = parseInt(document.getElementById('shiprow32').nextElementSibling.nextElementSibling.lastElementChild.textContent.split(/t/g)[0]);
