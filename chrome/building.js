@@ -37,7 +37,8 @@ var NAME_IDS, ICON_IDS;
 // or defer to getNormalUpkeep and getNormalProduction if not.
 
 function Building( loc, sectorId, typeId, time, owner, level, ticksLeft,
-		   selling, buying, minimum, maximum, upkeep, production ) {
+		   selling, buying, minimum, maximum, upkeep, production )
+{
 	this.loc = intPropVal( loc );
 	this.sectorId = intPropVal( sectorId );
 	this.typeId = intPropVal( typeId );
@@ -51,8 +52,13 @@ function Building( loc, sectorId, typeId, time, owner, level, ticksLeft,
 	this.maximum = maximum || [];
 	this.upkeep = upkeep || [];
 	this.production = production || [];
+
+	// These three won't be used until they're needed.  But defining them
+	// already anyway so V8 can optimise.
+	// https://www.html5rocks.com/en/tutorials/speed/v8/#toc-topic-hiddenclasses
 	this.cachedUpkeep = undefined;
 	this.cachedProduction = undefined;
+	this.projection = undefined;
 }
 
 
@@ -310,16 +316,18 @@ Building.createFromStorage = function( key, a ) {
 // defaults to the current time.
 
 Building.ticksPassed = function( time, now ) {
-	var timeToTick, timePassed, ticksPassed;
+	return unixToTicks( now ) - unixToTicks( time );
 
-	if ( now === undefined )
-		now = Building.now();
+	// Building ticks happen every 6 hours, 25 minutes past
+	// the hour, starting at 01:25 UTC.
+	// Period is 6h (21600 s). Offset is 1h 25m (5100 s)
+	//
+	// This returns the number of building ticks that have elapsed since the
+	// epoch.
 
-	timeToTick = 6 * 3600 - (time - 5100) % (6 * 3600);
-	timePassed = now - time;
-	ticksPassed = ( timePassed > timeToTick ) ? 1 : 0;
-	ticksPassed += Math.floor( timePassed / (6 * 3600) );
-	return ticksPassed;
+	function unixToTicks( sec ) {
+		return Math.floor( (sec - 5100) / 21600 );
+	}
 }
 
 // Removes the building at location `loc` from storage.  `ukey` is the universe
@@ -406,14 +414,88 @@ Building.prototype.isProduction = function( commodityId ) {
 	return Building.isProduction( this.typeId, commodityId );
 }
 
+// Return the number of ticks for which this building still has upkeep.  If a
+// projection is active, this will return the projected value.
+
+Building.prototype.getTicksLeft = function() {
+	if ( this.projection !== undefined )
+		return this.projection.ticksLeft;
+	return this.ticksLeft;
+}
+
+// Return the array of commodities that this building is buying.  If a
+// projection is active, this will return the projected values.
+
+Building.prototype.getBuying = function() {
+	if ( this.projection !== undefined )
+		return this.projection.buying;
+	return this.buying;
+}
+
+// Return the array of commodities that this building is selling.  If a
+// projection was requested, this will return the projected values.
+
+Building.prototype.getSelling = function() {
+	if ( this.projection !== undefined )
+		return this.projection.selling;
+	return this.selling;
+}
+
+// Set the Building's projection, so that methods `getTicksLeft`, `getBuying`
+// and `getSelling` return values projected at the given time.  If `time` is
+// null, reset the projection, so those methods will return last-updated values.
+
+Building.prototype.project = function( time ) {
+	var ticksLeft, upkeep, production;
+
+	if ( !time ) {
+		this.projection = undefined;
+		return;
+	}
+
+	if ( this.ticksLeft === undefined )
+		setProjection( undefined, [], [] );
+	else {
+		if ( this.ticksLeft > 0 )
+			ticksLeft = this.ticksNow( time );
+		else
+			ticksLeft = 0;
+
+		if ( ticksLeft === 0 )
+			// Could handle below but optimise this common case
+			setProjection( 0, this.buying, this.selling );
+		else {
+			upkeep = this.getUpkeep();
+			production = this.getProduction();
+			setProjection(
+				ticksLeft,
+				this.buying.map(projectUpkeep),
+				this.buying.map(projectProduction) );
+		}
+	}
+
+	function projectUpkeep( amt, id ) {
+		return amt - ticksLeft * upkeep[id];
+	}
+
+	// XXX - if/when we track building capacity, we can cap this (and could
+	// even tell you when the building will dump.
+	function projectProduction( amt, id ) {
+		return amt + ticksLeft * production[id];
+	}
+
+	function setProjection( ticksLeft, buying, selling ) {
+		this.projection = { ticksLeft, buying, selling };
+	}
+}
+
 Building.prototype.getUpkeep = function() {
 	if ( this.cachedUpkeep )
 		return this.cachedUpkeep;
 	if ( this.upkeep.length > 0 )
 		this.cachedUpkeep = this.upkeep;
 	else if ( this.level !== undefined )
-		this.cachedUpkeep = Building.makeCommodityArray(
-			this.getNormalUpkeep() );
+		this.cachedUpkeep = this.getNormalUpkeep();
 	else
 		this.cachedUpkeep = [];
 	return this.cachedUpkeep;
@@ -425,8 +507,7 @@ Building.prototype.getProduction = function() {
 	if ( this.production.length > 0 )
 		this.cachedProduction = this.production;
 	else if ( this.level !== undefined )
-		this.cachedProduction = Building.makeCommodityArray(
-			this.getNormalProduction() );
+		this.cachedProduction = this.getNormalProduction();
 	else
 		this.cachedProduction = [];
 	return this.cachedProduction;
