@@ -46,7 +46,6 @@ function onBuildingData( data ) {
 
 	if ( data[buildingKey] ) {
 		// Building is tracked.
-		console.log( buildingKey, data[buildingKey] );
 		building = Building.createFromStorage(
 			buildingKey, data[buildingKey] );
 		updateBuilding( {}, building );
@@ -319,7 +318,6 @@ function updateBuilding( storeItems, building, callback ) {
 		building.setProduction( undefined );
 	}
 
-	console.log( building );
 	storeItems[ buildingKey ] = building.toStorage();
 
 	chrome.storage.sync.set( storeItems, callback );
@@ -333,7 +331,7 @@ function updateBuilding( storeItems, building, callback ) {
 function infallibleLevelEstimator(
 	baseUpkeep, baseProduction, seenUpkeep, seenProduction )
 {
-	var cid, base, factor, seen, guess, error;
+	var cid, base, factor, seen;
 
 	// Find the best commodity to test on.  See devnotes for the rationale
 	// behind this code.
