@@ -126,7 +126,7 @@ function migrateV19Storage() {
 	function migrateV19Building( loc, a ) {
 		var level, ticksLeft,
 		    res_upkeep, res_production, amount_min, amount_max, amount,
-		    forSale, toBuy, id;
+		    selling, buying, id;
 
 		level = parseInt( a[5] );
 		if ( isNaN(level) || level < 1 )
@@ -139,32 +139,38 @@ function migrateV19Storage() {
 		res_upkeep = parseCommodityMap( a[11] );
 
 		// If we have amount, amount_max, amount_min, res_production,
-		// res_upkeep, then we build forSale and toBuy.  Otherwise, we
+		// res_upkeep, then we build selling and buying.  Otherwise, we
 		// store the building without amounts.
 		if ( amount && amount_max && amount_min &&
 		     res_production && res_upkeep ) {
 
-			forSale = [];
-			toBuy = [];
+			selling = [];
+			buying = [];
 
-			// for each commodity in res_production, compute forSale
+			// for each commodity in res_production, compute selling
 			// as amount - minimum
 			for ( id in res_production ) {
-				if ( amount[id] !== undefined && amount_min[id] !== undefined )
-					forSale.push( id, amount[id] - amount_min[id] );
+				if ( amount[id] !== undefined &&
+				     amount_min[id] !== undefined )
+					selling.push(
+						id, amount[id] -
+							amount_min[id] );
 			}
 
-			// for each commodity in res_upkeep, compute toBuy
+			// for each commodity in res_upkeep, compute buying
 			// as maximum - amount
 			for ( id in res_upkeep ) {
-				if ( amount[id] !== undefined && amount_max[id] !== undefined )
-					toBuy.push( id, amount_max[id] - amount[id] );
+				if ( amount[id] !== undefined &&
+				     amount_max[id] !== undefined )
+					buying.push(
+						id, amount_max[id] -
+							amount[id] );
 			}
 
-			if ( forSale.length === 0 )
-				forSale = undefined;
-			if ( toBuy.length === 0 )
-				toBuy = undefined;
+			if ( selling.length === 0 )
+				selling = undefined;
+			if ( buying.length === 0 )
+				buying = undefined;
 		}
 
 		// Compute ticksLeft like 1.9 did
@@ -183,8 +189,8 @@ function migrateV19Storage() {
 			a[6], // owner
 			level,
 			ticksLeft,
-			forSale,
-			toBuy
+			selling,
+			buying
 		);
 	}
 

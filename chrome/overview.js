@@ -592,24 +592,13 @@ function setCommodityTD( td, commId, n ) {
 
 function overviewFigure( building, commId ) {
 	if ( building.isUpkeep( commId ) &&
-	     building.toBuy[commId] !== undefined )
-		return -building.toBuy[ commId ];
+	     building.buying[commId] !== undefined )
+		return -building.buying[ commId ];
 
-	if ( building.forSale[commId] !== undefined )
-		return building.forSale[ commId ];
+	if ( building.selling[commId] !== undefined )
+		return building.selling[ commId ];
 
 	return undefined;
-}
-
-// Compute the manhattan distance from building `b` to the filter coords.
-// XXX - move to Filter
-
-function manhattan( b ) {
-	var bc = Sector.getCoords( b.sectorId, b.loc );
-
-	return Math.max(
-		Math.abs(bc.x - this.coords.x),
-		Math.abs(bc.y - this.coords.y) );
 }
 
 // Return an array of ids of commodities that are consumed or produced by at

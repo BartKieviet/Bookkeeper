@@ -246,12 +246,12 @@ function addOwnBuildings( universeList, ownEntries, callback ) {
 		// the data we have here.  Otherwise create a new one.
 
 		if ( building ) {
-			building.time = now;
-			building.typeId = entry.typeId;
-			building.level = entry.level;
-			building.ticksLeft = entry.ticksLeft;
-			updateForSale( building, entry.amount );
-			updateToBuy( building, entry.amount );
+			building.setTime( now );
+			building.setType( entry.typeId );
+			building.setLevel( entry.level );
+			building.setTicksLeft( entry.ticksLeft );
+			updateSelling( building, entry.amount );
+			updateBuying( building, entry.amount );
 		}
 		else {
 			building = new Building(
@@ -265,11 +265,11 @@ function addOwnBuildings( universeList, ownEntries, callback ) {
 
 // XXX these two may need to be in building.js
 // `amount` is a sparse array of commodity amounts.
-function updateForSale( building, amount ) {
+function updateSelling( building, amount ) {
 	if ( building.minimum.length === 0 )
 		return;
 
-	building.forSale.length = 0;
+	building.selling.length = 0;
 	building.minimum.forEach( update );
 
 	function update( min, id ) {
@@ -277,16 +277,16 @@ function updateForSale( building, amount ) {
 		amt = amount[ id ];
 		if ( amt !== undefined ) {
 			n = amt - min;
-			building.forSale[ id ] = n > 0 ? n : 0;
+			building.selling[ id ] = n > 0 ? n : 0;
 		}
 	}
 }
 
-function updateToBuy( building, amount ) {
+function updateBuying( building, amount ) {
 	if ( building.maximum.length === 0 )
 		return;
 
-	building.toBuy.length = 0;
+	building.buying.length = 0;
 	building.maximum.forEach( update );
 
 	function update( max, id ) {
@@ -294,7 +294,7 @@ function updateToBuy( building, amount ) {
 		amt = amount[ id ];
 		if ( amt !== undefined ) {
 			n = max - amt;
-			building.toBuy[ id ] = n > 0 ? n : 0;
+			building.buying[ id ] = n > 0 ? n : 0;
 		}
 	}
 }
