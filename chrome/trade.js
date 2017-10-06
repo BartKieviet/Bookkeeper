@@ -1,38 +1,23 @@
 // This is a content script.  It runs on building_trade.php.
 
-var Universe; // in universe.js
-var Building; // in building.js
+// From other sources
+var Universe, Sector, Building;
 
 //Global variables.
-var configured = false;
-var userloc, res_upkeep, res_production, amount_max, amount_min, buy_price, sell_price, time, amount;
-var universe = Universe.fromDocument( document );
-var buildingKey;
-//var buildingList = new Object();
+var universe, configured, userloc, buildingKey, time, pageData;
 
 configure();
 
 // End of content script execution.
 
 function configure() {
-	if (!configured) {
-		document.defaultView.addEventListener( 'message', onGameMessage );
-		var script = document.createElement( 'script' );
+	var script;
+	if ( !configured ) {
+		universe = Universe.fromDocument( document );
+		window.addEventListener( 'message', onGameMessage );
+		script = document.createElement( 'script' );
 		script.type = 'text/javascript';
-		var s = "\
-(function() {var fn=function(){window.postMessage({pardus_bookkeeper:1,\
-loc:typeof(userloc)=='undefined'?null:userloc,\
-res_upkeep:typeof(res_upkeep)=='undefined'?null:res_upkeep,\
-res_production:typeof(res_production)=='undefined'?null:res_production,\
-amount_max:typeof(amount_max)=='undefined'?null:amount_max,\
-amount_min:typeof(amount_min)=='undefined'?null:amount_min,\
-player_buy_price:typeof(player_buy_price)=='undefined'?null:player_buy_price,\
-player_sell_price:typeof(player_sell_price)=='undefined'?null:player_sell_price,\
-time:typeof(milliTime)=='undefined'?null:milliTime,\
-amount:typeof(amount)=='undefined'?null:amount,\
-},window.location.origin);};\
-if(typeof(addUserFunction)=='function')addUserFunction(fn);fn();})();";
-		script.textContent = s;
+		script.textContent = "(function(){var fn=function(){window.postMessage({pardus_bookkeeper:1,loc:typeof(userloc)==='undefined'?null:userloc,time:typeof(milliTime)==='undefined'?null:milliTime},window.location.origin);};if(typeof(addUserFunction)==='function')addUserFunction(fn);fn();})();";
 		document.body.appendChild( script );
 		configured = true;
 	}
@@ -48,16 +33,9 @@ function onGameMessage( event ) {
 	}
 
 	userloc = parseInt( data.loc );
-	res_upkeep = data.res_upkeep;
-	res_production = data.res_production;
-	amount_max = data.amount_max;
-	amount_min = data.amount_min;
-	buy_price = data.player_buy_price;
-	sell_price = data.player_sell_price;
 	time = data.time;
-	amount = data.amount;
-
 	buildingKey = universe.key + userloc;
+	pageData = parsePage();
 
 	// Now check if the building is tracked
 	chrome.storage.sync.get( buildingKey, onBuildingData );
@@ -65,16 +43,17 @@ function onGameMessage( event ) {
 
 function onBuildingData( data ) {
 	var building;
+
 	if ( data[buildingKey] ) {
 		// Building is tracked.
+		console.log( buildingKey, data[buildingKey] );
 		building = Building.createFromStorage(
 			buildingKey, data[buildingKey] );
-		updateBuilding( {}, building, function() {} );
+		updateBuilding( {}, building );
 		addButton( 'Untrack', onTrackButtonClick );
 	}
-	else {
+	else
 		addButton( 'Track', onTrackButtonClick );
-	}
 }
 
 function addButton( name, listener ) {
@@ -93,6 +72,20 @@ function addButton( name, listener ) {
 	transferButton.parentNode.appendChild(new_button);
 }
 
+// Function finds the transfer button since Pardus sadly gave it neither ID nor
+// name, so we have to check all input elements for the value '<- Transfer ->'
+function findTransferButton() {
+	var inputs, i, end, input;
+	inputs = document.forms.building_trade.elements;
+	for ( i = 0, end = inputs.length; i < end ; i++ ) {
+		input = inputs[ i ];
+		if ( input.type === 'submit' &&
+		     input.value === '<- Transfer ->' )
+			return input;
+	}
+	return null;
+}
+
 function onTrackButtonClick() {
 	this.disabled = true;
 
@@ -102,177 +95,12 @@ function onTrackButtonClick() {
 		chrome.storage.sync.get(
 			[ universe.key, buildingKey ], onTrackingBuilding );
 	}
-	else {
-		Building.removeStorage( userloc, universe.key, onBuildingUntracked );
-	}
+	else
+		Building.removeStorage(
+			userloc, universe.key, onBuildingUntracked );
 
-	// Don't toggle or enable here.	 We'll toggle when Chrome tells us the
+	// Don't toggle or enable here.  We'll toggle when Chrome tells us the
 	// building is saved (it can fail if we're over quota) or removed.
-}
-
-function toggleButton( btn ) {
-	btn.value = ( btn.value == 'Track' ) ? 'Untrack' : 'Track';
-}
-
-function findTransferButton() {
-	// Function finds the transfer button since Pardus sadly gave it
-	// neither ID nor name, so we have to check all input elements for
-	// the value '<- Transfer ->'
-	var inputs = document.getElementsByTagName("input");
-	var transferButton;
-	for (var i = 0; i < inputs.length ; i++) {
-		if (inputs[i].value === "<- Transfer ->"){
-			transferButton = inputs[i];
-		}
-	}
-	return transferButton;
-}
-
-function parseInfo() {
-	var tds, nameline, typeId;
-
-	tds = document.getElementsByTagName("td");
-	for (var i =0; i<tds.length;i++){
-		// so Pardus has this specific color for two TDs, pilot and building owner.
-		if (tds[i].style.color === "rgb(221, 221, 255)"){
-			nameline = tds[i].firstChild.innerHTML;
-		}
-	}
-
-	// XXX - this may break for owners whose name ends in 's', review later.
-	nameline = nameline.split(/'s /);
-	typeId = Building.getTypeId( nameline[1] );
-	if ( typeId === undefined )
-		return null;
-
-	return {
-		owner: nameline[ 0 ],
-		typeId: typeId
-	};
-}
-
-function estimateLevel( typeId ) {
-	var perCommodity, levelEst, level = 0, key, divCheck, max = 0, maxKey;
-
-	perCommodity = new Object();
-	levelEst = new Object();
-
-	// We compare our building with the list of buildings that get a
-	// diversity bonus. If the building is on this list, we take only the
-	// upkeep into account to get the level.
-	var divList = [ "SF", "NL", "Sm", "EF", "SC", "DD", "Br", "ML", "PF" ];
-	divCheck = divList.indexOf ( Building.getTypeShortName ( typeId ) );
-
-	for (key in amount_max) {
-		var fontList = document.getElementById('baserow'+key).getElementsByTagName("font");
-
-		if (fontList.length === 0) {
-			// Something is wrong, scramble!
-			continue;
-		}
-
-		if (key == '28' || key == '50') {
-			//28 -> Neural tissue does not play nice
-			//50 -> TSS vs non TSS DS? Skip.
-			continue;
-		}
-
-		perCommodity[key] = parseInt(fontList[fontList.length-1].innerHTML);
-
-		if (Math.abs( perCommodity [ key ]) > max ) {
-			if (divCheck === -1) {
-				// For non-diversity buildings we take both upkeep and production
-				maxKey = key;
-				max = Math.abs( perCommodity [ key ]);
-			} else if (res_upkeep [ key ] != undefined) {
-				// This is true for diversity buildings and upkeep key's
-				maxKey = key;
-				max = Math.abs( perCommodity [ key ]);
-			}
-		}
-
-	}
-
-	if (perCommodity [ maxKey ] > 0) {
-		level = Math.round((((Math.abs( perCommodity[maxKey] ) / res_production[maxKey] ) - 1) / 0.5) + 1);
-	} else {
-		level = Math.round((((Math.abs( perCommodity[maxKey] ) / res_upkeep[maxKey] ) - 1) / 0.4) + 1);
-	}
-
-	// here we double check the level by calculating the upkeep.
-	var levelCheck = 0;
-	// Stim Mills & non-TSS DS's break our level check below.
-	var commBlackList = ['28', '50', '211', '212', '213'];
-
-	for (key in res_upkeep) {
-		if (commBlackList.indexOf( key ) === -1) {
-			levelCheck += Math.round(res_upkeep[key]*(1+0.4*(level - 1))) + perCommodity[key];
-		}
-	}
-	if (levelCheck === 0) {
-		return level;
-	}
-
-	return undefined;
-}
-
-// This computation should be accurate for any building, including bonused farms
-// and TSS drug stations and whatever.  This is because, rather than trying to
-// compute the amounts consumed per tick, from guessed level and base upkeep
-// figures and whatever funky rules for this particular building, we lift the
-// actual value off the page, where Killer Queen helpfully gave it to us in her
-// recent update.
-
-function getRealUpkeep() {
-	var r, trs, tr, trxp, td, id, m, val;
-
-	trs = document.evaluate(
-		'.//tr[starts-with(@id, "baserow")]',
-		document.forms.building_trade, null,
-		XPathResult.UNORDERED_NODE_ITERATOR_TYPE, null);
-	trxp = document.createExpression( './td[position() = 4]', null );
-	r = [];
-
-	while ( (tr = trs.iterateNext()) ) {
-		id = parseInt( tr.id.substr(7) ); // 7 == 'baserow'.length
-		if ( isNaN(id) )
-			continue;
-		td = trxp.evaluate(
-			tr, XPathResult.ANY_UNORDERED_NODE_TYPE,
-			null).singleNodeValue;
-
-		// MOs show things like "-5 to -15" here.  We could be smarter
-		// for those, and probably will soon to fully close #32, but for
-		// now we'll just assume the higher value applies.
-		m = /-(\d+)(:?\s+to\s+-(\d+))?/.exec( td.textContent );
-		if ( !m )
-			continue;
-
-		r[ id ] = parseInt( m[2] ? m[2] : m[1] );
-	}
-
-	return r;
-}
-
-function computeTicksLeft() {
-	var least = Infinity;
-
-	getRealUpkeep().forEach( computeRow );
-
-	return least < Infinity ? least : undefined;
-
-	function computeRow( upkeep, id ) {
-		var amt, ticks;
-
-		amt = parseInt( amount[ id ] );
-		if ( isNaN(amt) )
-			// That was weird
-			return;
-
-		ticks = Math.floor( amt / upkeep );
-		if ( ticks < least )
-			least = ticks;
-	}
 }
 
 function onTrackingBuilding( data ) {
@@ -299,7 +127,8 @@ function onTrackingBuilding( data ) {
 
 	if ( data[buildingKey] ) {
 		// We already had a building? Weird. May have been another tab.
-		building = Building.createFromStorage( buildingKey, data[buildingKey] );
+		building = Building.createFromStorage(
+			buildingKey, data[buildingKey] );
 		updateBuilding( storeItems, building, onBuildingTracked );
 	}
 	else {
@@ -307,7 +136,8 @@ function onTrackingBuilding( data ) {
 		// list already goes inside storeItems.
 		chrome.storage.local.get(
 			'sector',
-			finishSaveBuilding.bind(null, storeItems, onBuildingTracked) );
+			finishSaveBuilding.bind(
+				null, storeItems, onBuildingTracked) );
 	}
 }
 
@@ -316,8 +146,8 @@ function finishSaveBuilding( items, callback, data ) {
 
 	sectorId = Sector.getId( data.sector );
 	if ( sectorId === undefined ) {
-		// Oops, currently can't save without this.  How did this happen?
-		// XXX - also, should tell the user we failed somehow
+		// Oops, currently can't save without this.  How did this
+		// happen?  XXX - also, should tell the user we failed somehow
 		callback();
 	}
 	else {
@@ -333,43 +163,206 @@ function onBuildingTracked() {
 		alert( "Cannot track more buildings\n" +
 		       chrome.runtime.lastError.message );
 	else
-		toggleButton( btn );
+		btn.value = 'Untrack';
 }
 
 function onBuildingUntracked() {
 	var btn = document.getElementById( 'bookkeeper-track' );
 	btn.disabled = false;
-	toggleButton( btn );
+	btn.value = 'Track';
 }
 
-function updateBuilding( items, building, callback ) {
-	var info, id, amt, max, min, selling, buying;
+function parsePage() {
+	var typeName, typeId, owner, buying, selling,
+	    baseUpkeep, baseProduction, upkeep, production, ticksLeft,
+	    s, a, trs, tr;
 
-	info = parseInfo();
-	if ( !info )
-		return;
+	typeName = document.evaluate(
+		'//h1', document, null, XPathResult.STRING_TYPE,
+		null).stringValue.trim();
+	typeId = Building.getTypeId( typeName );
+	if ( typeId === undefined )
+		return null;
+	baseUpkeep = Building.getBaseUpkeep( typeId );
+	baseProduction = Building.getBaseProduction( typeId );
 
-	building.setType( info.typeId );
-	building.setTime( Building.seconds(time) );
-	building.setOwner( info.owner );
-	building.setLevel( estimateLevel(info.typeId) );
-	building.setTicksLeft( computeTicksLeft() );
+	s = document.evaluate('./table/tbody/tr[position()=1]/td[position()=3]',
+			      document.forms.building_trade, null,
+			      XPathResult.STRING_TYPE, null).stringValue.trim();
+	a = s.split( "'", 2 );
+	if ( a[1] !== 's ' + typeName )
+		return null;
+	owner = a[0];
 
-	selling = [];
 	buying = [];
+	selling = [];
+	upkeep = [];
+	production = [];
+	ticksLeft = [];
+	trs = document.evaluate(
+		'./table/tbody/tr[position()=2]/td[position()=3]/table/tbody/tr[starts-with(@id, "baserow")]',
+		document.forms.building_trade, null,
+		XPathResult.UNORDERED_NODE_ITERATOR_TYPE, null);
 
-	for ( id in amount ) {
-		amt = amount[ id ];
-		max = amount_max[ id ];
-		min = amount_min[ id ];
+	// Loop over each commodity row
 
-		selling[ id ] = Math.max( 0, amt - min );
-		buying[ id ] = Math.max( 0, max - amt );
+	while ( (tr = trs.iterateNext()) !== null )
+		parseRow( tr );
+
+	// XXX - get the free space here, for #49
+
+	return {
+		typeName,
+		typeId,
+		owner,
+		buying,
+		selling,
+		upkeep,
+		production,
+		baseUpkeep,
+		baseProduction,
+		ticksLeft: Math.min.apply( null, ticksLeft )
+	};
+
+	function parseRow( tr ) {
+		var cid, amt, m, bal, lim;
+
+		// Id - We can get the commodity from the id of the row, from
+		// the icon in column zero, or the name in column 1.  I Don't
+		// think one of these is particularly better or safer, so I'll
+		// go with the easiest.  If we fail parsing a row, we'll ignore
+		// it but keep trying.
+
+		cid = parseInt( tr.id.substr(7) ); // 7 == 'baserow'.length
+		if ( !(cid > 0) )
+			return;
+
+		// Amount
+
+		amt = parseInt( tr.children[2].textContent );
+		if ( isNaN(amt) )
+			return;
+
+		// Balance (upkeep/production)
+		// MOs show things like "-5 to -15" here.  We could be smarter
+		// for those, and probably will soon to fully close #32, but for
+		// now we'll just assume the higher value applies.
+
+		m = /([+-]\d+)(:?\s+to\s+([+-]\d+))?/.exec(
+			tr.children[3].textContent );
+		if ( !m )
+			return;
+		bal = parseInt( m[2] ? m[2] : m[1] );
+
+		if ( baseProduction[cid] ) {
+			if ( !(bal > 0) )
+				// What is this? :S
+				return;
+
+			// Minimum
+			lim = parseInt( tr.children[4].textContent );
+			if ( isNaN(lim) )
+				return;
+
+			selling[ cid ] = amt > lim ? amt - lim : 0;
+			production[ cid ] = bal;
+		}
+		else if ( baseUpkeep[cid] ) {
+			if ( !(bal < 0) )
+				// What is this? :S
+				return;
+			bal = -bal;
+
+			// Maximum
+			lim = parseInt( tr.children[5].textContent );
+			if ( isNaN(lim) )
+				return;
+
+			buying[ cid ] = amt < lim ? lim - amt : 0;
+			upkeep[ cid ] = bal;
+			ticksLeft.push( Math.floor(amt / bal) );
+		}
 	}
-	building.setSelling( selling );
-	building.setBuying( buying );
+}
 
-	items[ buildingKey ] = building.toStorage();
+// `storeItems` is a hash containing keys we want to store along with the
+// building.
 
-	chrome.storage.sync.set( items, callback );
+function updateBuilding( storeItems, building, callback ) {
+	var level, abnormal;
+
+	level = infallibleLevelEstimator(
+		pageData.baseUpkeep, pageData.baseProduction,
+		pageData.upkeep, pageData.production );
+
+	building.setType( pageData.typeId );
+	building.setTime( Building.seconds(time) );
+	building.setOwner( pageData.owner );
+	building.setLevel( level );
+	building.setTicksLeft( pageData.ticksLeft );
+	building.setBuying( pageData.buying );
+	building.setSelling( pageData.selling );
+
+	if ( level === undefined ||
+		!arrayEquals(
+			Building.getNormalUpkeep(pageData.typeId, level),
+			pageData.upkeep) ||
+		!arrayEquals(
+			Building.getNormalProduction(pageData.typeId, level),
+			pageData.production)) {
+		// The infallible estimator failed.
+		building.setUpkeep( pageData.upkeep );
+		building.setProduction( pageData.production );
+	}
+	else
+		building.setUpkeep( undefined );
+		building.setProduction( undefined );
+
+	console.log( building );
+	storeItems[ buildingKey ] = building.toStorage();
+
+	chrome.storage.sync.set( storeItems, callback );
+
+	function arrayEquals( a, b ) {
+		return a.length === b.length &&
+			a.every( function(v, id) { return v === b[ id ]; } );
+	}
+}
+
+function infallibleLevelEstimator(
+	baseUpkeep, baseProduction, seenUpkeep, seenProduction )
+{
+	var cid, base, factor, seen, guess, error;
+
+	// Find the best commodity to test on.  See devnotes for the rationale
+	// behind this code.
+
+	cid = best( baseProduction );
+	if ( cid !== undefined && baseProduction[cid] > 1 ) {
+		base = baseProduction[ cid ];
+		seen = seenProduction[ cid ];
+		factor = 0.5;
+	}
+	else {
+		cid = best( baseUpkeep );
+		base = baseUpkeep[ cid ];
+		seen = seenUpkeep[ cid ];
+		factor = 0.4;
+	}
+
+	return Math.round( 1 + (seen / base - 1) / factor );
+
+	// Given a dictionary `dict` of commodity ids to values, return the id
+	// of the commodity with the largest value.
+	function best( dict ) {
+		var id, result, max = -Infinity;
+		for ( id in dict ) {
+			if ( dict[id] > max ) {
+				result = id;
+				max = dict[ id ];
+			}
+		}
+		return result;
+	}
+
 }
