@@ -112,16 +112,16 @@ function onBuildingData( data ) {
 				previewSettingKey, onPrefsData );
 			return;
 		} else if ( !building.hasMinMax() ) {
-			requestUpdateGUI();
+			requestUpdateGUI( true );
 		}
 	} else {
-		requestUpdateGUI();
+		requestUpdateGUI( false );
 	}
 }
 
-function requestUpdateGUI() {
+function requestUpdateGUI( haveData ) {
 	// stolen from addUI()
-	var div, label, img, getMins;
+	var div, label, img, getMins, trackButton;
 	div = document.createElement( 'div' );
 	div.id = 'bookkeeper-quick-buttons';
 	label = document.createElement( 'label' );
@@ -130,16 +130,51 @@ function requestUpdateGUI() {
 	img.title = 'Pardus Bookkeeper';
 	label.appendChild( img );
 	label.appendChild( document.createTextNode('Quick Buttons') );
+	
+	trackButton = document.createElement( 'button' );
+	trackButton.textContent = 'Track';
+	trackButton.type = 'button';
 	getMins = document.createElement( 'button' );
 	getMins.textContent = 'Min/Maxes unknown\nplease update';
+	getMins.type = 'button';
 	div.appendChild( label );
-	div.appendChild( document.createElement('br') );
-	div.appendChild( getMins );
+	if (!haveData) {
+		div.appendChild( document.createElement('br') );
+		div.appendChild( trackButton );
+	} else {
+		div.appendChild( document.createElement('br') );
+		div.appendChild( getMins );
+	}
 	div.appendChild( document.createElement('br') );
 	document.forms.building_man.elements.trade_ship.parentElement.appendChild( div );
-	getMins.addEventListener( 'click' , function() {
-		window.open('/building_trade_settings.php?object=' + userloc, '_blank' )
-	} );
+
+	if (!haveData) {
+		trackButton.addEventListener( 'click' , function () {
+			chrome.storage.local.get( 'sector' , getSector )
+			
+			function getSector ( sector ) {
+				var sectorId = Sector.getId( sector.sector );
+				chrome.storage.sync.get( universe.key, addBuilding.bind ( null, sectorId ) );
+			}
+			
+			function addBuilding( sectorId, data ) {
+				if (!data [ universe.key ]) {
+					data [ universe.key ] = [];
+				}
+				data[ universe.key ].push ( userloc );
+				building = new Building ( userloc, sectorId, pageData.typeId );
+				chrome.storage.sync.set ( data );
+				updateBuilding();
+				location.reload(); //Ugly I know.
+			}
+		} );
+	} else {	
+		getMins.addEventListener( 'click' , function() {
+			window.open('/building_trade_settings.php?object=' + userloc, '_blank' )
+			location.reload(); //Ugly I know.
+		} );
+	}
+	
 }
 
 function onPrefsData( data ) {
