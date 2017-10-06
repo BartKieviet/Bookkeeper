@@ -4,6 +4,62 @@ Starting this document so we can move lengthy comments from the source files,
 explaining some decision or gotcha or whatever, to this document instead.  Keep
 the sources leaner.
 
+## Building level estimation
+
+Building production may be affected by...
+
+* Alliance Territory
+    - Class I diversity: Production boost for: Space Farm, Neural Laboratory.
+    - Class R diversity: Production boost for: Smelting Facility, Electronics
+      Facility
+    - Class D diversity: Production boost for: Slave Camp, Dark Dome.
+    - Class G diversity: Production boost for: Brewery, Medical Laboratory,
+      Plastics Facility
+
+* Special events
+    - Neural Burst: "Doubled efficiency levels of Neural Laboratories", whatever
+      this means.
+    - Neural Chill: "Efficiency level of Neural Laboratories set to zero (= 50%
+      production, 60% upkeep of base level)", whatever this means.
+
+* TSS membership
+    - "One less slave needed for upkeep of drug station and dark dome (due to
+      being provided by TSS)."
+
+* MO grid setting
+
+Bookkeeper does not even try to account for any of these things.  Rather, it
+tries to identify buildings that are "normal", i.e. those where upkeep and
+production can be calculated from a formula and a set of "base values" (the vast
+majority).  For normal buildings, only the building level is stored.  Otherwise,
+the full set of seen upkeep/production values is stored, regardless of whatever
+bonuses or penalties contributed to this anomaly.
+
+So for this we need to know each building's production level, which is not
+available from Pardus, except for the user's own buildings.  So we compute it
+from the base values for buildings of a given type (which we know), and the
+actual consumption and production of each tracked building (which we can see
+from the trade screen).
+
+Production commodities with base value 1 (like droids in DACs or drugs in DSs)
+are ambiguous for this computation: production in odd levels stays the same as
+in the previous even level, so the level can't be known based on seen production
+alone.  For upkeep commodities, bases 1 and 2 are ambiguous: consumption may
+stay the same for one, sometimes two consecutive levels.  For either, base
+values above those are safe: we can get accurate results from them (in fact, the
+commodity with the highest base value gives us the best estimation, because the
+error introduced by the use of `round` in the Pardus formulae becomes less and
+less significant with respect to the seen value).  And, happily, all Pardus
+buildings at this time have at least one commodity for which either its base
+upkeep or production is 3 or more.
+
+And so, for any tracked building except the user's own, we compute the level as
+above, and then we compute the expected upkeep and production with the Pardus
+formulae.  If the result matches exactly whan we see on screen, we assume we got
+the level correctly and store only that.  Otherwise, we deem the building
+abnormal, set its tracked level as unknown, and store its seen upkeep and
+production literally.
+
 ## Dictionaries of Id codes
 
 We use dictionaries of numeric Id codes all over the app.  These are sometimes
