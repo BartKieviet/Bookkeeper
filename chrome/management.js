@@ -146,7 +146,7 @@ function requestUpdateGUI( haveData ) {
 		div.appendChild( getMins );
 	}
 	div.appendChild( document.createElement('br') );
-<<<<<<< HEAD
+
 	document.forms.building_man.elements.trade_ship.parentElement.appendChild( div );
 
 	if (!haveData) {
@@ -175,16 +175,6 @@ function requestUpdateGUI( haveData ) {
 			location.reload(); //Ugly I know.
 		} );
 	}
-	
-=======
-	document.forms.building_man.elements.trade_ship.parentElement.
-		appendChild( div );
-	getMins.addEventListener( 'click' , function() {
-		window.open(
-			'/building_trade_settings.php?object=' + userloc,
-			'_blank' )
-	} );
->>>>>>> d7a671ba9a6d1efb5c06628d590f7d803023b49b
 }
 
 function onPrefsData( data ) {
