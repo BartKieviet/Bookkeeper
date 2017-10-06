@@ -10,10 +10,10 @@ var NAME_IDS, ICON_IDS;
 
 // Construct a new Building instance.
 //
-// Supply as many parameters as available, and/or use undefined for missing
-// data.  Note though: the building will not be fully usable (some instance
-// methods may fail) until at least properties `loc`, `sectorId`, and `typeId`,
-// have been set.
+// Supply as many parameters as you have data for, and/or use undefined for
+// missing data.  Note though: the building will not be fully usable (some
+// instance methods may fail) until at least properties `loc`, `sectorId`, and
+// `typeId`, have been set.
 //
 // `loc`, `sectorId`, `typeId`, `time`, `level`, and `ticksLeft`, if provided,
 // should be integers.
@@ -219,38 +219,31 @@ Building.getBaseProduction = function( typeId ) {
 	return t !== undefined ? t.bp : undefined;
 }
 
-// Get an array of commodity ids that buildings of the given type consume.  Note
-// you get an array of strings; map to integers and sort, if you care about
-// order.
+// Get an array of commodity ids that buildings of the given type consume.
 
 Building.getUpkeepCommodities = function( typeId ) {
 	var t = Building.getType( typeId );
-	return t !== undefined ? Object.keys(t.bu) : undefined;
+	return t !== undefined ? Object.keys(t.bu).map(toInt) : undefined;
 }
 
 // Get an array of commodity ids that buildings of the given type consume.  Note
-// you get an array of strings; map to integers and sort if you care about
-// order.  Note also that stim chip mills and dark domes (XXX - only those?) can
-// produce things not listed in these values.
+// that stim chip mills and dark domes (XXX - only those?) can produce things
+// not listed by this.
 
 Building.getProductionCommodities = function( typeId ) {
 	var t = Building.getType( typeId );
-	return t !== undefined ? Object.keys(t.bp) : undefined;
+	return t !== undefined ? Object.keys(t.bp).map(toInt) : undefined;
 }
 
-// Get the "normal" upkeep of a building of the given type and bonus.  This may
-// not match the actual upkeep seen in the wild, because of AT bonuses, special
-// events, and TSS membership status.  Return an object where keys are commodity
-// ids encoded as strings, and values are integers.
+// Get the "normal" upkeep of a building of the given type and level, before
+// bonuses and penalties that may apply.
 
 Building.getNormalUpkeep = function( typeId, level ) {
 	return computeUpPr( Building.getType(typeId), 'bu', level, 0.4 );
 }
 
-// Get the "normal" production of a building of the given type and bonus.  This
-// may not match the actual production because of AT bonuses, special events.
-// Return an object where keys are commodity ids encoded as strings, and values
-// are integers.
+// Get the "normal" production of a building of the given type and level, before
+// bonuses and penalties that may apply.
 
 Building.getNormalProduction = function( typeId, level ) {
 	return computeUpPr( Building.getType(typeId), 'bp', level, 0.5 );
@@ -292,12 +285,12 @@ Building.createFromStorage = function( key, a ) {
 	var loc = parseInt( key.substr(1) );
 	return new Building(
 		loc,
-		a[0], // sectorId
-		a[1], // typeId
-		a[2], // timeSecs
-		a[3], // owner
-		a[4], // level
-		a[5], // ticksLeft
+		v(a[0]), // sectorId
+		v(a[1]), // typeId
+		v(a[2]), // timeSecs
+		v(a[3]), // owner
+		v(a[4]), // level
+		v(a[5]), // ticksLeft
 		unpackArray( a[6] ), // selling
 		unpackArray( a[7] ), // buying
 		unpackArray( a[8] ), // minimum
@@ -305,6 +298,11 @@ Building.createFromStorage = function( key, a ) {
 		unpackArray( a[10] ), // upkeep
 		unpackArray( a[11] )  //production
 	);
+
+	// Apparently, we get `null` for items where we set as `undefined` when
+	// saving.  We want always undefined after load.  This is below is a
+	// very deliberate ==, don't change to ===.
+	function v( val ) { return val == null ? undefined : val; }
 }
 
 // The number of production ticks elapsed from Unix timestamp `time` to `now`.
@@ -465,7 +463,7 @@ Building.prototype.setTicksLeft = function( n ) {
 Building.prototype.setOwner = function( owner ) {
 	if ( owner !== undefined ) {
 		owner = String( owner );
-		if ( owner.length > 0 )
+		if ( owner.length === 0 )
 			owner = undefined;
 	}
 	this.owner = owner;
@@ -477,8 +475,10 @@ Building.prototype.setMinimum = function( a ) { this.minimum = a || []; }
 Building.prototype.setMaximum = function( a ) { this.maximum = a || []; }
 
 Building.prototype.setUpkeep = function( a ) {
-	if ( a )
-		this.cachedUpkeep = this.upkeep = a;
+	if ( a ) {
+		this.cachedUpkeep = a;
+		this.upkeep = a;
+	}
 	else {
 		this.cachedUpkeep = undefined;
 		this.upkeep = [];
@@ -486,8 +486,10 @@ Building.prototype.setUpkeep = function( a ) {
 }
 
 Building.prototype.setProduction = function( a ) {
-	if ( a )
-		this.cachedProduction = this.production = a;
+	if ( a ) {
+		this.cachedProduction = a;
+		this.production = a;
+	}
 	else {
 		this.cachedProduction = undefined;
 		this.production = [];
@@ -633,7 +635,7 @@ function packArray( a ) {
 
 function unpackArray( a ) {
 	var r, i, end;
-	if ( a === undefined )
+	if ( !a )
 		return [];
 	for ( r = [], i = 0, end = a.length; i < end; i += 2 )
 		r[ a[i] ] = a[ i + 1 ];
@@ -648,12 +650,13 @@ function computeUpPr( spec, prop, level, factor ) {
 	if ( spec === undefined || level === undefined )
 		return undefined;
 	base = spec[ prop ];
-	r = {};
+	r = [];
 	for ( k in base )
 		r[ k ] = Math.round( base[k] * ( 1 + factor * (level - 1) ) );
 	return r;
 }
 
+function toInt( s ) { return parseInt( s ); }
 
 return Building;
 
