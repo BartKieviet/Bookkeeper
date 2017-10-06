@@ -137,7 +137,7 @@ function setup() {
 			document.getElementById('buy_2').value = buyEnergy; 
 			document.getElementById('buy_4').value = buyAE; 
 			if (!previewStatus) {
-				document.forms.planet_trade.submit();
+				document.forms.starbase_trade.submit();
 			}
 		}); 		
 	}
