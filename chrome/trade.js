@@ -304,19 +304,20 @@ function updateBuilding( storeItems, building, callback ) {
 	building.setSelling( pageData.selling );
 
 	if ( level === undefined ||
-		!arrayEquals(
-			Building.getNormalUpkeep(pageData.typeId, level),
+	     !arrayEquals(
+		Building.getNormalUpkeep(pageData.typeId, level),
 			pageData.upkeep) ||
-		!arrayEquals(
-			Building.getNormalProduction(pageData.typeId, level),
+	     !arrayEquals(
+		Building.getNormalProduction(pageData.typeId, level),
 			pageData.production)) {
 		// The infallible estimator failed.
 		building.setUpkeep( pageData.upkeep );
 		building.setProduction( pageData.production );
 	}
-	else
+	else {
 		building.setUpkeep( undefined );
 		building.setProduction( undefined );
+	}
 
 	console.log( building );
 	storeItems[ buildingKey ] = building.toStorage();
