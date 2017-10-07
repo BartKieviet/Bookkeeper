@@ -39,10 +39,10 @@ function setup() {
 		ukey, document, button,
 		{ overlayClassName: 'bookkeeper-starbasetrade',
 		  mode: 'compact',
-		  storageKey: 'SB' } );
-	
+		  storageKey: 'Nav' } );
+
 	var XPATH_FREESPACE = document.createExpression('//table//td[starts-with(text(),"free")]/following-sibling::td', null );
-	
+
 	function makeButton( id ) {
 		button = document.createElement( 'button' );
 		button.type = 'button';
@@ -54,33 +54,33 @@ function setup() {
 	if (document.forms.planet_trade) {
 		var previewStatus = document.getElementById('preview_checkbox').checked;
 		document.getElementById('preview_checkbox').addEventListener('click', function() { previewStatus = !previewStatus } );
-		
+
 		var middleNode = document.getElementById('quickButtonsTbl');
 		middleNode.appendChild( document.createElement( 'br' ));
 
-		button = makeButton ( 'bookkeeper-transfer-food' ) 
+		button = makeButton ( 'bookkeeper-transfer-food' )
 		button.textContent = '<- Food | Energy ->';
 		middleNode.appendChild ( button ) ;
 		button.addEventListener('click', function() {
 			if ( document.getElementById('shiprow2').getElementsByTagName('a')[1] ) {
 				document.getElementById('shiprow2').getElementsByTagName('a')[1].click();
 			}
-			document.getElementById('baserow1').getElementsByTagName('a')[1].click(); 
+			document.getElementById('baserow1').getElementsByTagName('a')[1].click();
 			if (!previewStatus) {
 				document.forms.planet_trade.submit();
 			}
-		}); 
-		
+		});
+
 		middleNode.appendChild( document.createElement( 'br' ));
 		middleNode.appendChild( document.createElement( 'br' ));
-		button = makeButton ( 'bookkeeper-transfer-water' ) 
+		button = makeButton ( 'bookkeeper-transfer-water' )
 		button.textContent = '<- Water | Energy ->';
-		middleNode.appendChild ( button ) ;		
+		middleNode.appendChild ( button ) ;
 		button.addEventListener('click', function() {
 			if ( document.getElementById('shiprow2').getElementsByTagName('a')[1] ) {
 				document.getElementById('shiprow2').getElementsByTagName('a')[1].click();
 			}
-			document.getElementById('baserow3').getElementsByTagName('a')[1].click(); 
+			document.getElementById('baserow3').getElementsByTagName('a')[1].click();
 			if (!previewStatus) {
 				document.forms.planet_trade.submit();
 			}
@@ -88,7 +88,7 @@ function setup() {
 		middleNode.appendChild( document.createElement( 'br' ));
 		middleNode.appendChild( document.createElement( 'br' ));
 
-		button = makeButton ( 'bookkeeper-transfer-FWE' ) 
+		button = makeButton ( 'bookkeeper-transfer-FWE' )
 		button.textContent = '<- PSB FW | Energy ->';
 		middleNode.appendChild ( button ) ;
 		button.addEventListener('click', function() {
@@ -100,15 +100,15 @@ function setup() {
 			}
 			var buyFood = Math.floor( shipCargo / 5 * 3);
 			var buyWater = shipCargo - buyFood;
-			
-			document.getElementById('buy_1').value = buyFood; 
-			document.getElementById('buy_3').value = buyWater; 
+
+			document.getElementById('buy_1').value = buyFood;
+			document.getElementById('buy_3').value = buyWater;
 			if (!previewStatus) {
 				document.forms.planet_trade.submit();
 			}
-		}); 
+		});
 	}
-	
+
 	if (document.forms.starbase_trade) {
 		var previewStatus = document.getElementById('preview_checkbox').checked;
 		document.getElementById('preview_checkbox').addEventListener('click', function() { previewStatus = !previewStatus } );
@@ -116,8 +116,8 @@ function setup() {
 		var middleNode = document.getElementById('quickButtonsTbl');
 		middleNode.appendChild( document.createElement( 'br' ));
 		middleNode.appendChild( document.createElement( 'br' ));
-		button = makeButton ( 'bookkeeper-transfer-SF' ) 
-		button.textContent = '<- SF E/AE | Energy ->';	
+		button = makeButton ( 'bookkeeper-transfer-SF' )
+		button.textContent = '<- SF E/AE | Energy ->';
 		middleNode.appendChild ( button ) ;
 
 		button.addEventListener('click', function() {
@@ -133,12 +133,12 @@ function setup() {
 			}
 			var buyEnergy = Math.floor( shipCargo / 9 * 4);
 			var buyAE = shipCargo - buyEnergy;
-			
-			document.getElementById('buy_2').value = buyEnergy; 
-			document.getElementById('buy_4').value = buyAE; 
+
+			document.getElementById('buy_2').value = buyEnergy;
+			document.getElementById('buy_4').value = buyAE;
 			if (!previewStatus) {
 				document.forms.starbase_trade.submit();
 			}
-		}); 		
+		});
 	}
 }
