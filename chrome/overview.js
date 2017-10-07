@@ -618,7 +618,7 @@ function overviewFigure( building, commId ) {
 
 	if ( building.isUpkeep( commId ) &&
 	     (n = building.getBuying()[commId]) !== undefined )
-		return n;
+		return -n;
 
 	if ( (n = building.getSelling()[commId]) !== undefined )
 		return n;
