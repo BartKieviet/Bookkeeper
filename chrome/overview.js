@@ -30,10 +30,12 @@ var Overview = function( ukey, document, options ) {
 		storageKey: storageKey,
 		filterKey: options.filterKey
 			|| ukey + storageKey + 'Filter',
-		sortIdKey: options.filterKey
+		sortIdKey: options.sortIdKey
 			|| ukey + storageKey + 'OverviewSortCrit',
-		sortAscKey: options.filterKey
-			 || ukey + storageKey + 'OverviewSortAsc'
+		sortAscKey: options.sortAscKey
+			|| ukey + storageKey + 'OverviewSortAsc',
+		projectionKey: options.projectionKey
+			|| ukey + storageKey + 'Projection'
 	};
 
 	this.filter = new Filter();
@@ -49,6 +51,9 @@ var Overview = function( ukey, document, options ) {
 	this.clearIcon = makeIcon.call(
 		this, 'clear', 'Clear filter', onClearClick );
 	div.appendChild( this.clearIcon );
+	this.projectionIcon = makeIcon.call(
+		this, 'projoff', 'Toggle projection mode', onProjClick );
+	div.appendChild( this.projectionIcon );
 	this.container.appendChild( div );
 
 	this.filterInfo = document.createElement( 'p' );
@@ -83,7 +88,8 @@ Overview.prototype.configure = function( universeList, callback ) {
 		'sector',
 		this.options.filterKey,
 		this.options.sortIdKey,
-		this.options.sortAscKey
+		this.options.sortAscKey,
+		this.options.projectionKey
 	];
 	chrome.storage.local.get( keys, onStorageLocalData.bind(this) );
 
@@ -100,6 +106,10 @@ Overview.prototype.configure = function( universeList, callback ) {
 		this.currentSector = data.sector || '';
 		this.currentSectorId = Sector.getId( this.currentSector );
 		this.filter.parseQuery( query );
+		this.projection = data[ this.options.projectionKey ];
+		if ( this.projection === undefined )
+			// default to on, to show off
+			this.projection = true;
 
 		// Build an example query
 		this.filterInput.placeholder =
@@ -155,7 +165,7 @@ function applyFilter( universeList, sort, callback ) {
 	}
 
 	function onHaveBuildingData( data ) {
-		var key, buildings, spec, table;
+		var key, buildings, spec, table, now;
 
 		buildings = [];
 		for ( key in data ) {
@@ -167,6 +177,16 @@ function applyFilter( universeList, sort, callback ) {
 		this.filterInfo.textContent =
 			this.filter.makeHumanDescription();
 		this.sorTable.coords = this.filter.coords;
+
+		if ( this.projection ) {
+			this.projectionIcon.dataset.cmd = 'projon';
+			now = Building.now();
+			buildings.forEach( function(b) { b.project(now); } );
+		}
+		else
+			this.projectionIcon.dataset.cmd = 'projoff';
+
+		setImgSrc( this.projectionIcon );
 
 		spec = makeSpec.call( this, buildings );
 		this.sorTable.refresh( spec, buildings );
@@ -209,8 +229,10 @@ function setFilter() {
 	if ( !this.filter.filtering )
 		query = '';
 
-	storageItems = {};
-	storageItems[ this.options.filterKey ] = query;
+	storageItems = {
+		[ this.options.filterKey ]: query,
+		[ this.options.projectionKey ]: this.projection
+	};
 	chrome.storage.local.set( storageItems );
 
 	applyFilter.call( this );
@@ -294,18 +316,18 @@ var COLUMN_SPECS = {
 
 	ticksLeft: {
 		header: simpleHeader( 'Ticks' ),
-		cell: rCell( function( b ) { return b.ticksLeft; } ),
+		cell: function(b, td) {
+			var n = b.getTicksLeft();
+			td.textContent = n;
+			td.className = 'r';
+			if ( n === 0 )
+				td.classList.add( 'red' );
+			else if ( n === 1 )
+				td.classList.add( 'yellow' );
+		},
 		sortId: 'tick',
-		sort: function( a, b ) { return a.ticksLeft - b.ticksLeft; }
-	},
-
-	ticksNow: {
-		header: simpleHeader( 'Now' ),
-		cell: rCell( function( b ) { return b.ticksNow( this.now ); } ),
-		sortId: 'now',
 		sort: function( a, b ) {
-			return a.ticksNow( this.now )
-			     - b.ticksNow( this.now );
+			return a.getTicksLeft() - b.getTicksLeft();
 		}
 	},
 
@@ -368,12 +390,8 @@ function makeSpec( buildings ) {
 	// Always show the time
 	after.push( COLUMN_SPECS.time );
 
-	// In full mode, show ticks left at last update
-	if ( this.options.mode !== 'compact' )
-		after.push( COLUMN_SPECS.ticksLeft );
-
-	// Always show ticks now
-	after.push( COLUMN_SPECS.ticksNow );
+	// Always show ticks
+	after.push( COLUMN_SPECS.ticksLeft );
 
 	// In full mode, show the "remove" button
 	if ( this.options.mode !== 'compact' )
@@ -524,6 +542,11 @@ function onClearClick() {
 	setFilter.call( this );
 }
 
+function onProjClick() {
+	this.projection = !this.projection;
+	setFilter.call( this );
+}
+
 function onCmdMouseOver( event ) { setImgSrc( event.target, false ); }
 function onCmdMouseOut( event ) { setImgSrc( event.target, true ); }
 
@@ -591,12 +614,14 @@ function setCommodityTD( td, commId, n ) {
 // the building doesn't trade in that commodity.
 
 function overviewFigure( building, commId ) {
-	if ( building.isUpkeep( commId ) &&
-	     building.buying[commId] !== undefined )
-		return -building.buying[ commId ];
+	var n;
 
-	if ( building.selling[commId] !== undefined )
-		return building.selling[ commId ];
+	if ( building.isUpkeep( commId ) &&
+	     (n = building.getBuying()[commId]) !== undefined )
+		return n;
+
+	if ( (n = building.getSelling()[commId]) !== undefined )
+		return n;
 
 	return undefined;
 }

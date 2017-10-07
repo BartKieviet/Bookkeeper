@@ -90,6 +90,10 @@
 		"icons/cleardim.svg",
 		"icons/pos.svg",
 		"icons/posdim.svg",
+		"icons/projoff.svg",
+		"icons/projoffdim.svg",
+		"icons/projon.svg",
+		"icons/projondim.svg",
 		"icons/remove.svg",
 		"icons/removedim.svg",
 		"html/bbox.html"

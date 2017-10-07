@@ -446,7 +446,7 @@ Building.prototype.getSelling = function() {
 // null, reset the projection, so those methods will return last-updated values.
 
 Building.prototype.project = function( time ) {
-	var ticksLeft, upkeep, production;
+	var ticksLeft, elapsed, upkeep, production;
 
 	if ( !time ) {
 		this.projection = undefined;
@@ -454,7 +454,7 @@ Building.prototype.project = function( time ) {
 	}
 
 	if ( this.ticksLeft === undefined )
-		setProjection( undefined, [], [] );
+		setProjection.call( this, undefined, [], [] );
 	else {
 		if ( this.ticksLeft > 0 )
 			ticksLeft = this.ticksNow( time );
@@ -463,25 +463,28 @@ Building.prototype.project = function( time ) {
 
 		if ( ticksLeft === 0 )
 			// Could handle below but optimise this common case
-			setProjection( 0, this.buying, this.selling );
+			setProjection.call(
+				this, 0, this.buying, this.selling );
 		else {
+			elapsed = this.ticksLeft - ticksLeft;
 			upkeep = this.getUpkeep();
 			production = this.getProduction();
-			setProjection(
+			setProjection.call(
+				this,
 				ticksLeft,
 				this.buying.map(projectUpkeep),
-				this.buying.map(projectProduction) );
+				this.selling.map(projectProduction) );
 		}
 	}
 
 	function projectUpkeep( amt, id ) {
-		return amt - ticksLeft * upkeep[id];
+		return amt - elapsed * upkeep[id];
 	}
 
 	// XXX - if/when we track building capacity, we can cap this (and could
 	// even tell you when the building will dump.
 	function projectProduction( amt, id ) {
-		return amt + ticksLeft * production[id];
+		return amt + elapsed * production[id];
 	}
 
 	function setProjection( ticksLeft, buying, selling ) {
