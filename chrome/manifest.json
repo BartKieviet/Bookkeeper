@@ -39,7 +39,7 @@
 		},
 		{
 			"matches": [ "*://*.pardus.at/building_management.php*" ],
-			"js": [ "functions.js", "building.js", "management.js" ],
+			"js": [ "functions.js", "building.js", "sector.js", "management.js" ],
 			"css": [ "bookkeeper.css" ],
 			"all_frames": true
 		},
