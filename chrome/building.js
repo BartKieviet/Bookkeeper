@@ -492,7 +492,7 @@ Building.prototype.project = function( time ) {
 	// production, just can't be projected.
 
 	function projectUpkeep( amt, id ) {
-		return amt - elapsed * upkeep[id];
+		return amt + elapsed * upkeep[id];
 	}
 
 	// XXX - if/when we track building capacity, we can cap this (and could
