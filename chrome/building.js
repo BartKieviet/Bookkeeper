@@ -424,7 +424,8 @@ Building.prototype.getTicksLeft = function() {
 }
 
 // Return the array of commodities that this building is buying.  If a
-// projection is active, this will return the projected values.
+// projection is active, this will return the projected values.  Note that, if a
+// projection cannot be performed, you'll see NaN values in the array returned.
 
 Building.prototype.getBuying = function() {
 	if ( this.projection !== undefined )
@@ -433,7 +434,8 @@ Building.prototype.getBuying = function() {
 }
 
 // Return the array of commodities that this building is selling.  If a
-// projection was requested, this will return the projected values.
+// projection is active, this will return the projected values.  Note that, if a
+// projection cannot be performed, you'll see NaN values in the array returned.
 
 Building.prototype.getSelling = function() {
 	if ( this.projection !== undefined )
@@ -454,19 +456,23 @@ Building.prototype.project = function( time ) {
 	}
 
 	if ( this.ticksLeft === undefined )
-		setProjection.call( this, undefined, [], [] );
+		setProjection.call(
+			this, undefined, this.buying, this.selling );
 	else {
-		if ( this.ticksLeft > 0 )
+		if ( this.ticksLeft > 0 ) {
 			ticksLeft = this.ticksNow( time );
-		else
+			elapsed = this.ticksLeft - ticksLeft;
+		}
+		else {
 			ticksLeft = 0;
+			elapsed = 0;
+		}
 
-		if ( ticksLeft === 0 )
+		if ( elapsed === 0 )
 			// Could handle below but optimise this common case
 			setProjection.call(
-				this, 0, this.buying, this.selling );
+				this, ticksLeft, this.buying, this.selling );
 		else {
-			elapsed = this.ticksLeft - ticksLeft;
 			upkeep = this.getUpkeep();
 			production = this.getProduction();
 			setProjection.call(
@@ -476,6 +482,14 @@ Building.prototype.project = function( time ) {
 				this.selling.map(projectProduction) );
 		}
 	}
+
+	// Do note: projectUpkeep and projectProduction will return NaN if the
+	// id is not in upkeep/production.  This happens when
+	// getUpkeep/getProduction return an empty array, which in turn happens
+	// when there is no level and no stored production/upkeep.  We don't
+	// check for those things here because the NaN is actually kinda useful:
+	// it lets us know which commodities are part of the upkeep and
+	// production, just can't be projected.
 
 	function projectUpkeep( amt, id ) {
 		return amt - elapsed * upkeep[id];

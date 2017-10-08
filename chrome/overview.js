@@ -445,8 +445,9 @@ function makeCommCellFn( commId ) {
 		var n = overviewFigure( building, commId );
 		if ( n !== undefined ) {
 			setCommodityTD( td, commId, n );
-			this.totals[ commId ] =
-				( this.totals[commId] || 0 ) + n;
+			if ( Number.isFinite(n) )
+				this.totals[ commId ] =
+					( this.totals[commId] || 0 ) + n;
 		}
 	};
 }
@@ -600,7 +601,7 @@ function foot() {
 }
 
 function setCommodityTD( td, commId, n ) {
-	td.textContent = n;
+	td.textContent = Number.isFinite(n) ? n : '?';
 	td.title = Commodities.getCommodity( commId ).n;
 	td.className = 'c';
 	if ( n > 0 )
@@ -611,17 +612,19 @@ function setCommodityTD( td, commId, n ) {
 
 // Given a building and commodity id, return the number to display in the
 // overview table: negative upkeep, positive production, zero, or undefined if
-// the building doesn't trade in that commodity.
+// the building doesn't trade in that commodity.  Return -Infinity for upkeep
+// values that cannot be projected; +Infinity for production values.  This so
+// sorting is somewhat more meaningful, at least not completely broken by NaN.
 
 function overviewFigure( building, commId ) {
 	var n;
 
 	if ( building.isUpkeep( commId ) &&
 	     (n = building.getBuying()[commId]) !== undefined )
-		return -n;
+		return isNaN(n) ? -Infinity : -n;
 
 	if ( (n = building.getSelling()[commId]) !== undefined )
-		return n;
+		return isNaN(n) ? Infinity : n;
 
 	return undefined;
 }
