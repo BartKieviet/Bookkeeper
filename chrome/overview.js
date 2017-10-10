@@ -113,7 +113,7 @@ Overview.prototype.configure = function( universeList, callback ) {
 
 		// Build an example query
 		this.filterInput.placeholder =
-			'SF 3 ' + this.currentSector;
+			'Search building types, sectors, owners, ticks' ;
 
 		applyFilter.call(
 			this, universeList, sort, onReady.bind(this) );
