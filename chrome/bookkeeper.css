@@ -33,7 +33,7 @@ div.bookkeeper-overview > div > input {
 }
 
 div.bookkeeper-overview > div > img {
-	flex: 0;
+	flex: none;
 	width: 16px;
 	height: 16px;
 	cursor: pointer;

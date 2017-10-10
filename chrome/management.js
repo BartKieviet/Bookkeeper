@@ -33,8 +33,8 @@ if(typeof(addUserFunction)=='function')addUserFunction(fn);fn();})();";
 	}
 }
 
-// Arrival of a message means the page contents were updated.  The
-// message contains the value of our variables, too.
+// Arrival of a message means the page contents were updated.  The message
+// contains the value of our variables, too.
 function onGameMessage( event ) {
 	var data = event.data;
 
@@ -112,16 +112,16 @@ function onBuildingData( data ) {
 				previewSettingKey, onPrefsData );
 			return;
 		} else if ( !building.hasMinMax() ) {
-			requestUpdateGUI();
+			requestUpdateGUI( true );
 		}
 	} else {
-		requestUpdateGUI();
+		requestUpdateGUI( false );
 	}
 }
 
-function requestUpdateGUI() {
+function requestUpdateGUI( haveData ) {
 	// stolen from addUI()
-	var div, label, img, getMins;
+	var div, label, img, getMins, trackButton;
 	div = document.createElement( 'div' );
 	div.id = 'bookkeeper-quick-buttons';
 	label = document.createElement( 'label' );
@@ -130,16 +130,51 @@ function requestUpdateGUI() {
 	img.title = 'Pardus Bookkeeper';
 	label.appendChild( img );
 	label.appendChild( document.createTextNode('Quick Buttons') );
+	
+	trackButton = document.createElement( 'button' );
+	trackButton.textContent = 'Track';
+	trackButton.type = 'button';
 	getMins = document.createElement( 'button' );
 	getMins.textContent = 'Min/Maxes unknown\nplease update';
+	getMins.type = 'button';
 	div.appendChild( label );
+	if (!haveData) {
+		div.appendChild( document.createElement('br') );
+		div.appendChild( trackButton );
+	} else {
+		div.appendChild( document.createElement('br') );
+		div.appendChild( getMins );
+	}
 	div.appendChild( document.createElement('br') );
-	div.appendChild( getMins );
-	div.appendChild( document.createElement('br') );
+
 	document.forms.building_man.elements.trade_ship.parentElement.appendChild( div );
-	getMins.addEventListener( 'click' , function() {
-		window.open('/building_trade_settings.php?object=' + userloc, '_blank' )
-	} );
+
+	if (!haveData) {
+		trackButton.addEventListener( 'click' , function () {
+			chrome.storage.local.get( 'sector' , getSector )
+			
+			function getSector ( sector ) {
+				var sectorId = Sector.getId( sector.sector );
+				chrome.storage.sync.get( universe.key, addBuilding.bind ( null, sectorId ) );
+			}
+			
+			function addBuilding( sectorId, data ) {
+				if (!data [ universe.key ]) {
+					data [ universe.key ] = [];
+				}
+				data[ universe.key ].push ( userloc );
+				building = new Building ( userloc, sectorId, pageData.typeId );
+				chrome.storage.sync.set ( data );
+				updateBuilding();
+				location.reload(); //Ugly I know.
+			}
+		} );
+	} else {	
+		getMins.addEventListener( 'click' , function() {
+			window.open('/building_trade_settings.php?object=' + userloc, '_blank' )
+			location.reload(); //Ugly I know.
+		} );
+	}
 }
 
 function onPrefsData( data ) {
@@ -152,31 +187,32 @@ function onPrefsData( data ) {
 }
 
 function updateBuilding() {
-	building.time = Building.now();
-	building.ticksLeft = pageData.ticksLeft;
-	building.forSale = building.minimum.reduce(
-		function( forSale, min, id ) {
-			var amt = pageData.comm[ id ];
-			if ( amt !== undefined )
-				forSale[ id ] = Math.max( 0, amt - min );
-			else
-				forSale[ id ] = 0;
-			return forSale;
-		},
-		[]
-	);
+	building.setTime();
+	building.setTicksLeft( pageData.ticksLeft );
+	building.setSelling(
+		building.minimum.reduce(
+			function( selling, min, id ) {
+				var amt = pageData.comm[ id ];
+				if ( amt !== undefined )
+					selling[ id ] = Math.max(
+						0, amt - min );
+				else
+					selling[ id ] = 0;
+				return selling;
+			},
+			[] ) );
 
-	building.toBuy = building.maximum.reduce(
-		function( toBuy, max, id ) {
-			var amt = pageData.stock[ id ];
-			if ( amt !== undefined )
-				toBuy[ id ] = Math.max( 0, max - amt );
-			else
-				toBuy[ id ] = 0;
-			return toBuy;
-		},
-		[]
-	);
+	building.setBuying(
+		building.maximum.reduce(
+			function( buying, max, id ) {
+				var amt = pageData.stock[ id ];
+				if ( amt !== undefined )
+					buying[ id ] = Math.max( 0, max - amt );
+				else
+					buying[ id ] = 0;
+				return buying;
+			},
+			[] ) );
 
 	var data = {};
 	data[ buildingKey ] = building.toStorage();
@@ -250,7 +286,7 @@ function onAutoSell( event ) {
 	// commodity.  Destination space is the space in the building.
 
 	upkeep = building.getUpkeepCommodities();
-	ship = capAmounts( pageData.ship, building.toBuy );
+	ship = capAmounts( pageData.ship, building.buying );
 	transfer = computeTransfer( upkeep, ship, buildingSpace );
 	sendForm( 'ship_', transfer );
 }
@@ -297,7 +333,7 @@ function onAutoBoth( event ) {
 		},
 		[]
 	);
-	ship = capAmounts( pageData.ship, building.toBuy );
+	ship = capAmounts( pageData.ship, building.buying );
 	s2b = computeTransfer( upkeep, ship, buildingSpace );
 	b2s = computeTransfer(
 		production, pageData.comm, shipSpace + s2b.total );
