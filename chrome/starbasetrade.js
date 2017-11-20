@@ -1,11 +1,39 @@
 // This is a content script, it runs on starbase_trade.php and planet_trade.php.
 
 // From other files:
-var Overlay;
+var Overlay, Universe = Universe.fromDocument( document ), configured, userloc, time, psbCredits;
 
+configure();
 setup();
 
 // End of script execution.
+
+function configure() {
+	var script;
+	if ( !configured ) {
+		window.addEventListener( 'message', onGameMessage );
+		script = document.createElement( 'script' );
+		script.type = 'text/javascript';
+		script.textContent = "(function(){var fn=function(){window.postMessage({pardus_bookkeeper:1,loc:typeof(userloc)==='undefined'?null:userloc,time:typeof(milliTime)==='undefined'?null:milliTime,psbCredits:typeof(obj_credits)==='undefined'?null:obj_credits},window.location.origin);};if(typeof(addUserFunction)==='function')addUserFunction(fn);fn();})();";
+		document.body.appendChild( script );
+		configured = true;
+	}
+}
+
+// Arrival of a message means the page contents were updated.  The
+// message contains the value of our variables, too.
+function onGameMessage( event ) {
+	var data = event.data;
+
+	if ( !data || data.pardus_bookkeeper != 1 ) {
+		return;
+	}
+
+	userloc = parseInt( data.loc );
+	time = Math.floor( data.time / 1000 ); //Yes Vicky I wrote that.
+	psbCredits = parseInt( data.psbCredits );
+	trackPSB(); //Planet - SB, not player-owned Starbase ;-)
+}
 
 function setup() {
 	var ukey, form, container, img, button;
@@ -43,19 +71,12 @@ function setup() {
 
 	var XPATH_FREESPACE = document.createExpression('//table//td[starts-with(text(),"free")]/following-sibling::td', null );
 
-	function makeButton( id ) {
-		button = document.createElement( 'button' );
-		button.type = 'button';
-		button.id = id;
-		button.style = "width: 175px; height: 35px; margin-left: 3px; margin-right: 3px;";
-		return button
-	}
+	var middleNode = document.getElementById('quickButtonsTbl');
 
 	if (document.forms.planet_trade) {
 		var previewStatus = document.getElementById('preview_checkbox').checked;
 		document.getElementById('preview_checkbox').addEventListener('click', function() { previewStatus = !previewStatus } );
 
-		var middleNode = document.getElementById('quickButtonsTbl');
 		middleNode.appendChild( document.createElement( 'br' ));
 
 		button = makeButton ( 'bookkeeper-transfer-food' )
@@ -113,7 +134,6 @@ function setup() {
 		var previewStatus = document.getElementById('preview_checkbox').checked;
 		document.getElementById('preview_checkbox').addEventListener('click', function() { previewStatus = !previewStatus } );
 
-		var middleNode = document.getElementById('quickButtonsTbl');
 		middleNode.appendChild( document.createElement( 'br' ));
 		middleNode.appendChild( document.createElement( 'br' ));
 		button = makeButton ( 'bookkeeper-transfer-SF' )
@@ -141,4 +161,135 @@ function setup() {
 			}
 		});
 	}
+
+}
+
+function makeButton( id ) {
+	button = document.createElement( 'button' );
+	button.type = 'button';
+	button.id = id;
+	button.style = "width: 175px; height: 35px; margin-left: 3px; margin-right: 3px;";
+	return button
+}
+
+
+function trackPSB() {
+	chrome.storage.sync.get( [ Universe.key + 'PSBs', Universe.key + 'PSB' + userloc ], setTrackBtn.bind ( null, userloc) )
+}
+
+function setTrackBtn( userloc, data ) {
+	console.log( data );
+	var trackBtn = document.getElementById( 'bookkeeper-trackBtn' );
+	if  ( !trackBtn ) {	
+		var middleNode = document.getElementById('quickButtonsTbl');
+		middleNode.appendChild( document.createElement( 'br' ));
+		middleNode.appendChild( document.createElement( 'br' ));
+		trackBtn = makeButton ( 'bookkeeper-trackBtn' );
+		middleNode.appendChild( trackBtn );
+	}
+	
+	var value; 
+	
+	if (Object.keys( data ).length === 0 || data[ Universe.key + 'PSBs' ].indexOf( userloc ) === -1) {
+		value = 'Track';
+	} else {
+		value = 'Untrack';
+		data[ Universe.key + 'PSB' + userloc ] = parsePSBPage();
+		chrome.storage.sync.set( data );
+	}
+
+	trackBtn.textContent = value;
+	trackBtn.addEventListener( 'click', function() { 
+		chrome.storage.sync.get( [ Universe.key + 'PSBs', Universe.key + 'PSB' + userloc ], trackToggle.bind( trackBtn, userloc ) ); 
+	});
+}
+
+function trackToggle( userloc, data ) {
+	if (this.textContent === 'Track') {
+		this.textContent = 'Untrack';
+		
+		if (Object.keys( data ).length === 0) {
+			data[ Universe.key + 'PSBs' ] = [ userloc ];
+		} else {
+			data[ Universe.key + 'PSBs' ].push( userloc );
+		}
+		data[ Universe.key + 'PSB' + userloc ] = parsePSBPage();
+		chrome.storage.sync.set( data );
+		
+	} else {
+		this.textContent = 'Track';
+		PSBremoveStorage( userloc );
+	}
+}
+
+ function PSBremoveStorage ( loc ) {
+	var ukey = Universe.key;
+	
+	loc = parseInt( loc );
+	if ( isNaN(loc) )
+		return;
+
+	chrome.storage.sync.get( ukey + 'PSBs', removeBuildingListEntry );
+
+	function removeBuildingListEntry( data ) {
+		var list, index;
+
+		list = data[ ukey + 'PSBs' ];
+		index = list.indexOf( loc );
+		if ( index === -1 ) {
+			removeBuildingData();
+		} else {
+			list.splice( index, 1 );
+			chrome.storage.sync.set( data, removeBuildingData );
+		}
+	}
+
+	function removeBuildingData() {
+		chrome.storage.sync.remove( ukey + 'PSB' + loc );
+	}
+}
+
+function parsePSBPage() {
+	var allData = {}, i, commRow, amount = {}, bal = {}, min = {}, max = {}, price = {};
+	
+	for ( i = 1;  i < 33 ; i++ ) {
+		commRow = document.getElementById( 'baserow' + i );
+		if (!commRow) {
+			continue;
+		} else {
+			commRow = commRow.getElementsByTagName( 'td' );
+		}
+		amount [ i ] = commRow[ 2 ].textContent;
+		bal [ i ] = commRow[ 3 ].textContent;
+		commRow.length === 8 ? min [ i ] = commRow[ 4 ].textContent : min[ i ] = Math.abs( bal[ i ] ); 
+		max [ i ] = commRow[ commRow.length - 3 ].textContent;
+		price[ i ] = commRow[ commRow.length - 2 ].textContent;
+	} //I just realised we can get the above from the script section of the page too. Ah well.
+	allData[ 'amount' ] = amount; 
+	allData[ 'bal' ] = bal;
+	allData[ 'min' ] = min;
+	allData[ 'max' ] = max;
+	allData[ 'price' ] = price;
+	allData[ 'class' ] =  document.getElementsByTagName( 'h1' )[0].firstElementChild.src.split(/_/i)[1][0];
+	allData[ 'pop' ] = popEst ( bal, allData[ 'class'] );
+	allData[ 'time' ] = time;
+	allData[ 'loc' ] = userloc; //It's also in the storage name, I know, but this way we can easily loop the keys later on.
+	allData[ 'credits' ] = psbCredits;
+	return allData 
+}
+
+function popEst( bal , classImg ) {
+	var balComm = [], base;
+	
+	// Determine class & thus upkeep commodity type and upkeep. I take upkeep 
+	// because production can be zero.
+	classImg.indexOf( 'p' ) !== -1 ? balComm = [1,-3] : null;
+	classImg.indexOf( 'f' ) !== -1 ? balComm = [1,-2.5] : null;
+	classImg.indexOf( 'm' ) !== -1 ? balComm = [2,-7.5] : null;
+	classImg.indexOf( 'a' ) !== -1 ? balComm = [2,-12.5] : null;
+	classImg.indexOf( 'd' ) !== -1 ? balComm = [3,-2.5] : null;
+	classImg.indexOf( 'i' ) !== -1 ? balComm = [2,-7.5] : null;
+	classImg.indexOf( 'g' ) !== -1 ? balComm = [2,-2.5] : null;
+	classImg.indexOf( 'r' ) !== -1 ? balComm = [2,-4] : null;
+	return [Math.round( 1000 * bal [ balComm[0] ] / balComm[1] ), Math.ceil( -500 / balComm[1] ) ]
 }
