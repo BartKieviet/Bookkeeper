@@ -30,7 +30,7 @@ function onGameMessage( event ) {
 	}
 
 	userloc = parseInt( data.loc );
-	time = Math.floor( data.time / 1000 ); //Yes Vicky I wrote that.
+	time = Math.floor( parseInt( data.time ) / 1000 ); //Yes Vicky I wrote that.
 	psbCredits = parseInt( data.psbCredits );
 	trackPSB(); //Planet - SB, not player-owned Starbase ;-)
 }
@@ -38,7 +38,7 @@ function onGameMessage( event ) {
 function setup() {
 	var ukey, form, container, img, button;
 
-	// Insert a BK button.  That's all our UI.
+	// Insert a BK button.  
 
 	form = document.forms.planet_trade || document.forms.starbase_trade;
 
@@ -64,7 +64,7 @@ function setup() {
 
 	ukey = document.location.hostname[0].toUpperCase();
 	new Overlay(
-		ukey, document, button,
+		ukey + 'PSB', document, button,
 		{ overlayClassName: 'bookkeeper-starbasetrade',
 		  mode: 'compact',
 		  storageKey: 'Nav' } );
@@ -174,7 +174,7 @@ function makeButton( id ) {
 
 
 function trackPSB() {
-	chrome.storage.sync.get( [ Universe.key + 'PSBs', Universe.key + 'PSB' + userloc ], setTrackBtn.bind ( null, userloc) )
+	chrome.storage.sync.get( [ Universe.key + 'PSB', Universe.key + 'PSB' + userloc ], setTrackBtn.bind ( null, userloc) )
 }
 
 function setTrackBtn( userloc, data ) {
@@ -190,7 +190,7 @@ function setTrackBtn( userloc, data ) {
 	
 	var value; 
 	
-	if (Object.keys( data ).length === 0 || data[ Universe.key + 'PSBs' ].indexOf( userloc ) === -1) {
+	if (Object.keys( data ).length === 0 || data[ Universe.key + 'PSB' ].indexOf( userloc ) === -1) {
 		value = 'Track';
 	} else {
 		value = 'Untrack';
@@ -200,7 +200,7 @@ function setTrackBtn( userloc, data ) {
 
 	trackBtn.textContent = value;
 	trackBtn.addEventListener( 'click', function() { 
-		chrome.storage.sync.get( [ Universe.key + 'PSBs', Universe.key + 'PSB' + userloc ], trackToggle.bind( trackBtn, userloc ) ); 
+		chrome.storage.sync.get( [ Universe.key + 'PSB', Universe.key + 'PSB' + userloc ], trackToggle.bind( trackBtn, userloc ) ); 
 	});
 }
 
@@ -209,9 +209,9 @@ function trackToggle( userloc, data ) {
 		this.textContent = 'Untrack';
 		
 		if (Object.keys( data ).length === 0) {
-			data[ Universe.key + 'PSBs' ] = [ userloc ];
+			data[ Universe.key + 'PSB' ] = [ userloc ];
 		} else {
-			data[ Universe.key + 'PSBs' ].push( userloc );
+			data[ Universe.key + 'PSB' ].push( userloc );
 		}
 		data[ Universe.key + 'PSB' + userloc ] = parsePSBPage();
 		chrome.storage.sync.set( data );
@@ -229,12 +229,12 @@ function trackToggle( userloc, data ) {
 	if ( isNaN(loc) )
 		return;
 
-	chrome.storage.sync.get( ukey + 'PSBs', removeBuildingListEntry );
+	chrome.storage.sync.get( ukey + 'PSB', removeBuildingListEntry );
 
 	function removeBuildingListEntry( data ) {
 		var list, index;
 
-		list = data[ ukey + 'PSBs' ];
+		list = data[ ukey + 'PSB' ];
 		index = list.indexOf( loc );
 		if ( index === -1 ) {
 			removeBuildingData();
@@ -275,6 +275,7 @@ function parsePSBPage() {
 	allData[ 'time' ] = time;
 	allData[ 'loc' ] = userloc; //It's also in the storage name, I know, but this way we can easily loop the keys later on.
 	allData[ 'credits' ] = psbCredits;
+
 	return allData 
 }
 
