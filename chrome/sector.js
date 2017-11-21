@@ -464,6 +464,6 @@ Sector.getIdFromLocation = function( location ) {
 	return sectorId;
 }
 
-return Sector;
+return Sector;
 
 })();

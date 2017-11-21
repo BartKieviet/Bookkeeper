@@ -64,7 +64,7 @@ function setup() {
 
 	ukey = document.location.hostname[0].toUpperCase();
 	new Overlay(
-		ukey + 'PSB', document, button,
+		ukey, document, button,
 		{ overlayClassName: 'bookkeeper-starbasetrade',
 		  mode: 'compact',
 		  storageKey: 'Nav' } );
@@ -174,7 +174,7 @@ function makeButton( id ) {
 
 
 function trackPSB() {
-	chrome.storage.sync.get( [ Universe.key + 'PSB', Universe.key + 'PSB' + userloc ], setTrackBtn.bind ( null, userloc) )
+	chrome.storage.sync.get( [ Universe.key, Universe.key + userloc ], setTrackBtn.bind ( null, userloc) )
 }
 
 function setTrackBtn( userloc, data ) {
@@ -190,17 +190,17 @@ function setTrackBtn( userloc, data ) {
 	
 	var value; 
 	
-	if (Object.keys( data ).length === 0 || data[ Universe.key + 'PSB' ].indexOf( userloc ) === -1) {
+	if (Object.keys( data ).length === 0 || data[ Universe.key ].indexOf( userloc ) === -1) {
 		value = 'Track';
 	} else {
 		value = 'Untrack';
-		data[ Universe.key + 'PSB' + userloc ] = parsePSBPage();
+		data[ Universe.key + userloc ] = parsePSBPage().toStorage();
 		chrome.storage.sync.set( data );
 	}
 
 	trackBtn.textContent = value;
 	trackBtn.addEventListener( 'click', function() { 
-		chrome.storage.sync.get( [ Universe.key + 'PSB', Universe.key + 'PSB' + userloc ], trackToggle.bind( trackBtn, userloc ) ); 
+		chrome.storage.sync.get( [ Universe.key , Universe.key + userloc ], trackToggle.bind( trackBtn, userloc ) ); 
 	});
 }
 
@@ -209,11 +209,11 @@ function trackToggle( userloc, data ) {
 		this.textContent = 'Untrack';
 		
 		if (Object.keys( data ).length === 0) {
-			data[ Universe.key + 'PSB' ] = [ userloc ];
+			data[ Universe.key ] = [ userloc ];
 		} else {
-			data[ Universe.key + 'PSB' ].push( userloc );
+			data[ Universe.key ].push( userloc );
 		}
-		data[ Universe.key + 'PSB' + userloc ] = parsePSBPage();
+		data[ Universe.key + userloc ] = parsePSBPage();
 		chrome.storage.sync.set( data );
 		
 	} else {
@@ -229,12 +229,12 @@ function trackToggle( userloc, data ) {
 	if ( isNaN(loc) )
 		return;
 
-	chrome.storage.sync.get( ukey + 'PSB', removeBuildingListEntry );
+	chrome.storage.sync.get( ukey , removeBuildingListEntry );
 
 	function removeBuildingListEntry( data ) {
 		var list, index;
 
-		list = data[ ukey + 'PSB' ];
+		list = data[ ukey ];
 		index = list.indexOf( loc );
 		if ( index === -1 ) {
 			removeBuildingData();
@@ -245,16 +245,17 @@ function trackToggle( userloc, data ) {
 	}
 
 	function removeBuildingData() {
-		chrome.storage.sync.remove( ukey + 'PSB' + loc );
+		chrome.storage.sync.remove( ukey + loc );
 	}
 }
 
 function parsePSBPage() {
-	var allData = {}, i, commRow, amount = {}, bal = {}, min = {}, max = {}, price = {};
+	var allData = {}, i, commRow, amount = {}, bal = {}, min = {}, max = {}, price = {}, buying = [];
 	
 	for ( i = 1;  i < 33 ; i++ ) {
 		commRow = document.getElementById( 'baserow' + i );
 		if (!commRow) {
+			buying[ i ] = 0;
 			continue;
 		} else {
 			commRow = commRow.getElementsByTagName( 'td' );
@@ -264,19 +265,34 @@ function parsePSBPage() {
 		commRow.length === 8 ? min [ i ] = commRow[ 4 ].textContent : min[ i ] = Math.abs( bal[ i ] ); 
 		max [ i ] = commRow[ commRow.length - 3 ].textContent;
 		price[ i ] = commRow[ commRow.length - 2 ].textContent;
+		buying[ i ] = max[ i ] - amount[ i ];
 	} //I just realised we can get the above from the script section of the page too. Ah well.
 	allData[ 'amount' ] = amount; 
 	allData[ 'bal' ] = bal;
 	allData[ 'min' ] = min;
 	allData[ 'max' ] = max;
 	allData[ 'price' ] = price;
-	allData[ 'class' ] =  document.getElementsByTagName( 'h1' )[0].firstElementChild.src.split(/_/i)[1][0];
+	var PSBclass = document.getElementsByTagName( 'h1' )[0].firstElementChild.src.split(/_/i)[1][0].toUpperCase();
+	allData[ 'class' ] = document.getElementsByTagName( 'h1' )[0].firstElementChild.src.split(/_/i)[1][0];
 	allData[ 'pop' ] = popEst ( bal, allData[ 'class'] );
 	allData[ 'time' ] = time;
 	allData[ 'loc' ] = userloc; //It's also in the storage name, I know, but this way we can easily loop the keys later on.
 	allData[ 'credits' ] = psbCredits;
+	allData[ 'sectorId' ] = Sector.getIdFromLocation( userloc );
+	var sectorId = Sector.getIdFromLocation( userloc );
+	
+	if ( PSBclass === 'F' ) {
+		typeId = Building.getTypeId( 'Faction Starbase' );
+	} else if ( PSBclass === 'P' ) {
+		typeId = Building.getTypeId( 'Player Starbase' );
+	} else {
+		typeId = Building.getTypeId( PSBclass + ' Planet' );
+	}
+	var building = new Building( userloc, sectorId, typeId )
+	
+	building.setBuying( buying );
 
-	return allData 
+	return building
 }
 
 function popEst( bal , classImg ) {

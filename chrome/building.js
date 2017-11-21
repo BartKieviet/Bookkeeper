@@ -134,7 +134,9 @@ Building.CATALOGUE = [
 	{ n: 'Space Farm', s: 'SF', i: 'space_farm',
 	  bu: {2:4,4:5}, bp: {1:8,3:2,21:1} },
 	{ n: 'Stim Chip Mill', s: 'SCM', i: 'stim_chip_mill',
-	  bu: {1:3,3:3,7:2,17:2,28:44}, bp: {29:2} }
+	  bu: {1:3,3:3,7:2,17:2,28:44}, bp: {29:2} },
+	{ n: 'Faction Starbase', s: 'f', i: 'starbase_f',
+	  bu: {1:2.5, 3:1.75}, bp: {2:4} }
 ];
 
 // Convenience for the current time in seconds, so K's heart doesn't break that
