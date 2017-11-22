@@ -135,8 +135,22 @@ Building.CATALOGUE = [
 	  bu: {2:4,4:5}, bp: {1:8,3:2,21:1} },
 	{ n: 'Stim Chip Mill', s: 'SCM', i: 'stim_chip_mill',
 	  bu: {1:3,3:3,7:2,17:2,28:44}, bp: {29:2} },
-	{ n: 'Faction Starbase', s: 'f', i: 'starbase_f',
-	  bu: {1:2.5, 3:1.75}, bp: {2:4} }
+	{ n: 'Faction Starbase', s: 'F', i: 'starbase_f',
+	  bu: {1:2.5, 3:1.75}, bp: {2:4, 4:1.25} },
+	{ n: 'Player Starbase', s: 'P', i: 'starbase_p',
+	  bu: {1:3, 3:2}, bp: {2:5.25,4:1} },
+	{ n: 'Class M Planet', s: 'M', i: 'planet_m',
+	  bu: {2:7.5}, bp: {1:3.5, 3:4} },
+	{ n: 'Class A Planet', s: 'A', i: 'planet_a',
+	  bu: {2:12.5}, bp: {1:10, 3:10} },
+	{ n: 'Class D Planet', s: 'D', i: 'planet_d',
+	  bu: {3:2.5,14:0.5}, bp: {50:0.15} },
+	{ n: 'Class I Planet', s: 'I', i: 'planet_i',
+	  bu: {2:7.5}, bp: {1:8, 4:0.1} },
+	{ n: 'Class G Planet', s: 'G', i: 'planet_g',
+	  bu: {1:1.5, 2:7.5}, bp: {4:0.75, 12:5, 13:0.5} },
+	{ n: 'Class R Planet', s: 'R', i: 'planet_r',
+	  bu: {1:2.5,2:4,3:2}, bp: {4:1,5:1.5,6:0.5,19:0.1} }
 ];
 
 // Convenience for the current time in seconds, so K's heart doesn't break that

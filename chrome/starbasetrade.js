@@ -250,7 +250,7 @@ function trackToggle( userloc, data ) {
 }
 
 function parsePSBPage() {
-	var allData = {}, i, commRow, amount = {}, bal = {}, min = {}, max = {}, price = {}, buying = [];
+	var allData = {}, i, commRow, amount = {}, bal = {}, min = {}, max = {}, price = {}, buying = [], selling = [];
 	
 	for ( i = 1;  i < 33 ; i++ ) {
 		commRow = document.getElementById( 'baserow' + i );
@@ -260,13 +260,16 @@ function parsePSBPage() {
 		} else {
 			commRow = commRow.getElementsByTagName( 'td' );
 		}
-		amount [ i ] = commRow[ 2 ].textContent;
-		bal [ i ] = commRow[ 3 ].textContent;
-		commRow.length === 8 ? min [ i ] = commRow[ 4 ].textContent : min[ i ] = Math.abs( bal[ i ] ); 
-		max [ i ] = commRow[ commRow.length - 3 ].textContent;
-		price[ i ] = commRow[ commRow.length - 2 ].textContent;
+		amount [ i ] = parseInt( commRow[ 2 ].textContent.replace(/,/g,"") );
+		bal [ i ] = parseInt( commRow[ 3 ].textContent.replace(/,/g,"") );
+		commRow.length === 8 ? min [ i ] = parseInt( commRow[ 4 ].textContent.replace(/,/g,"") ) : min[ i ] = Math.abs( bal[ i ] ); 
+		max [ i ] = parseInt( commRow[ commRow.length - 3 ].textContent.replace(/,/g,"") );
+		price[ i ] = parseInt( commRow[ commRow.length - 2 ].textContent.replace(/,/g,"") );
+		
 		buying[ i ] = max[ i ] - amount[ i ];
+		selling[ i ] = amount[ i ] - min [ i ] ;
 	} //I just realised we can get the above from the script section of the page too. Ah well.
+
 	allData[ 'amount' ] = amount; 
 	allData[ 'bal' ] = bal;
 	allData[ 'min' ] = min;
@@ -286,12 +289,14 @@ function parsePSBPage() {
 	} else if ( PSBclass === 'P' ) {
 		typeId = Building.getTypeId( 'Player Starbase' );
 	} else {
-		typeId = Building.getTypeId( PSBclass + ' Planet' );
+		typeId = Building.getTypeId( PSBclass + ' Class Planet' );
 	}
-	var building = new Building( userloc, sectorId, typeId )
-	
-	building.setBuying( buying );
 
+	var building = new Building( userloc, sectorId, typeId )
+
+	building.setBuying( buying );
+	building.setSelling( selling );
+	
 	return building
 }
 
