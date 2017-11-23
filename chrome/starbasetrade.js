@@ -250,7 +250,7 @@ function trackToggle( userloc, data ) {
 }
 
 function parsePSBPage() {
-	var i, commRow, amount = {}, bal = {}, min = {}, max = {}, price = [], buying = [], selling = [];
+	var i, commRow, shiprow, amount = {}, bal = {}, min = [], max = [], price = [], buying = [], selling = [], sellAtPrice = [];
 	
 	var PSBclass = document.getElementsByTagName( 'h1' )[0].firstElementChild.src.split(/_/i)[1][0].toUpperCase();
 	var sectorId = Sector.getIdFromLocation( userloc );
@@ -264,7 +264,7 @@ function parsePSBPage() {
 	}
 
 	var building = new Building( userloc, sectorId, typeId );
-	building.setTicksLeft( Infinity ); //will be updated below.
+	building.setTicksLeft( 5000 ); //will be updated below.
 
 	for ( i = 1;  i < 33 ; i++ ) {
 		commRow = document.getElementById( 'baserow' + i );
@@ -289,42 +289,47 @@ function parsePSBPage() {
 			}
 		}
 		
+		shipRow = document.getElementById( 'shiprow' + i );
+		if (!shipRow) {
+			//i's not availabe? let's scram
+			continue; 
+		} else {
+			sellAtPrice[ i ] = parseInt( shipRow.getElementsByTagName( 'td' )[ 3 ].textContent.replace(/,/g,"") );
+		}
+		
 	} //I just realised we can get the above from the script section of the page too. Ah well.
+	
+	//Just in case the ticks are not processed correctly.
+	building.getTicksLeft() === 5000 ? building.setTicksLeft( undefined ) : null;
 
-	// allData[ 'amount' ] = amount; 
-	// allData[ 'bal' ] = bal;
-	// allData[ 'min' ] = min;
-	// allData[ 'max' ] = max;
-	// allData[ 'price' ] = price;
-	// allData[ 'class' ] = document.getElementsByTagName( 'h1' )[0].firstElementChild.src.split(/_/i)[1][0];
-	// allData[ 'pop' ] = popEst ( bal, allData[ 'class'] );
-	// allData[ 'time' ] = time;
-	// allData[ 'loc' ] = userloc; //It's also in the storage name, I know, but this way we can easily loop the keys later on.
-	// allData[ 'credits' ] = psbCredits;
-	// allData[ 'sectorId' ] = Sector.getIdFromLocation( userloc );
-
+	building.setMinimum( min );
+	building.setMaximum( max );
 	building.setBuying( buying );
 	building.setSelling( selling );
-	// need proper functions for the stuff below
+	building.setLevel( popEst( bal, building.getTypeShortName() )[0] );
+	
+	// XXX need proper functions for the stuff below
 	building.buyAtPrices = price;
+	building.sellAtPrices = sellAtPrice;
 	building.credits = parseInt( psbCredits );
 	building.psb = true;
-	
+
+	console.log(building);
 	return building
 }
 
-function popEst( bal , classImg ) {
+function popEst( bal, classImg ) {
 	var balComm = [], base;
 	
 	// Determine class & thus upkeep commodity type and upkeep. I take upkeep 
 	// because production can be zero.
-	classImg.indexOf( 'p' ) !== -1 ? balComm = [1,-3] : null;
-	classImg.indexOf( 'f' ) !== -1 ? balComm = [1,-2.5] : null;
-	classImg.indexOf( 'm' ) !== -1 ? balComm = [2,-7.5] : null;
-	classImg.indexOf( 'a' ) !== -1 ? balComm = [2,-12.5] : null;
-	classImg.indexOf( 'd' ) !== -1 ? balComm = [3,-2.5] : null;
-	classImg.indexOf( 'i' ) !== -1 ? balComm = [2,-7.5] : null;
-	classImg.indexOf( 'g' ) !== -1 ? balComm = [2,-2.5] : null;
-	classImg.indexOf( 'r' ) !== -1 ? balComm = [2,-4] : null;
+	classImg.indexOf( 'P' ) !== -1 ? balComm = [1,-3] : null;
+	classImg.indexOf( 'F' ) !== -1 ? balComm = [1,-2.5] : null;
+	classImg.indexOf( 'M' ) !== -1 ? balComm = [2,-7.5] : null;
+	classImg.indexOf( 'A' ) !== -1 ? balComm = [2,-12.5] : null;
+	classImg.indexOf( 'D' ) !== -1 ? balComm = [3,-2.5] : null;
+	classImg.indexOf( 'I' ) !== -1 ? balComm = [2,-7.5] : null;
+	classImg.indexOf( 'G' ) !== -1 ? balComm = [2,-2.5] : null;
+	classImg.indexOf( 'R' ) !== -1 ? balComm = [2,-4] : null;
 	return [Math.round( 1000 * bal [ balComm[0] ] / balComm[1] ), Math.ceil( -500 / balComm[1] ) ]
 }
