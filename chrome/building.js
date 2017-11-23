@@ -37,7 +37,7 @@ var NAME_IDS, ICON_IDS;
 // or defer to getNormalUpkeep and getNormalProduction if not.
 
 function Building( loc, sectorId, typeId, time, owner, level, ticksLeft,
-		   selling, buying, minimum, maximum, upkeep, production )
+		   selling, buying, minimum, maximum, upkeep, production, buyAtPrices, sellAtPrices, credits, psb )
 {
 	this.loc = intPropVal( loc );
 	this.sectorId = intPropVal( sectorId );
@@ -52,6 +52,10 @@ function Building( loc, sectorId, typeId, time, owner, level, ticksLeft,
 	this.maximum = maximum || [];
 	this.upkeep = upkeep || [];
 	this.production = production || [];
+	this.buyAtPrices = buyAtPrices ? buyAtPrices : [];
+	this.sellAtPrices = sellAtPrices ? sellAtPrices : [];
+	this.credits = credits ? parseInt( credits ) : undefined;
+	this.psb = psb ? true : false;
 
 	// These three won't be used until they're needed.  But defining them
 	// already anyway so V8 can optimise.
@@ -318,7 +322,11 @@ Building.createFromStorage = function( key, a ) {
 		unpackArray( a[8] ), // minimum
 		unpackArray( a[9] ), // maximum
 		unpackArray( a[10] ), // upkeep
-		unpackArray( a[11] )  //production
+		unpackArray( a[11] ), // production
+		unpackArray( a[12] ), // buyAtPrices, 
+		unpackArray( a[13] ), // sellAtPrices, 
+		v(a[14]), //credits
+		v(a[15]) //psb
 	);
 
 	// Apparently, we get `null` for items where we set as `undefined` when
@@ -660,7 +668,11 @@ Building.prototype.toStorage = function() {
 		packArray( this.minimum ),
 		packArray( this.maximum ),
 		packArray( this.upkeep ),
-		packArray( this.production )
+		packArray( this.production ),
+		packArray( this.buyAtPrices ), 
+		packArray( this.sellAtPrices ), 
+		this.credits, 
+		this.psb
 	];
 
 	// Shave off the last undefined elements of this.  a.length should never

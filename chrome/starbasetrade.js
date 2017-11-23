@@ -250,12 +250,26 @@ function trackToggle( userloc, data ) {
 }
 
 function parsePSBPage() {
-	var allData = {}, i, commRow, amount = {}, bal = {}, min = {}, max = {}, price = {}, buying = [], selling = [];
+	var i, commRow, amount = {}, bal = {}, min = {}, max = {}, price = [], buying = [], selling = [];
 	
+	var PSBclass = document.getElementsByTagName( 'h1' )[0].firstElementChild.src.split(/_/i)[1][0].toUpperCase();
+	var sectorId = Sector.getIdFromLocation( userloc );
+	
+	if ( PSBclass === 'F' ) {
+		typeId = Building.getTypeId( 'Faction Starbase' );
+	} else if ( PSBclass === 'P' ) {
+		typeId = Building.getTypeId( 'Player Starbase' );
+	} else {
+		typeId = Building.getTypeId( PSBclass + ' Class Planet' );
+	}
+
+	var building = new Building( userloc, sectorId, typeId );
+	building.setTicksLeft( Infinity ); //will be updated below.
+
 	for ( i = 1;  i < 33 ; i++ ) {
 		commRow = document.getElementById( 'baserow' + i );
 		if (!commRow) {
-			buying[ i ] = 0;
+			buying[ i ] = 0; //XXX check if we need this
 			continue;
 		} else {
 			commRow = commRow.getElementsByTagName( 'td' );
@@ -267,35 +281,34 @@ function parsePSBPage() {
 		price[ i ] = parseInt( commRow[ commRow.length - 2 ].textContent.replace(/,/g,"") );
 		
 		buying[ i ] = max[ i ] - amount[ i ];
-		selling[ i ] = amount[ i ] - min [ i ] ;
+		selling[ i ] = amount[ i ] - min [ i ];
+		
+		if (Building.isUpkeep( typeId, i )) {
+			if (Math.floor( amount[ i ] / -bal [ i ] ) <  building.getTicksLeft() ) {
+				building.setTicksLeft( Math.floor( amount[ i ] / -bal [ i ] ) )
+			}
+		}
+		
 	} //I just realised we can get the above from the script section of the page too. Ah well.
 
-	allData[ 'amount' ] = amount; 
-	allData[ 'bal' ] = bal;
-	allData[ 'min' ] = min;
-	allData[ 'max' ] = max;
-	allData[ 'price' ] = price;
-	var PSBclass = document.getElementsByTagName( 'h1' )[0].firstElementChild.src.split(/_/i)[1][0].toUpperCase();
-	allData[ 'class' ] = document.getElementsByTagName( 'h1' )[0].firstElementChild.src.split(/_/i)[1][0];
-	allData[ 'pop' ] = popEst ( bal, allData[ 'class'] );
-	allData[ 'time' ] = time;
-	allData[ 'loc' ] = userloc; //It's also in the storage name, I know, but this way we can easily loop the keys later on.
-	allData[ 'credits' ] = psbCredits;
-	allData[ 'sectorId' ] = Sector.getIdFromLocation( userloc );
-	var sectorId = Sector.getIdFromLocation( userloc );
-	
-	if ( PSBclass === 'F' ) {
-		typeId = Building.getTypeId( 'Faction Starbase' );
-	} else if ( PSBclass === 'P' ) {
-		typeId = Building.getTypeId( 'Player Starbase' );
-	} else {
-		typeId = Building.getTypeId( PSBclass + ' Class Planet' );
-	}
-
-	var building = new Building( userloc, sectorId, typeId )
+	// allData[ 'amount' ] = amount; 
+	// allData[ 'bal' ] = bal;
+	// allData[ 'min' ] = min;
+	// allData[ 'max' ] = max;
+	// allData[ 'price' ] = price;
+	// allData[ 'class' ] = document.getElementsByTagName( 'h1' )[0].firstElementChild.src.split(/_/i)[1][0];
+	// allData[ 'pop' ] = popEst ( bal, allData[ 'class'] );
+	// allData[ 'time' ] = time;
+	// allData[ 'loc' ] = userloc; //It's also in the storage name, I know, but this way we can easily loop the keys later on.
+	// allData[ 'credits' ] = psbCredits;
+	// allData[ 'sectorId' ] = Sector.getIdFromLocation( userloc );
 
 	building.setBuying( buying );
 	building.setSelling( selling );
+	// need proper functions for the stuff below
+	building.buyAtPrices = price;
+	building.credits = parseInt( psbCredits );
+	building.psb = true;
 	
 	return building
 }
