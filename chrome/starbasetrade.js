@@ -178,7 +178,6 @@ function trackPSB() {
 }
 
 function setTrackBtn( userloc, data ) {
-	console.log( data );
 	var trackBtn = document.getElementById( 'bookkeeper-trackBtn' );
 	if  ( !trackBtn ) {	
 		var middleNode = document.getElementById('quickButtonsTbl');
@@ -260,7 +259,7 @@ function parsePSBPage() {
 	} else if ( PSBclass === 'P' ) {
 		typeId = Building.getTypeId( 'Player Starbase' );
 	} else {
-		typeId = Building.getTypeId( PSBclass + ' Class Planet' );
+		typeId = Building.getTypeId( 'Class ' + PSBclass + ' Planet' );
 	}
 
 	var building = new Building( userloc, sectorId, typeId );
@@ -306,7 +305,7 @@ function parsePSBPage() {
 	building.setMaximum( max );
 	building.setBuying( buying );
 	building.setSelling( selling );
-	building.setLevel( popEst( bal, building.getTypeShortName() )[0] );
+	building.setLevel( popEst( bal, Building.getTypeShortName( typeId ) )[0] );
 	
 	// XXX need proper functions for the stuff below
 	building.buyAtPrices = price;
@@ -314,13 +313,11 @@ function parsePSBPage() {
 	building.credits = parseInt( psbCredits );
 	building.psb = true;
 
-	console.log(building);
 	return building
 }
 
 function popEst( bal, classImg ) {
 	var balComm = [], base;
-	
 	// Determine class & thus upkeep commodity type and upkeep. I take upkeep 
 	// because production can be zero.
 	classImg.indexOf( 'P' ) !== -1 ? balComm = [1,-3] : null;

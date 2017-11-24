@@ -28,6 +28,8 @@ function setup() {
 	function onOwnBuildingsAdded( universeList ) {
 		overview = new Overview( universe.key, document );
 		overview.configure( universeList, onReady );
+		overviewsb = new Overview( universe.key, document, { psbFlag : true } );
+		overviewsb.configure( universeList, onReady );
 	}
 
 	function onReady() {
@@ -48,6 +50,8 @@ function setup() {
 
 		anchor.parentNode.insertBefore( h1, anchor );
 		anchor.parentNode.insertBefore( overview.container, anchor );
+		anchor.parentNode.insertBefore( document.createElement( 'br' ), anchor );
+		anchor.parentNode.insertBefore( overviewsb.container, anchor );
 	}
 }
 

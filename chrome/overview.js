@@ -35,8 +35,10 @@ var Overview = function( ukey, document, options ) {
 		sortAscKey: options.sortAscKey
 			|| ukey + storageKey + 'OverviewSortAsc',
 		projectionKey: options.projectionKey
-			|| ukey + storageKey + 'Projection'
+			|| ukey + storageKey + 'Projection',
+		psbFlag: options.psbFlag || false
 	};
+	console.log( this.options.psbFlag);
 
 	this.filter = new Filter();
 	this.container = document.createElement( 'div' );
@@ -169,8 +171,16 @@ function applyFilter( universeList, sort, callback ) {
 
 		buildings = [];
 		for ( key in data ) {
-			buildings.push(
-				Building.createFromStorage(key, data[key]) );
+			var temp = Building.createFromStorage(key, data[key]);
+				console.log( this.options.psbFlag);
+				console.log('buidling psb' + temp.psb);
+
+			if ( this.options.psbFlag && temp.psb ) {
+				buildings.push( temp ); 
+			} else if ( !this.options.psbFlag && !temp.psb ) {
+				buildings.push( temp );	
+			}
+			
 		}
 
 		buildings = this.filter.filter( buildings, Building.now() );
@@ -290,7 +300,7 @@ var COLUMN_SPECS = {
 	},
 
 	level: {
-		header: simpleHeader( 'Lvl' ),
+		header: simpleHeader('Lvl'), //this.options.psbFlag ? simpleHeader( 'population') : simpleHeader( 'Lvl' ),
 		cell: rCell( function( b ) { return b.level || '?' } ),
 		sortId: 'level',
 		sort: function( a, b ) { return a.level - b.level; },
@@ -313,6 +323,16 @@ var COLUMN_SPECS = {
 		sort: function( a, b ) { return a.time - b.time; },
 		initDesc: true
 	},
+	
+	credits: {
+		header: function( th ) {
+			th.textContent = '€'; //insert icon later
+			th.classList.add( 'r', 'credits');
+		},
+		cell: rCell( function ( b ) { return b.credits } ),
+		sortId: 'credits',
+		sort: function( a, b ) { return a.credits - b.credits; }
+	},
 
 	ticksLeft: {
 		header: simpleHeader( 'Ticks' ),
@@ -328,6 +348,26 @@ var COLUMN_SPECS = {
 		sortId: 'tick',
 		sort: function( a, b ) {
 			return a.getTicksLeft() - b.getTicksLeft();
+		}
+	},
+	
+	ticksToDowngrade: {
+		header: simpleHeader( 'DG in' ),
+		cell: function( b, td ) {
+			if ( b.getTypeShortName() === 'P' ) {
+				var n = 0;
+				if (b.level >= 30000) {
+					n = Math.ceil( Math.log( 30000 / ( b.level * 1.012^( b.getTicksLeft() ) ) ) / Math.log( 15 / 16 ))
+				} else if (b.level >= 15000) {
+					n = Math.ceil( Math.log( 15000 / ( b.level * 1.012^( b.getTicksLeft() ) ) ) / Math.log( 15 / 16 ))
+				} else if ( b.level >= 5000 ) {
+					n = Math.ceil( Math.log( 5000 / ( b.level * 1.012^( b.getTicksLeft() ) ) ) / Math.log( 15 / 16 ))
+				} else {
+					n = Math.ceil( Math.log( 500 / ( b.level * 1.012^( b.getTicksLeft() ) ) ) / Math.log( 15 / 16 ))
+				}
+				td.textContent = n + b.getTicksLeft();
+				td.className = 'r';
+			}
 		}
 	},
 
@@ -392,11 +432,18 @@ function makeSpec( buildings ) {
 
 	// Always show ticks
 	after.push( COLUMN_SPECS.ticksLeft );
+	console.log( this.options.psbFlag);
 
+	// PSB option
+	if ( this.options.psbFlag ) {
+		after.push( COLUMN_SPECS.ticksToDowngrade );
+		after.push( COLUMN_SPECS.credits );
+	}
+	
 	// In full mode, show the "remove" button
 	if ( this.options.mode !== 'compact' )
 		after.push( COLUMN_SPECS.remove );
-
+	
 	// Add properties to the table for use in its spec functions
 	this.sorTable.ukey = this.options.ukey;
 	this.sorTable.totals = [];
