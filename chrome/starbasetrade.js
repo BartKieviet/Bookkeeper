@@ -212,9 +212,8 @@ function trackToggle( userloc, data ) {
 		} else {
 			data[ Universe.key ].push( userloc );
 		}
-		data[ Universe.key + userloc ] = parsePSBPage();
+		data[ Universe.key + userloc ] = parsePSBPage().toStorage();
 		chrome.storage.sync.set( data );
-		
 	} else {
 		this.textContent = 'Track';
 		PSBremoveStorage( userloc );

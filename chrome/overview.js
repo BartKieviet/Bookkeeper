@@ -38,7 +38,6 @@ var Overview = function( ukey, document, options ) {
 			|| ukey + storageKey + 'Projection',
 		psbFlag: options.psbFlag || false
 	};
-	console.log( this.options.psbFlag);
 
 	this.filter = new Filter();
 	this.container = document.createElement( 'div' );
@@ -172,8 +171,6 @@ function applyFilter( universeList, sort, callback ) {
 		buildings = [];
 		for ( key in data ) {
 			var temp = Building.createFromStorage(key, data[key]);
-				console.log( this.options.psbFlag);
-				console.log('buidling psb' + temp.psb);
 
 			if ( this.options.psbFlag && temp.psb ) {
 				buildings.push( temp ); 
@@ -326,10 +323,10 @@ var COLUMN_SPECS = {
 	
 	credits: {
 		header: function( th ) {
-			th.textContent = '€'; //insert icon later
+			th.textContent = 'Credits'; //insert icon later
 			th.classList.add( 'r', 'credits');
 		},
-		cell: rCell( function ( b ) { return b.credits } ),
+		cell: rCell( function ( b ) { return b.credits.toLocaleString('en') } ),
 		sortId: 'credits',
 		sort: function( a, b ) { return a.credits - b.credits; }
 	},
@@ -432,7 +429,6 @@ function makeSpec( buildings ) {
 
 	// Always show ticks
 	after.push( COLUMN_SPECS.ticksLeft );
-	console.log( this.options.psbFlag);
 
 	// PSB option
 	if ( this.options.psbFlag ) {
