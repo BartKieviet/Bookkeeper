@@ -27,7 +27,7 @@ function setup() {
 
 	function onOwnBuildingsAdded( universeList ) {
 		overview = new Overview( universe.key, document );
-		overview.configure( universeList, onReady );
+		overview.configure( universeList );
 		overviewsb = new Overview( universe.key, document, { psbFlag : true } );
 		overviewsb.configure( universeList, onReady );
 	}
@@ -50,8 +50,18 @@ function setup() {
 
 		anchor.parentNode.insertBefore( h1, anchor );
 		anchor.parentNode.insertBefore( overview.container, anchor );
-		anchor.parentNode.insertBefore( document.createElement( 'br' ), anchor );
-		anchor.parentNode.insertBefore( overviewsb.container, anchor );
+
+		if ( overviewsb.sorTable.items.length > 0) {
+			h1 = document.createElement( 'h1' );
+			h1.className = 'bookkeeper';
+			img = document.createElement( 'img' );
+			img.src = chrome.extension.getURL( 'icons/24.png' );
+			img.title = 'Pardus Bookkeeper';
+			h1.appendChild( img );
+			h1.appendChild( document.createTextNode('Planets and starbases') );
+			anchor.parentNode.insertBefore( h1, anchor );
+			anchor.parentNode.insertBefore( overviewsb.container, anchor );
+		}
 	}
 }
 
