@@ -438,6 +438,14 @@ Building.prototype.isProduction = function( commodityId ) {
 	return Building.isProduction( this.typeId, commodityId );
 }
 
+Building.prototype.getBuyAtPrices = function() {
+	return this.buyAtPrices;
+}
+
+Building.prototype.getSellAtPrices = function() {
+	return this.sellAtPrices;
+}	
+
 // Return the number of ticks for which this building still has upkeep.  If a
 // projection is active, this will return the projected value.
 

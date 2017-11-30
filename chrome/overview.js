@@ -36,7 +36,10 @@ var Overview = function( ukey, document, options ) {
 			|| ukey + storageKey + 'OverviewSortAsc',
 		projectionKey: options.projectionKey
 			|| ukey + storageKey + 'Projection',
-		psbFlag: options.psbFlag || false
+		psbFlag: options.psbFlag || false,
+		amountFlag: options.amountFlag || false,
+		buyPriceFlag: options.buyPriceFlag || false,
+		sellPriceFlag: options.sellPriceFlag || false,
 	};
 
 	this.filter = new Filter();
@@ -448,7 +451,7 @@ function makeSpec( buildings ) {
 	this.sorTable.commodities = getCommoditiesInUse( buildings );
 
 	Array.prototype.push.apply( spec.columns, before );
-	this.sorTable.commodities.forEach( pushCommSpec );
+	this.sorTable.commodities.forEach( pushCommSpec.bind( this ) );
 	Array.prototype.push.apply( spec.columns, after );
 
 	return spec;
@@ -456,7 +459,7 @@ function makeSpec( buildings ) {
 	function pushCommSpec( commId ) {
 		spec.columns.push( {
 			header: makeCommHeaderFn( commId ),
-			cell: makeCommCellFn( commId ),
+			cell: makeCommCellFn( commId, this.options ),
 			sortId: commId,
 			sort: makeCommSortFn( commId ),
 			initDesc: true
@@ -483,9 +486,9 @@ function makeCommHeaderFn( commId ) {
 	}
 }
 
-function makeCommCellFn( commId ) {
+function makeCommCellFn( commId , options ) {
 	return function( building, td ) {
-		var n = overviewFigure( building, commId );
+		var n = overviewFigure( building, commId, options );
 		if ( n !== undefined ) {
 			setCommodityTD( td, commId, n );
 			if ( Number.isFinite(n) )
@@ -588,6 +591,10 @@ function onClearClick() {
 
 function onProjClick() {
 	this.projection = !this.projection;
+	// this.projection = false; 
+	// this.amountFlag = true;
+	// this.sellPriceFlag = false;
+	// this.buyPriceFlag = false;
 	setFilter.call( this );
 }
 
@@ -644,7 +651,7 @@ function foot() {
 }
 
 function setCommodityTD( td, commId, n ) {
-	td.textContent = Number.isFinite(n) ? n : '?';
+	td.textContent = Number.isFinite(n) ? n.toLocaleString('en') : '?';
 	td.title = Commodities.getCommodity( commId ).n;
 	td.className = 'c';
 	if ( n > 0 )
@@ -659,9 +666,24 @@ function setCommodityTD( td, commId, n ) {
 // values that cannot be projected; +Infinity for production values.  This so
 // sorting is somewhat more meaningful, at least not completely broken by NaN.
 
-function overviewFigure( building, commId ) {
+function overviewFigure( building, commId, options ) {
 	var n;
-
+	if ( options.psbFlag ) {
+		// PSB / Planet modes
+		if ( options.amountFlag ) {
+			n = building.getSelling()[ commId ] + building.minimum[ commId ]
+		}
+		if ( options.sellPriceFlag ) {
+			n = building.getSellAtPrices()[ commId ];
+		}
+		if ( options.buyPriceFlag ) {
+			n = building.getBuyAtPrices()[ commId ];
+		}
+		if ( n ) { 
+			return n; 
+		}
+		
+	}
 	if ( building.isUpkeep( commId ) &&
 	     (n = building.getBuying()[commId]) !== undefined )
 		return isNaN(n) ? -Infinity : -n;
