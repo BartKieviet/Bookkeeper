@@ -267,7 +267,6 @@ function parsePSBPage() {
 	for ( i = 1;  i < 33 ; i++ ) {
 		commRow = document.getElementById( 'baserow' + i );
 		if (!commRow) {
-			buying[ i ] = 0; //XXX check if we need this
 			continue;
 		} else {
 			commRow = commRow.getElementsByTagName( 'td' );

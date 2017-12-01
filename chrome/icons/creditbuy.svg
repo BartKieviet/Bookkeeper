@@ -23,7 +23,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -43,7 +43,7 @@
      id="namedview8"
      showgrid="false"
      inkscape:zoom="9.8333333"
-     inkscape:cx="-35.694916"
+     inkscape:cx="-59.542374"
      inkscape:cy="12"
      inkscape:window-x="-11"
      inkscape:window-y="-11"
@@ -55,7 +55,7 @@
      id="path2" />
   <text
      xml:space="preserve"
-     style="font-style:normal;font-weight:normal;font-size:22.05708122px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#ffeed1;fill-opacity:1;stroke:none;stroke-width:1.37856758;"
+     style="font-style:normal;font-weight:normal;font-size:22.05708122px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#ff00d1;fill-opacity:1;stroke:none;stroke-width:1.37856758;"
      x="4.9833064"
      y="18.758213"
      id="text4491"><tspan
@@ -63,5 +63,5 @@
        id="tspan4489"
        x="4.9833064"
        y="18.758213"
-       style="stroke-width:1.37856758;fill:#ffeed1;fill-opacity:1;">$</tspan></text>
+       style="stroke-width:1.37856758;fill:#ff00d1;fill-opacity:1;">$</tspan></text>
 </svg>
