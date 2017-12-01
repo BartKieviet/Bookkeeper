@@ -98,6 +98,12 @@
 		"icons/amountoffdim.svg",
 		"icons/amounton.svg",
 		"icons/amountondim.svg",
+		"icons/creditoff.svg",
+		"icons/creditoffdim.svg",
+		"icons/creditsell.svg",
+		"icons/creditselldim.svg",
+		"icons/creditbuy.svg",
+		"icons/creditbuydim.svg",
 		"icons/remove.svg",
 		"icons/removedim.svg",
 		"html/bbox.html"

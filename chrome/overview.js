@@ -55,14 +55,19 @@ var Overview = function( ukey, document, options ) {
 	this.clearIcon = makeIcon.call(
 		this, 'clear', 'Clear filter', onClearClick );
 	div.appendChild( this.clearIcon );
-	this.projectionIcon = makeIcon.call(
-		this, 'projoff', 'Toggle projection mode', onProjClick );
-	div.appendChild( this.projectionIcon );
-	
-	if ( this.options.psbFlag ) {
+
+	if ( !this.options.psbFlag ) {
+		this.projectionIcon = makeIcon.call(
+			this, 'projoff', 'Toggle projection mode', onProjClick );
+		div.appendChild( this.projectionIcon );
+	} else {
 		this.amountIcon = makeIcon.call(
 			this, 'amountoff', 'Toggle amounts', onAmountClick );
 		div.appendChild( this.amountIcon );
+		this.creditIcon = makeIcon.call(
+			this, 'creditoff', 'Toggle buy/sell prices', onCreditClick );
+		div.appendChild( this.creditIcon );
+		
 	}
 	
 	this.container.appendChild( div );
@@ -195,19 +200,28 @@ function applyFilter( universeList, sort, callback ) {
 			this.filter.makeHumanDescription();
 		this.sorTable.coords = this.filter.coords;
 
-		if ( this.projection ) {
-			this.projectionIcon.dataset.cmd = 'projon';
-			now = Building.now();
-			buildings.forEach( function(b) { b.project(now); } );
-		}
-		else
-			this.projectionIcon.dataset.cmd = 'projoff';
-
-		if (this.options.psbFlag) {
+		if ( !this.options.psbFlag ) {
+			if ( this.projection ) {
+				this.projectionIcon.dataset.cmd = 'projon';
+				now = Building.now();
+				buildings.forEach( function(b) { b.project(now); } );
+			}
+			else
+				this.projectionIcon.dataset.cmd = 'projoff';
+			setImgSrc( this.projectionIcon );
+		} else {		
 			this.options.amountFlag ? this.amountIcon.dataset.cmd = 'amounton' : this.amountIcon.dataset.cmd = 'amountoff'; 
+			if ( this.options.sellPriceFlag ) {
+				this.creditIcon.dataset.cmd = 'creditsell';
+			} else if ( this.options.buyPriceFlag ) {
+				this.creditIcon.dataset.cmd = 'creditbuy';
+			} else {
+				this.creditIcon.dataset.cmd = 'creditoff';
+			}
+			setImgSrc( this.amountIcon );
+			setImgSrc( this.creditIcon );
 		}
 		
-		setImgSrc( this.projectionIcon );
 
 		spec = makeSpec.call( this, buildings );
 		this.sorTable.refresh( spec, buildings );
@@ -419,7 +433,8 @@ function rCell( fn ) {
 function makeSpec( buildings ) {
 	var spec, before, after;
 
-	spec = { columns: [], foot: foot };
+	spec = { columns: [] };
+	this.options.psbFlag ? null : spec [ 'foot' ] = foot ;
 	before = [];
 	after = [];
 
@@ -610,16 +625,21 @@ function onProjClick() {
 
 function onAmountClick() {
 	this.options.amountFlag = !this.options.amountFlag;
+	this.options.sellPriceFlag = false;
+	this.options.buyPriceFlag = false;
 	setFilter.call( this );
 }
 
-function onMoneyClick() {
-	if (this.buyPriceFlag || this.sellPriceFlag ) {
-		this.sellPriceFlag = !this.sellPriceFlag;
-		this.buyPriceFlag = !this.buyPriceFlag;
+function onCreditClick() {
+	if (this.options.sellPriceFlag ) {
+		this.options.buyPriceFlag = true;
+		this.options.sellPriceFlag = false;
+	} else if ( this.options.buyPriceFlag ) {
+		this.options.buyPriceFlag = false;
 	} else {
-		this.sellPriceFlag = !this.sellPriceFlag;
+		this.options.sellPriceFlag = !this.options.sellPriceFlag;
 	}
+	this.options.amountFlag = false;
 	setFilter.call( this );
 }
 
