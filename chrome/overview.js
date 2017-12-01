@@ -58,6 +58,13 @@ var Overview = function( ukey, document, options ) {
 	this.projectionIcon = makeIcon.call(
 		this, 'projoff', 'Toggle projection mode', onProjClick );
 	div.appendChild( this.projectionIcon );
+	
+	if ( this.options.psbFlag ) {
+		this.amountIcon = makeIcon.call(
+			this, 'amountoff', 'Toggle amounts', onAmountClick );
+		div.appendChild( this.amountIcon );
+	}
+	
 	this.container.appendChild( div );
 
 	this.filterInfo = document.createElement( 'p' );
@@ -196,6 +203,10 @@ function applyFilter( universeList, sort, callback ) {
 		else
 			this.projectionIcon.dataset.cmd = 'projoff';
 
+		if (this.options.psbFlag) {
+			this.options.amountFlag ? this.amountIcon.dataset.cmd = 'amounton' : this.amountIcon.dataset.cmd = 'amountoff'; 
+		}
+		
 		setImgSrc( this.projectionIcon );
 
 		spec = makeSpec.call( this, buildings );
@@ -241,7 +252,10 @@ function setFilter() {
 
 	storageItems = {
 		[ this.options.filterKey ]: query,
-		[ this.options.projectionKey ]: this.projection
+		[ this.options.projectionKey ]: this.projection,
+		[ this.options.amountFlag ]: this.options.amountFlag,
+		[ this.options.buyPriceFlag ]: this.options.buyPriceFlag,
+		[ this.options.sellPriceFlag ]: this.options.sellPriceFlag
 	};
 	chrome.storage.local.set( storageItems );
 
@@ -301,7 +315,7 @@ var COLUMN_SPECS = {
 
 	level: {
 		header: simpleHeader('Lvl'), //this.options.psbFlag ? simpleHeader( 'population') : simpleHeader( 'Lvl' ),
-		cell: rCell( function( b ) { return b.level || '?' } ),
+		cell: rCell( function( b ) { return b.level.toLocaleString('en') || '?' } ),
 		sortId: 'level',
 		sort: function( a, b ) { return a.level - b.level; },
 		initDesc: true
@@ -591,12 +605,24 @@ function onClearClick() {
 
 function onProjClick() {
 	this.projection = !this.projection;
-	// this.projection = false; 
-	// this.amountFlag = true;
-	// this.sellPriceFlag = false;
-	// this.buyPriceFlag = false;
 	setFilter.call( this );
 }
+
+function onAmountClick() {
+	this.options.amountFlag = !this.options.amountFlag;
+	setFilter.call( this );
+}
+
+function onMoneyClick() {
+	if (this.buyPriceFlag || this.sellPriceFlag ) {
+		this.sellPriceFlag = !this.sellPriceFlag;
+		this.buyPriceFlag = !this.buyPriceFlag;
+	} else {
+		this.sellPriceFlag = !this.sellPriceFlag;
+	}
+	setFilter.call( this );
+}
+
 
 function onCmdMouseOver( event ) { setImgSrc( event.target, false ); }
 function onCmdMouseOut( event ) { setImgSrc( event.target, true ); }
