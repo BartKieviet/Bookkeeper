@@ -248,7 +248,7 @@ function trackToggle( userloc, data ) {
 }
 
 function parsePSBPage() {
-	var i, commRow, shiprow, amount = {}, bal = {}, min = [], max = [], price = [], buying = [], selling = [], sellAtPrice = [];
+	var i, commRow, shiprow, amount = [], bal = {}, min = [], max = [], price = [], buying = [], selling = [], sellAtPrice = [];
 	
 	var PSBclass = document.getElementsByTagName( 'h1' )[0].firstElementChild.src.split(/_/i)[1][0].toUpperCase();
 	var sectorId = Sector.getIdFromLocation( userloc );
@@ -277,8 +277,8 @@ function parsePSBPage() {
 		max [ i ] = parseInt( commRow[ commRow.length - 3 ].textContent.replace(/,/g,"") );
 		price[ i ] = parseInt( commRow[ commRow.length - 2 ].textContent.replace(/,/g,"") );
 		
-		buying[ i ] = max[ i ] - amount[ i ];
-		selling[ i ] = amount[ i ] - min [ i ];
+		buying[ i ] = max[ i ] - amount[ i ] < 0 ? 0 : max[ i ] - amount[ i ];
+		selling[ i ] = amount[ i ] - min [ i ] < 0 ? 0 : amount[ i ] - min [ i ];
 		
 		if (Building.isUpkeep( typeId, i )) {
 			if (Math.floor( amount[ i ] / -bal [ i ] ) <  building.getTicksLeft() ) {
@@ -298,7 +298,8 @@ function parsePSBPage() {
 	
 	//Just in case the ticks are not processed correctly.
 	building.getTicksLeft() === 5000 ? building.setTicksLeft( undefined ) : null;
-
+	console.log( amount );
+	
 	building.setMinimum( min );
 	building.setMaximum( max );
 	building.setBuying( buying );
@@ -310,6 +311,7 @@ function parsePSBPage() {
 	building.sellAtPrices = sellAtPrice;
 	building.credits = parseInt( psbCredits );
 	building.psb = true;
+	building.amount = amount;
 
 	return building
 }

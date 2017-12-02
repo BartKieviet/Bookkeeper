@@ -717,7 +717,7 @@ function overviewFigure( building, commId, options ) {
 	if ( options.psbFlag ) {
 		// PSB / Planet modes
 		if ( options.amountFlag ) {
-			n = building.getSelling()[ commId ] + building.minimum[ commId ]
+			n = building.getAmount()[ commId ];
 		}
 		if ( options.sellPriceFlag ) {
 			n = building.getSellAtPrices()[ commId ];
@@ -730,6 +730,7 @@ function overviewFigure( building, commId, options ) {
 		}
 		
 	}
+
 	if ( building.isUpkeep( commId ) &&
 	     (n = building.getBuying()[commId]) !== undefined )
 		return isNaN(n) ? -Infinity : -n;
@@ -738,7 +739,7 @@ function overviewFigure( building, commId, options ) {
 		return isNaN(n) ? Infinity : n;
 
 	return undefined;
-}
+a}
 
 // Return an array of ids of commodities that are consumed or produced by at
 // least one building in the collection given.

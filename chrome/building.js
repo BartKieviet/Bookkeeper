@@ -37,7 +37,7 @@ var NAME_IDS, ICON_IDS;
 // or defer to getNormalUpkeep and getNormalProduction if not.
 
 function Building( loc, sectorId, typeId, time, owner, level, ticksLeft,
-		   selling, buying, minimum, maximum, upkeep, production, buyAtPrices, sellAtPrices, credits, psb )
+		   selling, buying, minimum, maximum, upkeep, production, buyAtPrices, sellAtPrices, credits, psb, amount )
 {
 	this.loc = intPropVal( loc );
 	this.sectorId = intPropVal( sectorId );
@@ -56,6 +56,7 @@ function Building( loc, sectorId, typeId, time, owner, level, ticksLeft,
 	this.sellAtPrices = sellAtPrices ? sellAtPrices : [];
 	this.credits = credits ? parseInt( credits ) : undefined;
 	this.psb = psb ? true : false;
+	this.amount = amount || [];
 
 	// These three won't be used until they're needed.  But defining them
 	// already anyway so V8 can optimise.
@@ -326,7 +327,8 @@ Building.createFromStorage = function( key, a ) {
 		unpackArray( a[12] ), // buyAtPrices, 
 		unpackArray( a[13] ), // sellAtPrices, 
 		v(a[14]), //credits
-		v(a[15]) //psb
+		v(a[15]), //psb
+		unpackArray( a[16] ) // amount
 	);
 
 	// Apparently, we get `null` for items where we set as `undefined` when
@@ -444,7 +446,12 @@ Building.prototype.getBuyAtPrices = function() {
 
 Building.prototype.getSellAtPrices = function() {
 	return this.sellAtPrices;
-}	
+}
+
+Building.prototype.getAmount = function() {
+	return this.amount;
+}
+	
 
 // Return the number of ticks for which this building still has upkeep.  If a
 // projection is active, this will return the projected value.
@@ -680,7 +687,8 @@ Building.prototype.toStorage = function() {
 		packArray( this.buyAtPrices ), 
 		packArray( this.sellAtPrices ), 
 		this.credits, 
-		this.psb
+		this.psb,
+		packArray( this.amount )
 	];
 
 	// Shave off the last undefined elements of this.  a.length should never
