@@ -298,7 +298,6 @@ function parsePSBPage() {
 	
 	//Just in case the ticks are not processed correctly.
 	building.getTicksLeft() === 5000 ? building.setTicksLeft( undefined ) : null;
-	console.log( amount );
 	
 	building.setMinimum( min );
 	building.setMaximum( max );
