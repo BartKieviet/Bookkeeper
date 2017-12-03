@@ -637,12 +637,12 @@ function onProjClick() {
 function onAmountClick() {
 	if ( this.options.amountBuyFlag ) {
 		this.options.amountBuyFlag = false;
-		this.options.amountFlag = false;
+		this.options.amountFlag = true;
 	} else if ( this.options.amountFlag ) {
 		this.options.amountFlag = !this.options.amountFlag;
-		this.options.amountBuyFlag = true;
+		this.options.amountBuyFlag = false;
 	} else {
-		this.options.amountFlag = !this.options.amountFlag;
+		this.options.amountBuyFlag = !this.options.amountBuyFlag;
 	}
 	this.options.sellPriceFlag = false;
 	this.options.buyPriceFlag = false;
@@ -755,7 +755,7 @@ function overviewFigure( building, commId, options ) {
 	}
 
 	if ( building.isUpkeep( commId ) &&
-	     (n = building.getBuying()[commId]) !== undefined )
+		(n = building.getBuying()[commId]) !== undefined )
 		return isNaN(n) ? -Infinity : -n;
 
 	if ( (n = building.getSelling()[commId]) !== undefined )
