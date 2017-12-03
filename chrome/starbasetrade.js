@@ -141,7 +141,7 @@ function setup() {
 		middleNode.appendChild ( button ) ;
 
 		button.addEventListener('click', function() {
-			var shipCargo = parseInt( XPATH_FREESPACE.evaluate( document.body, XPathResult.UNORDERED_NODE_ITERATOR_TYPE, null ).iterateNext().textContent.split(/t/g)[0]);
+			var shipCargo = parseInt( XPATH_FREESPACE.evaluate( document.body, XPathResult.UNORDERED_NODE_ITERATOR_TYPE, null ).iterateNext().textContent.split(/[+t]/g)[0]);
 
 			if (document.getElementById('shiprow1').getElementsByTagName('a')[1] ) {
 				document.getElementById('shiprow1').getElementsByTagName('a')[1].click();

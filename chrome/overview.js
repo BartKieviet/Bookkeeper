@@ -38,6 +38,7 @@ var Overview = function( ukey, document, options ) {
 			|| ukey + storageKey + 'Projection',
 		psbFlag: options.psbFlag || false,
 		amountFlag: options.amountFlag || false,
+		amountBuyFlag: options.amountBuyFlag || false,
 		buyPriceFlag: options.buyPriceFlag || false,
 		sellPriceFlag: options.sellPriceFlag || false,
 	};
@@ -210,7 +211,14 @@ function applyFilter( universeList, sort, callback ) {
 				this.projectionIcon.dataset.cmd = 'projoff';
 			setImgSrc( this.projectionIcon );
 		} else {		
-			this.options.amountFlag ? this.amountIcon.dataset.cmd = 'amounton' : this.amountIcon.dataset.cmd = 'amountoff'; 
+			if ( this.options.amountFlag ) {
+				this.amountIcon.dataset.cmd = 'amounton';
+			} else if( this.options.amountBuyFlag ) {
+				this.amountIcon.dataset.cmd = 'amountbuying';
+			} else {
+				this.amountIcon.dataset.cmd = 'amountoff'; 
+			}
+			
 			if ( this.options.sellPriceFlag ) {
 				this.creditIcon.dataset.cmd = 'creditsell';
 			} else if ( this.options.buyPriceFlag ) {
@@ -450,7 +458,10 @@ function makeSpec( buildings ) {
 		before.push( makeDistanceSpec(this.filter) );
 
 	// Always show type and owner.
-	before.push( COLUMN_SPECS.type, COLUMN_SPECS.owner );
+	before.push( COLUMN_SPECS.type );
+	if ( !this.options.psbFlag ) {
+		before.push( COLUMN_SPECS.owner );
+	}
 
 	// In full mode, show the level, too.
 	if ( this.options.mode !== 'compact' )
@@ -624,7 +635,15 @@ function onProjClick() {
 }
 
 function onAmountClick() {
-	this.options.amountFlag = !this.options.amountFlag;
+	if ( this.options.amountBuyFlag ) {
+		this.options.amountBuyFlag = false;
+		this.options.amountFlag = false;
+	} else if ( this.options.amountFlag ) {
+		this.options.amountFlag = !this.options.amountFlag;
+		this.options.amountBuyFlag = true;
+	} else {
+		this.options.amountFlag = !this.options.amountFlag;
+	}
 	this.options.sellPriceFlag = false;
 	this.options.buyPriceFlag = false;
 	setFilter.call( this );
@@ -639,6 +658,7 @@ function onCreditClick() {
 	} else {
 		this.options.sellPriceFlag = !this.options.sellPriceFlag;
 	}
+	this.options.amountBuyFlag = false;
 	this.options.amountFlag = false;
 	setFilter.call( this );
 }
@@ -719,13 +739,16 @@ function overviewFigure( building, commId, options ) {
 		if ( options.amountFlag ) {
 			n = building.getAmount()[ commId ];
 		}
+		if ( options.amountBuyFlag ) {
+			n = building.getBuying()[ commId ];
+		}
 		if ( options.sellPriceFlag ) {
 			n = building.getSellAtPrices()[ commId ];
 		}
 		if ( options.buyPriceFlag ) {
 			n = building.getBuyAtPrices()[ commId ];
 		}
-		if ( n ) { 
+		if ( n!== undefined ) { 
 			return n; 
 		}
 		
@@ -737,7 +760,6 @@ function overviewFigure( building, commId, options ) {
 
 	if ( (n = building.getSelling()[commId]) !== undefined )
 		return isNaN(n) ? Infinity : n;
-
 	return undefined;
 a}
 
