@@ -450,6 +450,20 @@ Sector.getCoords = function( sectorId, location ) {
 	};
 }
 
+Sector.getIdFromLocation = function( location ) {
+	//Returns the sectorId from the location.
+	var min = Infinity, sectorId
+	CATALOGUE.forEach( findSector )
+	
+	function findSector( sector, ind ) {
+		if ( location - sector[ 'lb' ] < min && location - sector[ 'lb' ] >= 0 ) {
+			min = location - sector[ 'lb' ];
+			sectorId = ind;
+		}
+	}
+	return sectorId;
+}
+
 return Sector;
 
 })();

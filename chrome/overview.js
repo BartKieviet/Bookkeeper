@@ -35,7 +35,12 @@ var Overview = function( ukey, document, options ) {
 		sortAscKey: options.sortAscKey
 			|| ukey + storageKey + 'OverviewSortAsc',
 		projectionKey: options.projectionKey
-			|| ukey + storageKey + 'Projection'
+			|| ukey + storageKey + 'Projection',
+		psbFlag: options.psbFlag || false,
+		amountFlag: options.amountFlag || false,
+		amountBuyFlag: options.amountBuyFlag || false,
+		buyPriceFlag: options.buyPriceFlag || false,
+		sellPriceFlag: options.sellPriceFlag || false,
 	};
 
 	this.filter = new Filter();
@@ -51,9 +56,21 @@ var Overview = function( ukey, document, options ) {
 	this.clearIcon = makeIcon.call(
 		this, 'clear', 'Clear filter', onClearClick );
 	div.appendChild( this.clearIcon );
-	this.projectionIcon = makeIcon.call(
-		this, 'projoff', 'Toggle projection mode', onProjClick );
-	div.appendChild( this.projectionIcon );
+
+	if ( !this.options.psbFlag ) {
+		this.projectionIcon = makeIcon.call(
+			this, 'projoff', 'Toggle projection mode', onProjClick );
+		div.appendChild( this.projectionIcon );
+	} else {
+		this.amountIcon = makeIcon.call(
+			this, 'amountoff', 'Toggle amounts', onAmountClick );
+		div.appendChild( this.amountIcon );
+		this.creditIcon = makeIcon.call(
+			this, 'creditoff', 'Toggle buy/sell prices', onCreditClick );
+		div.appendChild( this.creditIcon );
+		
+	}
+	
 	this.container.appendChild( div );
 
 	this.filterInfo = document.createElement( 'p' );
@@ -169,8 +186,14 @@ function applyFilter( universeList, sort, callback ) {
 
 		buildings = [];
 		for ( key in data ) {
-			buildings.push(
-				Building.createFromStorage(key, data[key]) );
+			var temp = Building.createFromStorage(key, data[key]);
+
+			if ( this.options.psbFlag && temp.psb ) {
+				buildings.push( temp ); 
+			} else if ( !this.options.psbFlag && !temp.psb ) {
+				buildings.push( temp );	
+			}
+			
 		}
 
 		buildings = this.filter.filter( buildings, Building.now() );
@@ -178,15 +201,35 @@ function applyFilter( universeList, sort, callback ) {
 			this.filter.makeHumanDescription();
 		this.sorTable.coords = this.filter.coords;
 
-		if ( this.projection ) {
-			this.projectionIcon.dataset.cmd = 'projon';
-			now = Building.now();
-			buildings.forEach( function(b) { b.project(now); } );
+		if ( !this.options.psbFlag ) {
+			if ( this.projection ) {
+				this.projectionIcon.dataset.cmd = 'projon';
+				now = Building.now();
+				buildings.forEach( function(b) { b.project(now); } );
+			}
+			else
+				this.projectionIcon.dataset.cmd = 'projoff';
+			setImgSrc( this.projectionIcon );
+		} else {		
+			if ( this.options.amountFlag ) {
+				this.amountIcon.dataset.cmd = 'amounton';
+			} else if( this.options.amountBuyFlag ) {
+				this.amountIcon.dataset.cmd = 'amountbuying';
+			} else {
+				this.amountIcon.dataset.cmd = 'amountoff'; 
+			}
+			
+			if ( this.options.sellPriceFlag ) {
+				this.creditIcon.dataset.cmd = 'creditsell';
+			} else if ( this.options.buyPriceFlag ) {
+				this.creditIcon.dataset.cmd = 'creditbuy';
+			} else {
+				this.creditIcon.dataset.cmd = 'creditoff';
+			}
+			setImgSrc( this.amountIcon );
+			setImgSrc( this.creditIcon );
 		}
-		else
-			this.projectionIcon.dataset.cmd = 'projoff';
-
-		setImgSrc( this.projectionIcon );
+		
 
 		spec = makeSpec.call( this, buildings );
 		this.sorTable.refresh( spec, buildings );
@@ -231,7 +274,10 @@ function setFilter() {
 
 	storageItems = {
 		[ this.options.filterKey ]: query,
-		[ this.options.projectionKey ]: this.projection
+		[ this.options.projectionKey ]: this.projection,
+		[ this.options.amountFlag ]: this.options.amountFlag,
+		[ this.options.buyPriceFlag ]: this.options.buyPriceFlag,
+		[ this.options.sellPriceFlag ]: this.options.sellPriceFlag
 	};
 	chrome.storage.local.set( storageItems );
 
@@ -290,8 +336,8 @@ var COLUMN_SPECS = {
 	},
 
 	level: {
-		header: simpleHeader( 'Lvl' ),
-		cell: rCell( function( b ) { return b.level || '?' } ),
+		header: simpleHeader('Lvl'), //this.options.psbFlag ? simpleHeader( 'population') : simpleHeader( 'Lvl' ),
+		cell: rCell( function( b ) { return b.level.toLocaleString('en') || '?' } ),
 		sortId: 'level',
 		sort: function( a, b ) { return a.level - b.level; },
 		initDesc: true
@@ -313,6 +359,16 @@ var COLUMN_SPECS = {
 		sort: function( a, b ) { return a.time - b.time; },
 		initDesc: true
 	},
+	
+	credits: {
+		header: function( th ) {
+			th.textContent = 'Credits'; //insert icon later
+			th.classList.add( 'r', 'credits');
+		},
+		cell: rCell( function ( b ) { return b.credits.toLocaleString('en') } ),
+		sortId: 'credits',
+		sort: function( a, b ) { return a.credits - b.credits; }
+	},
 
 	ticksLeft: {
 		header: simpleHeader( 'Ticks' ),
@@ -328,6 +384,26 @@ var COLUMN_SPECS = {
 		sortId: 'tick',
 		sort: function( a, b ) {
 			return a.getTicksLeft() - b.getTicksLeft();
+		}
+	},
+	
+	ticksToDowngrade: {
+		header: simpleHeader( 'DG in' ),
+		cell: function( b, td ) {
+			if ( b.getTypeShortName() === 'P' ) {
+				var n = 0;
+				if (b.level >= 30000) {
+					n = Math.ceil( Math.log( 30000 / ( b.level * 1.012^( b.getTicksLeft() ) ) ) / Math.log( 15 / 16 ))
+				} else if (b.level >= 15000) {
+					n = Math.ceil( Math.log( 15000 / ( b.level * 1.012^( b.getTicksLeft() ) ) ) / Math.log( 15 / 16 ))
+				} else if ( b.level >= 5000 ) {
+					n = Math.ceil( Math.log( 5000 / ( b.level * 1.012^( b.getTicksLeft() ) ) ) / Math.log( 15 / 16 ))
+				} else {
+					n = Math.ceil( Math.log( 500 / ( b.level * 1.012^( b.getTicksLeft() ) ) ) / Math.log( 15 / 16 ))
+				}
+				td.textContent = n + b.getTicksLeft();
+				td.className = 'r';
+			}
 		}
 	},
 
@@ -365,7 +441,8 @@ function rCell( fn ) {
 function makeSpec( buildings ) {
 	var spec, before, after;
 
-	spec = { columns: [], foot: foot };
+	spec = { columns: [] };
+	this.options.psbFlag ? null : spec [ 'foot' ] = foot ;
 	before = [];
 	after = [];
 
@@ -381,7 +458,10 @@ function makeSpec( buildings ) {
 		before.push( makeDistanceSpec(this.filter) );
 
 	// Always show type and owner.
-	before.push( COLUMN_SPECS.type, COLUMN_SPECS.owner );
+	before.push( COLUMN_SPECS.type );
+	if ( !this.options.psbFlag ) {
+		before.push( COLUMN_SPECS.owner );
+	}
 
 	// In full mode, show the level, too.
 	if ( this.options.mode !== 'compact' )
@@ -393,10 +473,16 @@ function makeSpec( buildings ) {
 	// Always show ticks
 	after.push( COLUMN_SPECS.ticksLeft );
 
+	// PSB option
+	if ( this.options.psbFlag ) {
+		after.push( COLUMN_SPECS.ticksToDowngrade );
+		after.push( COLUMN_SPECS.credits );
+	}
+	
 	// In full mode, show the "remove" button
 	if ( this.options.mode !== 'compact' )
 		after.push( COLUMN_SPECS.remove );
-
+	
 	// Add properties to the table for use in its spec functions
 	this.sorTable.ukey = this.options.ukey;
 	this.sorTable.totals = [];
@@ -405,7 +491,7 @@ function makeSpec( buildings ) {
 	this.sorTable.commodities = getCommoditiesInUse( buildings );
 
 	Array.prototype.push.apply( spec.columns, before );
-	this.sorTable.commodities.forEach( pushCommSpec );
+	this.sorTable.commodities.forEach( pushCommSpec.bind( this ) );
 	Array.prototype.push.apply( spec.columns, after );
 
 	return spec;
@@ -413,7 +499,7 @@ function makeSpec( buildings ) {
 	function pushCommSpec( commId ) {
 		spec.columns.push( {
 			header: makeCommHeaderFn( commId ),
-			cell: makeCommCellFn( commId ),
+			cell: makeCommCellFn( commId, this.options ),
 			sortId: commId,
 			sort: makeCommSortFn( commId ),
 			initDesc: true
@@ -440,9 +526,9 @@ function makeCommHeaderFn( commId ) {
 	}
 }
 
-function makeCommCellFn( commId ) {
+function makeCommCellFn( commId , options ) {
 	return function( building, td ) {
-		var n = overviewFigure( building, commId );
+		var n = overviewFigure( building, commId, options );
 		if ( n !== undefined ) {
 			setCommodityTD( td, commId, n );
 			if ( Number.isFinite(n) )
@@ -548,6 +634,36 @@ function onProjClick() {
 	setFilter.call( this );
 }
 
+function onAmountClick() {
+	if ( this.options.amountBuyFlag ) {
+		this.options.amountBuyFlag = false;
+		this.options.amountFlag = true;
+	} else if ( this.options.amountFlag ) {
+		this.options.amountFlag = !this.options.amountFlag;
+		this.options.amountBuyFlag = false;
+	} else {
+		this.options.amountBuyFlag = !this.options.amountBuyFlag;
+	}
+	this.options.sellPriceFlag = false;
+	this.options.buyPriceFlag = false;
+	setFilter.call( this );
+}
+
+function onCreditClick() {
+	if (this.options.sellPriceFlag ) {
+		this.options.buyPriceFlag = true;
+		this.options.sellPriceFlag = false;
+	} else if ( this.options.buyPriceFlag ) {
+		this.options.buyPriceFlag = false;
+	} else {
+		this.options.sellPriceFlag = !this.options.sellPriceFlag;
+	}
+	this.options.amountBuyFlag = false;
+	this.options.amountFlag = false;
+	setFilter.call( this );
+}
+
+
 function onCmdMouseOver( event ) { setImgSrc( event.target, false ); }
 function onCmdMouseOut( event ) { setImgSrc( event.target, true ); }
 
@@ -601,7 +717,7 @@ function foot() {
 }
 
 function setCommodityTD( td, commId, n ) {
-	td.textContent = Number.isFinite(n) ? n : '?';
+	td.textContent = Number.isFinite(n) ? n.toLocaleString('en') : '?';
 	td.title = Commodities.getCommodity( commId ).n;
 	td.className = 'c';
 	if ( n > 0 )
@@ -616,18 +732,36 @@ function setCommodityTD( td, commId, n ) {
 // values that cannot be projected; +Infinity for production values.  This so
 // sorting is somewhat more meaningful, at least not completely broken by NaN.
 
-function overviewFigure( building, commId ) {
+function overviewFigure( building, commId, options ) {
 	var n;
+	if ( options.psbFlag ) {
+		// PSB / Planet modes
+		if ( options.amountFlag ) {
+			n = building.getAmount()[ commId ];
+		}
+		if ( options.amountBuyFlag ) {
+			n = building.getBuying()[ commId ];
+		}
+		if ( options.sellPriceFlag ) {
+			n = building.getSellAtPrices()[ commId ];
+		}
+		if ( options.buyPriceFlag ) {
+			n = building.getBuyAtPrices()[ commId ];
+		}
+		if ( n!== undefined ) { 
+			return n; 
+		}
+		
+	}
 
 	if ( building.isUpkeep( commId ) &&
-	     (n = building.getBuying()[commId]) !== undefined )
+		(n = building.getBuying()[commId]) !== undefined )
 		return isNaN(n) ? -Infinity : -n;
 
 	if ( (n = building.getSelling()[commId]) !== undefined )
 		return isNaN(n) ? Infinity : n;
-
 	return undefined;
-}
+a}
 
 // Return an array of ids of commodities that are consumed or produced by at
 // least one building in the collection given.

@@ -37,7 +37,7 @@ var NAME_IDS, ICON_IDS;
 // or defer to getNormalUpkeep and getNormalProduction if not.
 
 function Building( loc, sectorId, typeId, time, owner, level, ticksLeft,
-		   selling, buying, minimum, maximum, upkeep, production )
+		   selling, buying, minimum, maximum, upkeep, production, buyAtPrices, sellAtPrices, credits, psb, amount )
 {
 	this.loc = intPropVal( loc );
 	this.sectorId = intPropVal( sectorId );
@@ -52,6 +52,11 @@ function Building( loc, sectorId, typeId, time, owner, level, ticksLeft,
 	this.maximum = maximum || [];
 	this.upkeep = upkeep || [];
 	this.production = production || [];
+	this.buyAtPrices = buyAtPrices ? buyAtPrices : [];
+	this.sellAtPrices = sellAtPrices ? sellAtPrices : [];
+	this.credits = credits ? parseInt( credits ) : undefined;
+	this.psb = psb ? true : false;
+	this.amount = amount || [];
 
 	// These three won't be used until they're needed.  But defining them
 	// already anyway so V8 can optimise.
@@ -134,7 +139,23 @@ Building.CATALOGUE = [
 	{ n: 'Space Farm', s: 'SF', i: 'space_farm',
 	  bu: {2:4,4:5}, bp: {1:8,3:2,21:1} },
 	{ n: 'Stim Chip Mill', s: 'SCM', i: 'stim_chip_mill',
-	  bu: {1:3,3:3,7:2,17:2,28:44}, bp: {29:2} }
+	  bu: {1:3,3:3,7:2,17:2,28:44}, bp: {29:2} },
+	{ n: 'Faction Starbase', s: 'F', i: 'starbase_f',
+	  bu: {1:2.5, 3:1.75}, bp: {2:4, 4:1.25} },
+	{ n: 'Player Starbase', s: 'P', i: 'starbase_p',
+	  bu: {1:3, 3:2}, bp: {2:5.25,4:1} },
+	{ n: 'Class M Planet', s: 'M', i: 'planet_m',
+	  bu: {2:7.5}, bp: {1:3.5, 3:4} },
+	{ n: 'Class A Planet', s: 'A', i: 'planet_a',
+	  bu: {2:12.5}, bp: {1:10, 3:10} },
+	{ n: 'Class D Planet', s: 'D', i: 'planet_d',
+	  bu: {3:2.5,14:0.5}, bp: {50:0.15} },
+	{ n: 'Class I Planet', s: 'I', i: 'planet_i',
+	  bu: {2:7.5}, bp: {1:8, 4:0.1} },
+	{ n: 'Class G Planet', s: 'G', i: 'planet_g',
+	  bu: {1:1.5, 2:7.5}, bp: {4:0.75, 12:5, 13:0.5} },
+	{ n: 'Class R Planet', s: 'R', i: 'planet_r',
+	  bu: {1:2.5,2:4,3:2}, bp: {4:1,5:1.5,6:0.5,19:0.1} }
 ];
 
 // Convenience for the current time in seconds, so K's heart doesn't break that
@@ -302,7 +323,12 @@ Building.createFromStorage = function( key, a ) {
 		unpackArray( a[8] ), // minimum
 		unpackArray( a[9] ), // maximum
 		unpackArray( a[10] ), // upkeep
-		unpackArray( a[11] )  //production
+		unpackArray( a[11] ), // production
+		unpackArray( a[12] ), // buyAtPrices, 
+		unpackArray( a[13] ), // sellAtPrices, 
+		v(a[14]), //credits
+		v(a[15]), //psb
+		unpackArray( a[16] ) // amount
 	);
 
 	// Apparently, we get `null` for items where we set as `undefined` when
@@ -413,6 +439,19 @@ Building.prototype.isUpkeep = function( commodityId ) {
 Building.prototype.isProduction = function( commodityId ) {
 	return Building.isProduction( this.typeId, commodityId );
 }
+
+Building.prototype.getBuyAtPrices = function() {
+	return this.buyAtPrices;
+}
+
+Building.prototype.getSellAtPrices = function() {
+	return this.sellAtPrices;
+}
+
+Building.prototype.getAmount = function() {
+	return this.amount;
+}
+	
 
 // Return the number of ticks for which this building still has upkeep.  If a
 // projection is active, this will return the projected value.
@@ -644,7 +683,12 @@ Building.prototype.toStorage = function() {
 		packArray( this.minimum ),
 		packArray( this.maximum ),
 		packArray( this.upkeep ),
-		packArray( this.production )
+		packArray( this.production ),
+		packArray( this.buyAtPrices ), 
+		packArray( this.sellAtPrices ), 
+		this.credits, 
+		this.psb,
+		packArray( this.amount )
 	];
 
 	// Shave off the last undefined elements of this.  a.length should never
