@@ -276,6 +276,7 @@ function setFilter() {
 		[ this.options.filterKey ]: query,
 		[ this.options.projectionKey ]: this.projection,
 		[ this.options.amountFlag ]: this.options.amountFlag,
+		[ this.options.amountBuyFlag ]: this.options.amountBuyFlag,
 		[ this.options.buyPriceFlag ]: this.options.buyPriceFlag,
 		[ this.options.sellPriceFlag ]: this.options.sellPriceFlag
 	};
@@ -740,7 +741,7 @@ function overviewFigure( building, commId, options ) {
 			n = building.getAmount()[ commId ];
 		}
 		if ( options.amountBuyFlag ) {
-			n = building.getBuying()[ commId ];
+			n = -building.getBuying()[ commId ];
 		}
 		if ( options.sellPriceFlag ) {
 			n = building.getSellAtPrices()[ commId ];
