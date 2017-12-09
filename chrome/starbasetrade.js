@@ -73,93 +73,130 @@ function setup() {
 
 	var middleNode = document.getElementById('quickButtonsTbl');
 
-	if (document.forms.planet_trade) {
-		var previewStatus = document.getElementById('preview_checkbox').checked;
-		document.getElementById('preview_checkbox').addEventListener('click', function() { previewStatus = !previewStatus } );
+	var previewStatus = document.getElementById('preview_checkbox').checked;
+	document.getElementById('preview_checkbox').addEventListener('click', function() { previewStatus = !previewStatus } );
 
+	//Add fuel option.
+	chrome.storage.sync.get( [ Universe.key + 'Fuel', Universe.key + 'FuelCB' ], addFuelInput.bind( null, middleNode ) );
+
+	if (document.forms.planet_trade) {
+
+		middleNode.appendChild( document.createElement( 'br' ));
 		middleNode.appendChild( document.createElement( 'br' ));
 
 		button = makeButton ( 'bookkeeper-transfer-food' )
 		button.textContent = '<- Food | Energy ->';
 		middleNode.appendChild ( button ) ;
-		button.addEventListener('click', function() {
-			if ( document.getElementById('shiprow2').getElementsByTagName('a')[1] ) {
-				document.getElementById('shiprow2').getElementsByTagName('a')[1].click();
-			}
-			document.getElementById('baserow1').getElementsByTagName('a')[1].click();
-			if (!previewStatus) {
-				document.forms.planet_trade.submit();
-			}
-		});
+		button.addEventListener( 'click', btnClick );
+
+		// button.addEventListener('click', function() {
+			// if ( document.getElementById('shiprow2').getElementsByTagName('a')[1] ) {
+				// document.getElementById('shiprow2').getElementsByTagName('a')[1].click();
+			// }
+			// document.getElementById('baserow1').getElementsByTagName('a')[1].click();
+			// if (!previewStatus) {
+				// document.forms.planet_trade.submit();
+			// }
+		// });
 
 		middleNode.appendChild( document.createElement( 'br' ));
 		middleNode.appendChild( document.createElement( 'br' ));
 		button = makeButton ( 'bookkeeper-transfer-water' )
 		button.textContent = '<- Water | Energy ->';
 		middleNode.appendChild ( button ) ;
-		button.addEventListener('click', function() {
-			if ( document.getElementById('shiprow2').getElementsByTagName('a')[1] ) {
-				document.getElementById('shiprow2').getElementsByTagName('a')[1].click();
-			}
-			document.getElementById('baserow3').getElementsByTagName('a')[1].click();
-			if (!previewStatus) {
-				document.forms.planet_trade.submit();
-			}
-		});
+		button.addEventListener( 'click', btnClick );
+
+		// button.addEventListener('click', function() {
+			// if ( document.getElementById('shiprow2').getElementsByTagName('a')[1] ) {
+				// document.getElementById('shiprow2').getElementsByTagName('a')[1].click();
+			// }
+			// document.getElementById('baserow3').getElementsByTagName('a')[1].click();
+			// if (!previewStatus) {
+				// document.forms.planet_trade.submit();
+			// }
+		// });
+		
 		middleNode.appendChild( document.createElement( 'br' ));
 		middleNode.appendChild( document.createElement( 'br' ));
 
 		button = makeButton ( 'bookkeeper-transfer-FWE' )
 		button.textContent = '<- PSB FW | Energy ->';
 		middleNode.appendChild ( button ) ;
-		button.addEventListener('click', function() {
+		button.addEventListener( 'click', btnClick );
+		
+		function btnClick() {
 			var shipCargo = parseInt( XPATH_FREESPACE.evaluate( document.body, XPathResult.UNORDERED_NODE_ITERATOR_TYPE, null ).iterateNext().textContent.split(/t/g)[0]);
 
 			if (document.getElementById('shiprow2').getElementsByTagName('a')[1] ) {
-				document.getElementById('shiprow2').getElementsByTagName('a')[1].click();
-				shipCargo += parseInt( document.getElementById('sell_2').value );
+				var energy = parseInt( document.getElementById( 'shiprow2' ).children[2].firstChild.textContent );
+				document.getElementById('sell_2').value = energy;		
+				shipCargo += energy;
 			}
-			var buyFood = Math.floor( shipCargo / 5 * 3);
-			var buyWater = shipCargo - buyFood;
-
-			document.getElementById('buy_1').value = buyFood;
-			document.getElementById('buy_3').value = buyWater;
+			shipCargo -= checkFuelSettings();
+			
+			if ( this.id === 'bookkeeper-transfer-FWE' ) {
+				var buyFood = Math.floor( shipCargo / 5 * 3);
+				var buyWater = shipCargo - buyFood;
+				document.getElementById('buy_1').value = buyFood;
+				document.getElementById('buy_3').value = buyWater;
+			} else if ( this.id === 'bookkeeper-transfer-food' ) {
+				var buyFood = shipCargo;
+				document.getElementById('buy_1').value = buyFood;
+			} else {
+				var buyWater = shipCargo;
+				document.getElementById('buy_3').value = buyWater;
+			}
+			console.log( document.getElementById( 'bookkeeper-fuel-cb' ).checked );
 			if (!previewStatus) {
 				document.forms.planet_trade.submit();
 			}
-		});
+		}
 	}
 
 	if (document.forms.starbase_trade) {
-		var previewStatus = document.getElementById('preview_checkbox').checked;
-		document.getElementById('preview_checkbox').addEventListener('click', function() { previewStatus = !previewStatus } );
-
+	
 		middleNode.appendChild( document.createElement( 'br' ));
 		middleNode.appendChild( document.createElement( 'br' ));
 		button = makeButton ( 'bookkeeper-transfer-SF' )
-		button.textContent = '<- SF E/AE | Energy ->';
+		button.textContent = '<- SF E/AE | FW ->';
 		middleNode.appendChild ( button ) ;
+		button.addEventListener('click', btnClick ); 
 
-		button.addEventListener('click', function() {
-			var shipCargo = parseInt( XPATH_FREESPACE.evaluate( document.body, XPathResult.UNORDERED_NODE_ITERATOR_TYPE, null ).iterateNext().textContent.split(/[+t]/g)[0]);
+		middleNode.appendChild( document.createElement( 'br' ));
+		middleNode.appendChild( document.createElement( 'br' ));
+		var button = makeButton ( 'bookkeeper-transfer-FWE' )
+		button.textContent = '<- Energy | FW ->';
+		middleNode.appendChild ( button ) ;
+		button.addEventListener('click', btnClick ); 
+		
+		function btnClick() {
+			var shipCargo = parseInt( XPATH_FREESPACE.evaluate( document.body, XPathResult.UNORDERED_NODE_ITERATOR_TYPE, null ).iterateNext().textContent.split(/t/g)[0]);
 
 			if (document.getElementById('shiprow1').getElementsByTagName('a')[1] ) {
-				document.getElementById('shiprow1').getElementsByTagName('a')[1].click();
-				shipCargo += parseInt( document.getElementById('sell_1').value );
+				var food = parseInt( document.getElementById( 'shiprow1' ).children[2].firstChild.textContent );
+				document.getElementById('sell_1').value = food;
+				shipCargo += food;
 			}
 			if (document.getElementById('shiprow3').getElementsByTagName('a')[1] ) {
-				document.getElementById('shiprow3').getElementsByTagName('a')[1].click();
-				shipCargo += parseInt( document.getElementById('sell_3').value );
+				var water = parseInt( document.getElementById( 'shiprow3' ).children[2].firstChild.textContent );
+				document.getElementById('sell_3').value = water;
+				shipCargo += water;
 			}
-			var buyEnergy = Math.floor( shipCargo / 9 * 4);
-			var buyAE = shipCargo - buyEnergy;
 
+			shipCargo -= checkFuelSettings();
+
+			if ( this.id === 'bookkeeper-transfer-FWE' ) {
+				var buyEnergy = shipCargo;
+			} else {
+				var buyEnergy = Math.floor( shipCargo / 9 * 4);
+				var buyAE = shipCargo - buyEnergy;
+				document.getElementById('buy_4').value = buyAE;
+			}
 			document.getElementById('buy_2').value = buyEnergy;
-			document.getElementById('buy_4').value = buyAE;
 			if (!previewStatus) {
 				document.forms.starbase_trade.submit();
 			}
-		});
+		}
 	}
 
 }
@@ -172,7 +209,72 @@ function makeButton( id ) {
 	return button
 }
 
+function addFuelInput( node , amount ) {
+	
+	var fuelInput = document.createElement( 'input' );
+	fuelInput.id = 'bookkeeper-fuel';
+	fuelInput.type = 'textarea';
+	fuelInput.size = '1';
+	var fuelInputLabel = document.createElement( 'label' );
+	fuelInputLabel.for = 'bookkeeper-fuel';
+	fuelInputLabel.textContent = 'FUEL SPACE ';
+	var fuelInputCB = document.createElement( 'input' );
+	fuelInputCB.id = 'bookkeeper-fuel-cb';
+	fuelInputCB.type = 'checkbox';
+	fuelInputCB.title = 'Sell surplus fuel';
 
+	if ( amount [ Universe.key + 'Fuel' ] !== undefined ) {
+		fuelInput.value = amount [ Universe.key + 'Fuel' ];
+	}
+	if ( amount [ Universe.key + 'FuelCB' ] !== undefined ) {
+		fuelInputCB.checked = amount [ Universe.key + 'FuelCB' ]; 
+	}
+	node.insertBefore( fuelInputCB, node.children[1] );	
+	node.insertBefore( fuelInput, fuelInputCB );
+	node.insertBefore( fuelInputLabel, fuelInput );
+	node.insertBefore( document.createElement( 'br' ) , fuelInputLabel );
+	fuelInput.addEventListener( 'change', function () {
+		var storedata = {};
+		storedata[ Universe.key + 'Fuel' ] = document.getElementById( 'bookkeeper-fuel' ).value;
+		chrome.storage.sync.set( storedata );
+		});
+	fuelInputCB.addEventListener( 'click', function () {
+		var storedata = {};
+		storedata[ Universe.key + 'FuelCB' ] = document.getElementById( 'bookkeeper-fuel-cb' ).checked;
+		chrome.storage.sync.set( storedata );
+		});
+}
+
+function checkFuelSettings() {
+	var fuelSettings = parseInt( document.getElementById( 'bookkeeper-fuel' ).value );
+	var shipFuel = parseInt( document.getElementById( 'shiprow16' ).children[2].firstChild.textContent );
+
+	if ( ( fuelSettings - shipFuel ) < 0 && document.getElementById( 'bookkeeper-fuel-cb' ).checked ) {
+		var commRow = document.getElementById( 'baserow16' );
+		if (!commRow) {
+			return 0;
+		} else {
+			var amount, max, fuelTDs;
+			commRow = commRow.getElementsByTagName( 'td' );
+			amount = parseInt( commRow[ 2 ].textContent.replace(/,/g,"") );
+			max = parseInt( commRow[ commRow.length - 3 ].textContent.replace(/,/g,"") );
+			if ( amount + ( shipFuel - fuelSettings ) < max ) {
+				document.getElementById( 'sell_16' ).value = shipFuel - fuelSettings;
+			} else if ( amount < max ) {
+				document.getElementById( 'sell_16' ).value = max - amount;
+				return amount - max;
+			} else {
+				return 0;
+			}		
+		}
+	} else if ( ( fuelSettings - shipFuel ) < 0 || isNaN( fuelSettings ) ) {
+		return 0;
+	}
+	
+	return ( fuelSettings - shipFuel )
+}
+
+// Here comes all the tracking Planets and Starbases stuff
 function trackPSB() {
 	chrome.storage.sync.get( [ Universe.key, Universe.key + userloc ], setTrackBtn.bind ( null, userloc) )
 }
