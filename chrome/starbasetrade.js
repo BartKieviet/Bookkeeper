@@ -146,7 +146,6 @@ function setup() {
 				var buyWater = shipCargo;
 				document.getElementById('buy_3').value = buyWater;
 			}
-			console.log( document.getElementById( 'bookkeeper-fuel-cb' ).checked );
 			if (!previewStatus) {
 				document.forms.planet_trade.submit();
 			}
