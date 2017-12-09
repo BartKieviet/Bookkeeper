@@ -77,51 +77,26 @@ function setup() {
 	document.getElementById('preview_checkbox').addEventListener('click', function() { previewStatus = !previewStatus } );
 
 	//Add fuel option.
-	chrome.storage.sync.get( [ Universe.key + 'Fuel', Universe.key + 'FuelCB' ], addFuelInput.bind( null, middleNode ) );
+	chrome.storage.sync.get( [ Universe.key + 'Fuel', Universe.key + 'FuelCB' ], addFuelInput.bind( middleNode ) );
 
 	if (document.forms.planet_trade) {
 
-		middleNode.appendChild( document.createElement( 'br' ));
-		middleNode.appendChild( document.createElement( 'br' ));
-
+		addBR( middleNode );
 		button = makeButton ( 'bookkeeper-transfer-food' )
 		button.textContent = '<- Food | Energy ->';
-		middleNode.appendChild ( button ) ;
+		middleNode.appendChild( button ) ;
 		button.addEventListener( 'click', btnClick );
 
-		// button.addEventListener('click', function() {
-			// if ( document.getElementById('shiprow2').getElementsByTagName('a')[1] ) {
-				// document.getElementById('shiprow2').getElementsByTagName('a')[1].click();
-			// }
-			// document.getElementById('baserow1').getElementsByTagName('a')[1].click();
-			// if (!previewStatus) {
-				// document.forms.planet_trade.submit();
-			// }
-		// });
-
-		middleNode.appendChild( document.createElement( 'br' ));
-		middleNode.appendChild( document.createElement( 'br' ));
+		addBR( middleNode );
 		button = makeButton ( 'bookkeeper-transfer-water' )
 		button.textContent = '<- Water | Energy ->';
-		middleNode.appendChild ( button ) ;
+		middleNode.appendChild( button ) ;
 		button.addEventListener( 'click', btnClick );
-
-		// button.addEventListener('click', function() {
-			// if ( document.getElementById('shiprow2').getElementsByTagName('a')[1] ) {
-				// document.getElementById('shiprow2').getElementsByTagName('a')[1].click();
-			// }
-			// document.getElementById('baserow3').getElementsByTagName('a')[1].click();
-			// if (!previewStatus) {
-				// document.forms.planet_trade.submit();
-			// }
-		// });
 		
-		middleNode.appendChild( document.createElement( 'br' ));
-		middleNode.appendChild( document.createElement( 'br' ));
-
+		addBR( middleNode );
 		button = makeButton ( 'bookkeeper-transfer-FWE' )
 		button.textContent = '<- PSB FW | Energy ->';
-		middleNode.appendChild ( button ) ;
+		middleNode.appendChild( button ) ;
 		button.addEventListener( 'click', btnClick );
 		
 		function btnClick() {
@@ -154,18 +129,16 @@ function setup() {
 
 	if (document.forms.starbase_trade) {
 	
-		middleNode.appendChild( document.createElement( 'br' ));
-		middleNode.appendChild( document.createElement( 'br' ));
+		addBR( middleNode );
 		button = makeButton ( 'bookkeeper-transfer-SF' )
 		button.textContent = '<- SF E/AE | FW ->';
-		middleNode.appendChild ( button ) ;
+		middleNode.appendChild( button ) ;
 		button.addEventListener('click', btnClick ); 
 
-		middleNode.appendChild( document.createElement( 'br' ));
-		middleNode.appendChild( document.createElement( 'br' ));
+		addBR( middleNode );
 		var button = makeButton ( 'bookkeeper-transfer-FWE' )
 		button.textContent = '<- Energy | FW ->';
-		middleNode.appendChild ( button ) ;
+		middleNode.appendChild( button ) ;
 		button.addEventListener('click', btnClick ); 
 		
 		function btnClick() {
@@ -208,7 +181,12 @@ function makeButton( id ) {
 	return button
 }
 
-function addFuelInput( node , amount ) {
+function addBR( node ) {
+	node.appendChild( document.createElement( 'br' ));
+	node.appendChild( document.createElement( 'br' ));
+}
+
+function addFuelInput( amount ) {
 	
 	var fuelInput = document.createElement( 'input' );
 	fuelInput.id = 'bookkeeper-fuel';
@@ -228,10 +206,10 @@ function addFuelInput( node , amount ) {
 	if ( amount [ Universe.key + 'FuelCB' ] !== undefined ) {
 		fuelInputCB.checked = amount [ Universe.key + 'FuelCB' ]; 
 	}
-	node.insertBefore( fuelInputCB, node.children[1] );	
-	node.insertBefore( fuelInput, fuelInputCB );
-	node.insertBefore( fuelInputLabel, fuelInput );
-	node.insertBefore( document.createElement( 'br' ) , fuelInputLabel );
+	this.insertBefore( fuelInputCB, this.children[1] );	
+	this.insertBefore( fuelInput, fuelInputCB );
+	this.insertBefore( fuelInputLabel, fuelInput );
+	this.insertBefore( document.createElement( 'br' ) , fuelInputLabel );
 	fuelInput.addEventListener( 'change', function () {
 		var storedata = {};
 		storedata[ Universe.key + 'Fuel' ] = document.getElementById( 'bookkeeper-fuel' ).value;
