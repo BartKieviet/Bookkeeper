@@ -268,25 +268,32 @@ function fetchCustomBtns( data ) {
 function saveCustomBtn( id , n ) {
 	var toSave = {};
 	for ( var i = 0; i < Infinity ; i++) {
-		console.log(i);
 		var dropdown = document.getElementById('bookkeeper-cbtn-conf-' + n + '-name-' + i );
 		if ( dropdown === null ) { break }
 		var name = document.getElementById('bookkeeper-cbtn-conf-' + n + '-name-' + i ).value;
 		var amount = parseInt( document.getElementById('bookkeeper-cbtn-conf-' + n + '-amount-' + i).value ) ;
 		isNaN(amount) ? null : toSave[ name ] = amount;
 	}
-	// document.getElementById( id ).remove();
-	console.log(toSave);
+	document.getElementById( id ).remove();
+	
 	var key = Universe.key + 'CustomBtn' + n;
-	chrome.storage.sync.set( { key : toSave } );
+	var toSaveData = {};
+	toSaveData[ key ] = toSave;
+	chrome.storage.sync.set( toSaveData );
+	
+	var old_element = document.getElementById( 'bookkeeper-cbtn-' + n );
+	var new_element = old_element.cloneNode(true);
+	old_element.parentNode.replaceChild(new_element, old_element);
+	new_element.addEventListener( 'click', clickCustomButton.bind( null, toSave ) );
 }
 
 function makeCustomBtn( n, data ) {
 	var button = makeButton( 'bookkeeper-cbtn-' + n );
 	addBR( this );
-	button.textContent = 'Custom ' + n;
+	button.textContent = 'Custom ';// + n;
 	button.style.width = '147px';
 	this.appendChild( button );	
+	button.addEventListener( 'click', clickCustomButton.bind ( null, data[ Universe.key + 'CustomBtn' + n ] ) );
 	var button = makeButton( 'bookkeeper-cbtn-' + n + '-conf');
 	button.textContent = 'C';
 	button.style = '';
@@ -295,6 +302,18 @@ function makeCustomBtn( n, data ) {
 	this.appendChild( button );	
 	button.addEventListener('click', showConfDiv.bind( this, n ) );
 }
+
+function clickCustomButton( btnData ) {
+	for ( key in btnData ) {
+		var base = '';
+		btnData[key] < 0 ? base = 'sell_' : base = 'buy_';
+		document.getElementById( base + key ) ? document.getElementById( base + key ).value = Math.abs( btnData[ key ] ) : null;
+	}
+	var frm = document.forms.planet_trade || document.forms.starbase_trade;
+	var prviewStatus = document.getElementById('preview_checkbox').checked;
+	if (!prviewStatus) { frm.submit() };
+}
+
 
 function showConfDiv( n ) {
 	var container = document.createElement( 'div' );
@@ -318,7 +337,7 @@ function showConfDiv( n ) {
 			if ( document.getElementById( 'baserow' + i ) ) {
 				var option = document.createElement( 'option' );
 				option.innerHTML = Commodities.getCommodity( i ).n;
-				option.value = Commodities.getCommodity( i ).n;
+				option.value = i;
 				dropdown.appendChild( option );
 			}
 		}	
@@ -327,6 +346,7 @@ function showConfDiv( n ) {
 		amount.type = 'textarea';
 		amount.size = '1';
 		amount.id = 'bookkeeper-cbtn-conf-' + n + '-amount-' + document.getElementsByTagName( 'select' ).length;
+		amount.title = 'Positive for buy, negative for sell';
 		div.appendChild( amount );
 		
 		// var buysell = document.createElement( 'input' );
