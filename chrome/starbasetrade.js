@@ -78,7 +78,8 @@ function setup() {
 
 	//Add fuel option.
 	chrome.storage.sync.get( [ Universe.key + 'Fuel', Universe.key + 'FuelCB' ], addFuelInput.bind( middleNode ) );
-
+	chrome.storage.sync.get( [ Universe.key + 'NCustomBtns' ], fetchCustomBtns.bind( middleNode ) );
+	
 	if (document.forms.planet_trade) {
 
 		addBR( middleNode );
@@ -173,6 +174,7 @@ function setup() {
 
 }
 
+// Makes button.
 function makeButton( id ) {
 	button = document.createElement( 'button' );
 	button.type = 'button';
@@ -181,11 +183,13 @@ function makeButton( id ) {
 	return button
 }
 
+// Shorthand to adding two BRs.
 function addBR( node ) {
 	node.appendChild( document.createElement( 'br' ));
 	node.appendChild( document.createElement( 'br' ));
 }
 
+// add fuel input 
 function addFuelInput( amount ) {
 	
 	var fuelInput = document.createElement( 'input' );
@@ -222,6 +226,7 @@ function addFuelInput( amount ) {
 		});
 }
 
+// If there are fuel settings, parse them. Returns the amount the shipcargo is dimished. Or increased in case of fuel sale.
 function checkFuelSettings() {
 	var fuelSettings = parseInt( document.getElementById( 'bookkeeper-fuel' ).value );
 	var shipFuel = parseInt( document.getElementById( 'shiprow16' ).children[2].firstChild.textContent );
@@ -251,7 +256,100 @@ function checkFuelSettings() {
 	return ( fuelSettings - shipFuel )
 }
 
-// Here comes all the tracking Planets and Starbases stuff
+//Custom buttons
+function fetchCustomBtns( data ) {
+
+	var nButtons = data [ Universe.key + 'NCustomBtns' ] || 1;
+	for ( var i = 1; i <= nButtons ; i++ ) {
+		chrome.storage.sync.get( [ Universe.key + 'CustomBtn' + i ], makeCustomBtn.bind( this, i ) );
+	}
+}
+
+function saveCustomBtn( id , n ) {
+	var toSave = {};
+	for ( var i = 0; i < Infinity ; i++) {
+		console.log(i);
+		var dropdown = document.getElementById('bookkeeper-cbtn-conf-' + n + '-name-' + i );
+		if ( dropdown === null ) { break }
+		var name = document.getElementById('bookkeeper-cbtn-conf-' + n + '-name-' + i ).value;
+		var amount = parseInt( document.getElementById('bookkeeper-cbtn-conf-' + n + '-amount-' + i).value ) ;
+		isNaN(amount) ? null : toSave[ name ] = amount;
+	}
+	// document.getElementById( id ).remove();
+	console.log(toSave);
+	var key = Universe.key + 'CustomBtn' + n;
+	chrome.storage.sync.set( { key : toSave } );
+}
+
+function makeCustomBtn( n, data ) {
+	var button = makeButton( 'bookkeeper-cbtn-' + n );
+	addBR( this );
+	button.textContent = 'Custom ' + n;
+	button.style.width = '147px';
+	this.appendChild( button );	
+	var button = makeButton( 'bookkeeper-cbtn-' + n + '-conf');
+	button.textContent = 'C';
+	button.style = '';
+	button.style.width = '25px';
+	button.style.height = '35px';
+	this.appendChild( button );	
+	button.addEventListener('click', showConfDiv.bind( this, n ) );
+}
+
+function showConfDiv( n ) {
+	var container = document.createElement( 'div' );
+	container.id = 'bookkeeper-cbtn-conf-' + n;
+	container.className = 'bookkeeper-cbtn-conf';
+	this.parentNode.appendChild(container);
+	var button = makeButton( 'bookkeeper-cbtn-conf-submit' + n );
+	button.textContent = 'Submit';
+	container.appendChild( button );
+	addRow( button );
+	
+	function addRow( button ) {
+		var div = document.createElement( 'div' );
+		div.textContent = 'Commodity: ';
+		//div.id = 'bookkeeper-cbtn-conf-' + n 
+		var dropdown = document.createElement( 'select' );
+		dropdown.type = 'select';
+		dropdown.id = 'bookkeeper-cbtn-conf-' + n + '-name-' + document.getElementsByTagName( 'select' ).length;
+		
+		for (var i = 1; i < 33 ; i++) {
+			if ( document.getElementById( 'baserow' + i ) ) {
+				var option = document.createElement( 'option' );
+				option.innerHTML = Commodities.getCommodity( i ).n;
+				option.value = Commodities.getCommodity( i ).n;
+				dropdown.appendChild( option );
+			}
+		}	
+		div.appendChild( dropdown );
+		var amount = document.createElement( 'input' );
+		amount.type = 'textarea';
+		amount.size = '1';
+		amount.id = 'bookkeeper-cbtn-conf-' + n + '-amount-' + document.getElementsByTagName( 'select' ).length;
+		div.appendChild( amount );
+		
+		// var buysell = document.createElement( 'input' );
+		// buysell.type = 'radio';
+		// buysell.name = 'buysell';
+		// buysell.id = 'buy';
+		// div.appendChild( buysell );
+		// var buysell = document.createElement( 'input' );
+		// buysell.type = 'radio';
+		// buysell.name = 'buysell';
+		// buysell.id = 'sell';
+		// div.appendChild( buysell );
+		
+		addBR( div );
+		amount.addEventListener( 'change', addRow.bind( null, button) );
+		container.insertBefore( div , button );
+		
+	}
+	button.addEventListener('click', saveCustomBtn.bind( null, container.id, n ) ); 
+}
+
+
+// Below comes all the tracking Planets and Starbases stuff
 function trackPSB() {
 	chrome.storage.sync.get( [ Universe.key, Universe.key + userloc ], setTrackBtn.bind ( null, userloc) )
 }

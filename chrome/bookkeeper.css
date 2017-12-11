@@ -1,4 +1,4 @@
-h1.bookkeeper img {
+﻿h1.bookkeeper img {
 	vertical-align: -2px;
 	margin-right: 4px;
 }
@@ -137,7 +137,7 @@ div.bookkeeper-overview > table img.bookkeeper-small-button {
 }
 
 /* OVERLAY */
-#bookkeeper-overlay {
+.bookkeeper-cbtn-conf, #bookkeeper-overlay {
 	position: fixed;
 	bottom: 8px;
 	right: 210px;
