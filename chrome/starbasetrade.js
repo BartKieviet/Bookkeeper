@@ -272,7 +272,7 @@ function saveCustomBtn( id , n ) {
 		if ( dropdown === null ) { break }
 		var name = document.getElementById('bookkeeper-cbtn-conf-' + n + '-name-' + i ).value;
 		var amount = parseInt( document.getElementById('bookkeeper-cbtn-conf-' + n + '-amount-' + i).value ) ;
-		isNaN(amount) ? null : toSave[ name ] = amount;
+		( toSave[ name ] || isNaN(amount) || amount == 0 ) ? null : toSave[ name ] = amount;
 	}
 	document.getElementById( id ).remove();
 	
@@ -285,6 +285,12 @@ function saveCustomBtn( id , n ) {
 	var new_element = old_element.cloneNode(true);
 	old_element.parentNode.replaceChild(new_element, old_element);
 	new_element.addEventListener( 'click', clickCustomButton.bind( null, toSave ) );
+
+	var old_element = document.getElementById( 'bookkeeper-cbtn-' + n + '-conf' );
+	var new_element = old_element.cloneNode(true);
+	old_element.parentNode.replaceChild(new_element, old_element);
+	new_element.addEventListener( 'click', showConfDiv.bind( new_element , n , toSaveData ) );
+	
 }
 
 function makeCustomBtn( n, data ) {
@@ -300,7 +306,7 @@ function makeCustomBtn( n, data ) {
 	button.style.width = '25px';
 	button.style.height = '35px';
 	this.appendChild( button );	
-	button.addEventListener('click', showConfDiv.bind( this, n ) );
+	button.addEventListener( 'click', showConfDiv.bind( this, n , data ) );
 }
 
 function clickCustomButton( btnData ) {
@@ -315,17 +321,23 @@ function clickCustomButton( btnData ) {
 }
 
 
-function showConfDiv( n ) {
+function showConfDiv( n , data ) {
+	data = data[ Universe.key + 'CustomBtn' + n ];
 	var container = document.createElement( 'div' );
 	container.id = 'bookkeeper-cbtn-conf-' + n;
 	container.className = 'bookkeeper-cbtn-conf';
 	this.parentNode.appendChild(container);
+	
 	var button = makeButton( 'bookkeeper-cbtn-conf-submit' + n );
 	button.textContent = 'Submit';
 	container.appendChild( button );
-	addRow( button );
+
+	for ( key in data ) {
+		addRow( button, key, data[key] );	
+	}
+	Object.keys( data ).length === 0 ? addRow( button, 0, 0 ) : null;
 	
-	function addRow( button ) {
+	function addRow( button, comm, dataAmount ) {
 		var div = document.createElement( 'div' );
 		div.textContent = 'Commodity: ';
 		//div.id = 'bookkeeper-cbtn-conf-' + n 
@@ -340,28 +352,21 @@ function showConfDiv( n ) {
 				option.value = i;
 				dropdown.appendChild( option );
 			}
+			if ( comm == i ) { // == on purpose since comm is string and i is int.
+				option.selected = 'selected';
+			}
 		}	
-		div.appendChild( dropdown );
 		var amount = document.createElement( 'input' );
 		amount.type = 'textarea';
 		amount.size = '1';
 		amount.id = 'bookkeeper-cbtn-conf-' + n + '-amount-' + document.getElementsByTagName( 'select' ).length;
 		amount.title = 'Positive for buy, negative for sell';
+		amount.value = dataAmount
+
+		div.appendChild( dropdown );		
 		div.appendChild( amount );
-		
-		// var buysell = document.createElement( 'input' );
-		// buysell.type = 'radio';
-		// buysell.name = 'buysell';
-		// buysell.id = 'buy';
-		// div.appendChild( buysell );
-		// var buysell = document.createElement( 'input' );
-		// buysell.type = 'radio';
-		// buysell.name = 'buysell';
-		// buysell.id = 'sell';
-		// div.appendChild( buysell );
-		
 		addBR( div );
-		amount.addEventListener( 'change', addRow.bind( null, button) );
+		amount.addEventListener( 'change', addRow.bind( null, button, 0, 0) );
 		container.insertBefore( div , button );
 		
 	}
