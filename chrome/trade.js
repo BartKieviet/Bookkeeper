@@ -39,6 +39,13 @@ function onGameMessage( event ) {
 
 	// Now check if the building is tracked
 	chrome.storage.sync.get( buildingKey, onBuildingData );
+	window.addEventListener( 'keypress', clickAuto );
+}
+
+function clickAuto(evt) {
+	if ( evt.keyCode === 103 ) { //g <-- not to interfere with standard SGPvP
+		document.getElementById( 'quickButtonSellAndBuy' ).click()
+	}
 }
 
 function onBuildingData( data ) {

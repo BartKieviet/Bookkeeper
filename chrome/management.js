@@ -53,6 +53,13 @@ function onGameMessage( event ) {
 
 	pageData = parsePage();
 	chrome.storage.sync.get( buildingKey, onBuildingData );
+	window.addEventListener( 'keypress', clickAuto );	
+}
+
+function clickAuto(evt) {
+	if ( evt.keyCode === 103 ) { //g <-- not to interfere with standard SGPvP
+		document.getElementById( 'bookkeeper-quick-buttons-sellandbuy' ).click()
+	}
 }
 
 // Lift all the data we can lift from this page.
@@ -244,6 +251,7 @@ function addUI() {
 	autoBuy.textContent = '<- Transfer production';
 	autoBoth = document.createElement( 'button' );
 	autoBoth.textContent = '<- Auto Transfer ->';
+	autoBoth.id = 'bookkeeper-quick-buttons-sellandbuy';
 	preview = document.createElement( 'label' );
 	// previewCheckBox is a global, remember
 	previewCheckbox = document.createElement( 'input' );

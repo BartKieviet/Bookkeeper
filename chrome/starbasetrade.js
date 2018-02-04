@@ -81,6 +81,8 @@ function setup() {
 	chrome.storage.sync.get( [ Universe.key + 'NCustomBtns' ], fetchCustomBtns.bind( middleNode ) );
 	
 	if (document.forms.planet_trade) {
+		
+		window.addEventListener( 'keypress', clickAuto.bind( this, 'bookkeeper-transfer-FWE' ) );
 
 		addBR( middleNode );
 		button = makeButton ( 'bookkeeper-transfer-food' )
@@ -130,6 +132,8 @@ function setup() {
 
 	if (document.forms.starbase_trade) {
 	
+		window.addEventListener( 'keypress', clickAuto.bind( this, 'bookkeeper-transfer-FWE' ) );
+
 		addBR( middleNode );
 		button = makeButton ( 'bookkeeper-transfer-SF' )
 		button.textContent = '<- SF E/AE | FW ->';
@@ -188,6 +192,15 @@ function addBR( node ) {
 	node.appendChild( document.createElement( 'br' ));
 	node.appendChild( document.createElement( 'br' ));
 }
+
+//clicks button with id = id if g is pressed.
+function clickAuto( id, evt ) {
+	if ( evt.keyCode === 103 ) { // g <- not to interfere with standard SGPvP
+		document.getElementById( id ).click()
+	}
+}
+
+
 
 // add fuel input 
 function addFuelInput( amount ) {
