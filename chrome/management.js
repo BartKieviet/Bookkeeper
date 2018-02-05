@@ -8,7 +8,7 @@ var universe = Universe.fromDocument ( document );
 
 // Globals set during configuration
 var configured, userloc, time, shipSpace, buildingSpace, buildingKey,
-    pageData, building, previewEnabled, previewCheckbox;
+    pageData, building, previewEnabled, previewCheckbox, autoKey = 103;
 
 configure();
 
@@ -57,7 +57,7 @@ function onGameMessage( event ) {
 }
 
 function clickAuto(evt) {
-	if ( evt.keyCode === 103 ) { //g <-- not to interfere with standard SGPvP
+	if ( evt.keyCode === autoKey ) { //g <-- not to interfere with standard SGPvP
 		document.getElementById( 'bookkeeper-quick-buttons-sellandbuy' ).click()
 	}
 }

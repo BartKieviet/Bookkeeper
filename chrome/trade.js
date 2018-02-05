@@ -4,7 +4,7 @@
 var Universe, Sector, Building;
 
 //Global variables.
-var universe, configured, userloc, buildingKey, time, pageData;
+var universe, configured, userloc, buildingKey, time, pageData, autoKey = 103;
 
 configure();
 
@@ -43,7 +43,7 @@ function onGameMessage( event ) {
 }
 
 function clickAuto(evt) {
-	if ( evt.keyCode === 103 ) { //g <-- not to interfere with standard SGPvP
+	if ( evt.keyCode === autoKey ) { //g <-- not to interfere with standard SGPvP
 		document.getElementById( 'quickButtonSellAndBuy' ).click()
 	}
 }

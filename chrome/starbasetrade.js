@@ -1,7 +1,7 @@
 // This is a content script, it runs on starbase_trade.php and planet_trade.php.
 
 // From other files:
-var Overlay, Universe = Universe.fromDocument( document ), configured, userloc, time, psbCredits;
+var Overlay, Universe = Universe.fromDocument( document ), configured, userloc, time, psbCredits, autoKey = 103;
 
 configure();
 setup();
@@ -195,7 +195,7 @@ function addBR( node ) {
 
 //clicks button with id = id if g is pressed.
 function clickAuto( id, evt ) {
-	if ( evt.keyCode === 103 ) { // g <- not to interfere with standard SGPvP
+	if ( evt.keyCode === autoKey ) { // g <- not to interfere with standard SGPvP
 		document.getElementById( id ).click()
 	}
 }
