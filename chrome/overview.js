@@ -68,9 +68,9 @@ var Overview = function( ukey, document, options ) {
 		this.creditIcon = makeIcon.call(
 			this, 'creditoff', 'Toggle buy/sell prices', onCreditClick );
 		div.appendChild( this.creditIcon );
-		
+
 	}
-	
+
 	this.container.appendChild( div );
 
 	this.filterInfo = document.createElement( 'p' );
@@ -189,11 +189,11 @@ function applyFilter( universeList, sort, callback ) {
 			var temp = Building.createFromStorage(key, data[key]);
 
 			if ( this.options.psbFlag && temp.psb ) {
-				buildings.push( temp ); 
+				buildings.push( temp );
 			} else if ( !this.options.psbFlag && !temp.psb ) {
-				buildings.push( temp );	
+				buildings.push( temp );
 			}
-			
+
 		}
 
 		buildings = this.filter.filter( buildings, Building.now() );
@@ -210,15 +210,15 @@ function applyFilter( universeList, sort, callback ) {
 			else
 				this.projectionIcon.dataset.cmd = 'projoff';
 			setImgSrc( this.projectionIcon );
-		} else {		
+		} else {
 			if ( this.options.amountFlag ) {
 				this.amountIcon.dataset.cmd = 'amounton';
 			} else if( this.options.amountBuyFlag ) {
 				this.amountIcon.dataset.cmd = 'amountbuying';
 			} else {
-				this.amountIcon.dataset.cmd = 'amountoff'; 
+				this.amountIcon.dataset.cmd = 'amountoff';
 			}
-			
+
 			if ( this.options.sellPriceFlag ) {
 				this.creditIcon.dataset.cmd = 'creditsell';
 			} else if ( this.options.buyPriceFlag ) {
@@ -229,7 +229,7 @@ function applyFilter( universeList, sort, callback ) {
 			setImgSrc( this.amountIcon );
 			setImgSrc( this.creditIcon );
 		}
-		
+
 
 		spec = makeSpec.call( this, buildings );
 		this.sorTable.refresh( spec, buildings );
@@ -360,7 +360,7 @@ var COLUMN_SPECS = {
 		sort: function( a, b ) { return a.time - b.time; },
 		initDesc: true
 	},
-	
+
 	credits: {
 		header: function( th ) {
 			th.textContent = 'Credits'; //insert icon later
@@ -387,7 +387,7 @@ var COLUMN_SPECS = {
 			return a.getTicksLeft() - b.getTicksLeft();
 		}
 	},
-	
+
 	ticksToDowngrade: {
 		header: simpleHeader( 'DG in' ),
 		cell: function( b, td ) {
@@ -479,11 +479,11 @@ function makeSpec( buildings ) {
 		after.push( COLUMN_SPECS.ticksToDowngrade );
 		after.push( COLUMN_SPECS.credits );
 	}
-	
+
 	// In full mode, show the "remove" button
 	if ( this.options.mode !== 'compact' )
 		after.push( COLUMN_SPECS.remove );
-	
+
 	// Add properties to the table for use in its spec functions
 	this.sorTable.ukey = this.options.ukey;
 	this.sorTable.totals = [];
@@ -749,10 +749,10 @@ function overviewFigure( building, commId, options ) {
 		if ( options.buyPriceFlag ) {
 			n = building.getBuyAtPrices()[ commId ];
 		}
-		if ( n!== undefined ) { 
-			return n; 
+		if ( n!== undefined ) {
+			return n;
 		}
-		
+
 	}
 
 	if ( building.isUpkeep( commId ) &&
