@@ -68,5 +68,13 @@ return {
 			'bookkeeper-switch-small', 'bookkeeper-slider-small' );
 	}
 };
-
 })();
+
+//Loading options 
+var Options
+chrome.storage.sync.get( 'Options', fillOptions );
+
+function fillOptions( data ) {
+		Options = data;
+}
+

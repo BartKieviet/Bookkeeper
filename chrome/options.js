@@ -21,9 +21,14 @@ function onDOMContentLoaded() {
 		document.getElementById( 'bookkeeper-storage-gauge' ).
 			parentElement.remove();
 	}
-	
-	//wireing
+
+	var IDLIST = ['bookkeeper-keypress', 'bookkeeper-key', 'bookkeeper-sbtrack-enabled', 'bookkeeper-custom-btns-enabled'];
+	//wiring
 	wire( 'bookkeeper-keypress', 'bookkeeper-key' );
+
+	chrome.storage.sync.get( 'Options', setupOptions );
+	
+	IDLIST.forEach( changeSave );
 }
 
 function beginUsageDisplayChore() {
@@ -99,4 +104,33 @@ function wire( idCheck, idText ) {
 	document.getElementById( idCheck ).addEventListener( 'change', function() {
 		document.getElementById( idText ).disabled = !document.getElementById( idCheck ).checked
 	} );
+}
+
+function changeSave( id ) {
+	document.getElementById( id ).addEventListener( 'change', saveOptions );
+}
+
+//XXX make life easier by introducing for loops.
+function saveOptions() {
+	let Options = {};
+	Options[ 'enablePSB' ] = document.getElementById( 'bookkeeper-sbtrack-enabled' ).checked;
+	Options[ 'enableCustom' ] = document.getElementById( 'bookkeeper-custom-btns-enabled' ).checked;
+	Options[ 'enableAutoKey' ] = document.getElementById( 'bookkeeper-keypress' ).checked;
+	Options[ 'autoKey' ] = document.getElementById( 'bookkeeper-key' ).value.charCodeAt(0);
+	let toSave = {};
+	toSave[ 'Options' ] = Options;
+	chrome.storage.sync.set( toSave );
+}
+
+function setupOptions( Options ) {
+	Options = Options[ 'Options' ];
+	if (Object.keys(Options).length === 0) {
+		saveOptions();
+	} else {
+		document.getElementById( 'bookkeeper-sbtrack-enabled' ).checked = Options[ 'enablePSB' ];
+		document.getElementById( 'bookkeeper-custom-btns-enabled' ).checked = Options[ 'enableCustom' ];
+		document.getElementById( 'bookkeeper-keypress' ).checked = 	Options[ 'enableAutoKey' ];
+		document.getElementById( 'bookkeeper-key' ).value = String.fromCharCode( Options[ 'autoKey' ] );
+		document.getElementById( 'bookkeeper-key' ).disabled = !document.getElementById( 'bookkeeper-keypress' ).checked;
+	}
 }
