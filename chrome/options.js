@@ -21,6 +21,9 @@ function onDOMContentLoaded() {
 		document.getElementById( 'bookkeeper-storage-gauge' ).
 			parentElement.remove();
 	}
+	
+	//wireing
+	wire( 'bookkeeper-keypress', 'bookkeeper-key' );
 }
 
 function beginUsageDisplayChore() {
@@ -90,4 +93,10 @@ function onClearClick() {
 		restore.call( this );
 		beginUsageDisplayChore();
 	}
+}
+
+function wire( idCheck, idText ) {
+	document.getElementById( idCheck ).addEventListener( 'change', function() {
+		document.getElementById( idText ).disabled = !document.getElementById( idCheck ).checked
+	} );
 }
