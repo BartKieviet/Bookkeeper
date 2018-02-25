@@ -4,7 +4,7 @@
 var Universe, Sector, Building;
 
 //Global variables.
-var universe, configured, userloc, buildingKey, time, pageData;
+var universe, configured, userloc, buildingKey, time, pageData, autoKey = 103;
 
 configure();
 
@@ -39,6 +39,13 @@ function onGameMessage( event ) {
 
 	// Now check if the building is tracked
 	chrome.storage.sync.get( buildingKey, onBuildingData );
+	window.addEventListener( 'keypress', clickAuto );
+}
+
+function clickAuto(evt) {
+	if ( evt.keyCode === autoKey ) { //g <-- not to interfere with standard SGPvP
+		document.getElementById( 'quickButtonSellAndBuy' ).click()
+	}
 }
 
 function onBuildingData( data ) {
