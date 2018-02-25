@@ -77,7 +77,7 @@ function setup() {
 
 	//Add fuel option.
 	chrome.storage.sync.get( [ Universe.key + 'Fuel', Universe.key + 'FuelCB' ], addFuelInput.bind( middleNode ) );
-	chrome.storage.sync.get( [ Universe.key + 'NCustomBtns' ], fetchCustomBtns.bind( middleNode ) );
+	chrome.storage.sync.get( [ Universe.key + 'NCustomBtns', 'BookkeeperOptions' ], fetchCustomBtns.bind( middleNode ) );
 	chrome.storage.sync.get( [ 'BookkeeperOptions' ], addKeyPress );
 	
 	if (document.forms.planet_trade) {
@@ -272,7 +272,9 @@ function checkFuelSettings() {
 
 //Custom buttons
 function fetchCustomBtns( data ) {
-
+	let Options = data[ 'BookkeeperOptions' ];
+	if ( !Options[ 'enableCustom' ] ) 
+		return;
 	var nButtons = data [ Universe.key + 'NCustomBtns' ] || 1;
 	for ( var i = 1; i <= nButtons ; i++ ) {
 		chrome.storage.sync.get( [ Universe.key + 'CustomBtn' + i ], makeCustomBtn.bind( this, i ) );
@@ -337,6 +339,8 @@ function clickCustomButton( btnData ) {
 
 function showConfDiv( n , data ) {
 	data = data[ Universe.key + 'CustomBtn' + n ];
+	if ( !data )
+		data = {};
 	var container = document.createElement( 'div' );
 	container.id = 'bookkeeper-cbtn-conf-' + n;
 	container.className = 'bookkeeper-cbtn-conf';
@@ -345,7 +349,7 @@ function showConfDiv( n , data ) {
 	var button = makeButton( 'bookkeeper-cbtn-conf-submit' + n );
 	button.textContent = 'Submit';
 	container.appendChild( button );
-
+	
 	for ( key in data ) {
 		addRow( button, key, data[key] );	
 	}
