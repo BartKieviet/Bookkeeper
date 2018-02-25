@@ -8,7 +8,7 @@ var universe = Universe.fromDocument ( document );
 
 // Globals set during configuration
 var configured, userloc, time, shipSpace, buildingSpace, buildingKey,
-    pageData, building, previewEnabled, previewCheckbox, autoKey = 103;
+    pageData, building, previewEnabled, previewCheckbox;
 
 configure();
 
@@ -53,12 +53,19 @@ function onGameMessage( event ) {
 
 	pageData = parsePage();
 	chrome.storage.sync.get( buildingKey, onBuildingData );
-	window.addEventListener( 'keypress', clickAuto );	
+	chrome.storage.sync.get( 'BookkeeperOptions', addKeyPress );
 }
 
-function clickAuto(evt) {
-	if ( evt.keyCode === autoKey ) { //g <-- not to interfere with standard SGPvP
-		document.getElementById( 'bookkeeper-quick-buttons-sellandbuy' ).click()
+function addKeyPress( data ) {
+	let Options = data [ 'BookkeeperOptions' ];
+	if ( !Options[ 'enableAutoKey'] )
+		return;
+	window.addEventListener( 'keypress', clickAuto.bind( this, Options ) );
+}		
+
+function clickAuto( evt, Options ) {
+	if ( evt.keyCode === Options[ 'autoKey' ] ) { 
+		document.getElementById( 'bookkeeper-quick-buttons-sellandbuy' ).click();
 	}
 }
 

@@ -1,8 +1,7 @@
 // This is a content script, it runs on starbase_trade.php and planet_trade.php.
 
 // From other files:
-var Overlay, Universe = Universe.fromDocument( document ), configured, userloc, time, psbCredits, autoKey = 103;
-
+var Overlay, Universe = Universe.fromDocument( document ), configured, userloc, time, psbCredits;
 configure();
 setup();
 
@@ -32,9 +31,7 @@ function onGameMessage( event ) {
 	userloc = parseInt( data.loc );
 	time = Math.floor( parseInt( data.time ) / 1000 ); //Yes Vicky I wrote that.
 	psbCredits = parseInt( data.psbCredits );
-	if ( Options[ 'enablePSB' ] ) {
-		trackPSB(); //Planet - SB, not player-owned Starbase ;-)
-	}
+	chrome.storage.sync.get( 'BookkeeperOptions', trackPSB ); //Planet - SB, not player-owned Starbase ;-)
 }
 
 function setup() {
@@ -81,10 +78,9 @@ function setup() {
 	//Add fuel option.
 	chrome.storage.sync.get( [ Universe.key + 'Fuel', Universe.key + 'FuelCB' ], addFuelInput.bind( middleNode ) );
 	chrome.storage.sync.get( [ Universe.key + 'NCustomBtns' ], fetchCustomBtns.bind( middleNode ) );
+	chrome.storage.sync.get( [ 'BookkeeperOptions' ], addKeyPress );
 	
 	if (document.forms.planet_trade) {
-		
-		window.addEventListener( 'keypress', clickAuto.bind( this, 'bookkeeper-transfer-FWE' ) );
 
 		addBR( middleNode );
 		button = makeButton ( 'bookkeeper-transfer-food' )
@@ -133,9 +129,7 @@ function setup() {
 	}
 
 	if (document.forms.starbase_trade) {
-	
-		window.addEventListener( 'keypress', clickAuto.bind( this, 'bookkeeper-transfer-FWE' ) );
-
+		
 		addBR( middleNode );
 		button = makeButton ( 'bookkeeper-transfer-SF' )
 		button.textContent = '<- SF E/AE | FW ->';
@@ -195,14 +189,19 @@ function addBR( node ) {
 	node.appendChild( document.createElement( 'br' ));
 }
 
+function addKeyPress( data ) {
+	let Options = data [ 'BookkeeperOptions' ];
+	if ( !Options[ 'enableAutoKey'] )
+		return;
+	window.addEventListener( 'keypress', clickAuto.bind( this, 'bookkeeper-transfer-FWE', Options ) );
+}		
+
 //clicks button with id = id if g is pressed.
-function clickAuto( id, evt ) {
-	if ( evt.keyCode === autoKey ) { // g <- not to interfere with standard SGPvP
+function clickAuto( id, Options, evt ) {
+	if ( evt.keyCode === Options[ 'autoKey' ] ) { // g <- not to interfere with standard SGPvP
 		document.getElementById( id ).click()
 	}
 }
-
-
 
 // add fuel input 
 function addFuelInput( amount ) {
@@ -390,7 +389,10 @@ function showConfDiv( n , data ) {
 
 
 // Below comes all the tracking Planets and Starbases stuff
-function trackPSB() {
+function trackPSB( data ) {
+	let Options = data[ 'BookkeeperOptions' ];
+	if ( !Options[ 'enablePSB' ] )
+		return;
 	chrome.storage.sync.get( [ Universe.key, Universe.key + userloc ], setTrackBtn.bind ( null, userloc) )
 }
 

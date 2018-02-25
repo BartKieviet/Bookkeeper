@@ -70,11 +70,3 @@ return {
 };
 })();
 
-//Loading options 
-var Options
-chrome.storage.sync.get( 'BookkeeperOptions', fillOptions );
-
-function fillOptions( data ) {
-	Options = data[ 'BookkeeperOptions' ];
-}
-
