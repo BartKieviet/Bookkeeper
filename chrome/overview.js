@@ -40,7 +40,7 @@ var Overview = function( ukey, document, options ) {
 		amountFlag: options.amountFlag || false,
 		amountBuyFlag: options.amountBuyFlag || false,
 		buyPriceFlag: options.buyPriceFlag || false,
-		sellPriceFlag: options.sellPriceFlag || false,
+		sellPriceFlag: options.sellPriceFlag || false
 	};
 
 	this.filter = new Filter();
@@ -68,9 +68,9 @@ var Overview = function( ukey, document, options ) {
 		this.creditIcon = makeIcon.call(
 			this, 'creditoff', 'Toggle buy/sell prices', onCreditClick );
 		div.appendChild( this.creditIcon );
-		
+
 	}
-	
+
 	this.container.appendChild( div );
 
 	this.filterInfo = document.createElement( 'p' );
@@ -189,11 +189,11 @@ function applyFilter( universeList, sort, callback ) {
 			var temp = Building.createFromStorage(key, data[key]);
 
 			if ( this.options.psbFlag && temp.psb ) {
-				buildings.push( temp ); 
+				buildings.push( temp );
 			} else if ( !this.options.psbFlag && !temp.psb ) {
-				buildings.push( temp );	
+				buildings.push( temp );
 			}
-			
+
 		}
 
 		buildings = this.filter.filter( buildings, Building.now() );
@@ -210,15 +210,15 @@ function applyFilter( universeList, sort, callback ) {
 			else
 				this.projectionIcon.dataset.cmd = 'projoff';
 			setImgSrc( this.projectionIcon );
-		} else {		
+		} else {
 			if ( this.options.amountFlag ) {
 				this.amountIcon.dataset.cmd = 'amounton';
 			} else if( this.options.amountBuyFlag ) {
 				this.amountIcon.dataset.cmd = 'amountbuying';
 			} else {
-				this.amountIcon.dataset.cmd = 'amountoff'; 
+				this.amountIcon.dataset.cmd = 'amountoff';
 			}
-			
+
 			if ( this.options.sellPriceFlag ) {
 				this.creditIcon.dataset.cmd = 'creditsell';
 			} else if ( this.options.buyPriceFlag ) {
@@ -229,7 +229,7 @@ function applyFilter( universeList, sort, callback ) {
 			setImgSrc( this.amountIcon );
 			setImgSrc( this.creditIcon );
 		}
-		
+
 
 		spec = makeSpec.call( this, buildings );
 		this.sorTable.refresh( spec, buildings );
@@ -360,13 +360,15 @@ var COLUMN_SPECS = {
 		sort: function( a, b ) { return a.time - b.time; },
 		initDesc: true
 	},
-	
+
 	credits: {
 		header: function( th ) {
 			th.textContent = 'Credits'; //insert icon later
 			th.classList.add( 'r', 'credits');
 		},
-		cell: rCell( function ( b ) { return b.credits.toLocaleString('en') } ),
+		cell: rCell( function ( b ) {
+			return b.credits.toLocaleString('en')
+		} ),
 		sortId: 'credits',
 		sort: function( a, b ) { return a.credits - b.credits; }
 	},
@@ -387,25 +389,10 @@ var COLUMN_SPECS = {
 			return a.getTicksLeft() - b.getTicksLeft();
 		}
 	},
-	
+
 	ticksToDowngrade: {
 		header: simpleHeader( 'DG in' ),
-		cell: function( b, td ) {
-			if ( b.getTypeShortName() === 'P' ) {
-				var n = 0;
-				if (b.level >= 30000) {
-					n = Math.ceil( Math.log( 30000 / ( b.level * 1.012^( b.getTicksLeft() ) ) ) / Math.log( 15 / 16 ))
-				} else if (b.level >= 15000) {
-					n = Math.ceil( Math.log( 15000 / ( b.level * 1.012^( b.getTicksLeft() ) ) ) / Math.log( 15 / 16 ))
-				} else if ( b.level >= 5000 ) {
-					n = Math.ceil( Math.log( 5000 / ( b.level * 1.012^( b.getTicksLeft() ) ) ) / Math.log( 15 / 16 ))
-				} else {
-					n = Math.ceil( Math.log( 500 / ( b.level * 1.012^( b.getTicksLeft() ) ) ) / Math.log( 15 / 16 ))
-				}
-				td.textContent = n + b.getTicksLeft();
-				td.className = 'r';
-			}
-		}
+		cell: ticksToDowngradeCell
 	},
 
 	remove: {
@@ -436,6 +423,44 @@ function rCell( fn ) {
 		td.className = 'r';
 	}
 }
+
+// This one was a bit too verbose to define inline in the spec object above.
+
+function ticksToDowngradeCell( b, td ) {
+	if ( b.getTypeShortName() !== 'P' )
+		return;
+
+	// "level" is population.  Because we abuse a data structure intended
+	// for buildings originally.
+	let population = b.level;
+
+	// How many ticks we have left.  This is not very accurate for
+	// starbases, because consumption increases with population... so this
+	// number actually overestimates the ticks left.
+	let ticksLeft = b.getTicksLeft();
+
+	// The minimum size the base will be after it consumes the food it
+	// currently has in stock.  As per manual, growth is actually a random
+	// value between 1.2 and 2.4%.  So it'll grow more than this.  Hopefully
+	// that will offset the overestimation above.
+	let grownPop =  population * Math.pow( 1.012, ticksLeft );
+
+	// Find the first number in this sequence that is less than or equal to
+	// the current population.  These of course are the thresholds for the
+	// 4th, 3rd, and 2nd ring, and the final downgrade.
+	let threshold = [ 30000, 15000, 5000, 500 ].find(
+		function(t) { return t <= population; } );
+
+	// The number of ticks for the base to shrink from the size it'll grown
+	// to, to the next downgrade threshold.
+	//
+	// Kahldar is too smart.
+	let n = Math.ceil( Math.log(threshold/grownPop) / Math.log(15/16) );
+
+	td.textContent = ticksLeft + n;
+	td.className = 'r';
+}
+
 
 // Create the spec for the table, based on the current filter.
 
@@ -479,11 +504,11 @@ function makeSpec( buildings ) {
 		after.push( COLUMN_SPECS.ticksToDowngrade );
 		after.push( COLUMN_SPECS.credits );
 	}
-	
+
 	// In full mode, show the "remove" button
 	if ( this.options.mode !== 'compact' )
 		after.push( COLUMN_SPECS.remove );
-	
+
 	// Add properties to the table for use in its spec functions
 	this.sorTable.ukey = this.options.ukey;
 	this.sorTable.totals = [];
@@ -749,10 +774,10 @@ function overviewFigure( building, commId, options ) {
 		if ( options.buyPriceFlag ) {
 			n = building.getBuyAtPrices()[ commId ];
 		}
-		if ( n!== undefined ) { 
-			return n; 
+		if ( n!== undefined ) {
+			return n;
 		}
-		
+
 	}
 
 	if ( building.isUpkeep( commId ) &&
@@ -762,7 +787,7 @@ function overviewFigure( building, commId, options ) {
 	if ( (n = building.getSelling()[commId]) !== undefined )
 		return isNaN(n) ? Infinity : n;
 	return undefined;
-a}
+}
 
 // Return an array of ids of commodities that are consumed or produced by at
 // least one building in the collection given.
