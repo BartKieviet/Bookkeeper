@@ -20,16 +20,24 @@ function setup() {
 
 	function onHaveUniverseListData( data ) {
 		var universeList = data[ universe.key ] || [];
-		ownEntries = parseOwnBuildings();
+		if ( Options[ 'enableOwnBuildings' ] ) {
+			ownEntries = parseOwnBuildings();
+		} else {
+			ownEntries = [];
+		}
 		addOwnBuildings(
 			universeList, ownEntries, onOwnBuildingsAdded );
 	}
 
 	function onOwnBuildingsAdded( universeList ) {
 		overview = new Overview( universe.key, document );
-		overview.configure( universeList );
-		overviewsb = new Overview( universe.key, document, { psbFlag : true } );
-		overviewsb.configure( universeList, onReady );
+		if ( Options[ 'enablePSB' ] ) {
+			overview.configure( universeList );
+			overviewsb = new Overview( universe.key, document, { psbFlag : true } );
+			overviewsb.configure( universeList, onReady );
+		} else {
+			overview.configure( universeList, onReady );
+		}
 	}
 
 	function onReady() {
@@ -51,7 +59,7 @@ function setup() {
 		anchor.parentNode.insertBefore( h1, anchor );
 		anchor.parentNode.insertBefore( overview.container, anchor );
 
-		if ( overviewsb.sorTable.items.length > 0) {
+		if ( Options[ 'enablePSB' ] && overviewsb.sorTable.items.length > 0) {
 			h1 = document.createElement( 'h1' );
 			h1.className = 'bookkeeper';
 			img = document.createElement( 'img' );
