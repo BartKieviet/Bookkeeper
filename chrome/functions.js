@@ -75,6 +75,6 @@ var Options
 chrome.storage.sync.get( 'Options', fillOptions );
 
 function fillOptions( data ) {
-		Options = data;
+	Options = data[ 'Options' ];
 }
 

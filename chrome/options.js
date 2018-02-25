@@ -22,9 +22,9 @@ function onDOMContentLoaded() {
 			parentElement.remove();
 	}
 
-	var IDLIST = ['bookkeeper-keypress', 'bookkeeper-key', 'bookkeeper-sbtrack-enabled', 'bookkeeper-custom-btns-enabled'];
+	var IDLIST = ['bookkeeper-enableAutoKey', 'bookkeeper-autoKey', 'bookkeeper-enablePSB', 'bookkeeper-enableCustom'];
 	//wiring
-	wire( 'bookkeeper-keypress', 'bookkeeper-key' );
+	wire( 'bookkeeper-enableAutoKey', 'bookkeeper-autoKey' );
 
 	chrome.storage.sync.get( 'Options', setupOptions );
 	
@@ -113,10 +113,10 @@ function changeSave( id ) {
 //XXX make life easier by introducing for loops.
 function saveOptions() {
 	let Options = {};
-	Options[ 'enablePSB' ] = document.getElementById( 'bookkeeper-sbtrack-enabled' ).checked;
-	Options[ 'enableCustom' ] = document.getElementById( 'bookkeeper-custom-btns-enabled' ).checked;
-	Options[ 'enableAutoKey' ] = document.getElementById( 'bookkeeper-keypress' ).checked;
-	Options[ 'autoKey' ] = document.getElementById( 'bookkeeper-key' ).value.charCodeAt(0);
+	Options[ 'enablePSB' ] = document.getElementById( 'bookkeeper-enablePSB' ).checked;
+	Options[ 'enableCustom' ] = document.getElementById( 'bookkeeper-enableCustom' ).checked;
+	Options[ 'enableAutoKey' ] = document.getElementById( 'bookkeeper-enableAutoKey' ).checked;
+	Options[ 'autoKey' ] = document.getElementById( 'bookkeeper-autoKey' ).value.charCodeAt(0);
 	let toSave = {};
 	toSave[ 'Options' ] = Options;
 	chrome.storage.sync.set( toSave );
@@ -127,10 +127,10 @@ function setupOptions( Options ) {
 	if (Object.keys(Options).length === 0) {
 		saveOptions();
 	} else {
-		document.getElementById( 'bookkeeper-sbtrack-enabled' ).checked = Options[ 'enablePSB' ];
-		document.getElementById( 'bookkeeper-custom-btns-enabled' ).checked = Options[ 'enableCustom' ];
-		document.getElementById( 'bookkeeper-keypress' ).checked = 	Options[ 'enableAutoKey' ];
-		document.getElementById( 'bookkeeper-key' ).value = String.fromCharCode( Options[ 'autoKey' ] );
-		document.getElementById( 'bookkeeper-key' ).disabled = !document.getElementById( 'bookkeeper-keypress' ).checked;
+		document.getElementById( 'bookkeeper-enablePSB' ).checked = Options[ 'enablePSB' ];
+		document.getElementById( 'bookkeeper-enableCustom' ).checked = Options[ 'enableCustom' ];
+		document.getElementById( 'bookkeeper-enableAutoKey' ).checked = 	Options[ 'enableAutoKey' ];
+		document.getElementById( 'bookkeeper-autoKey' ).value = String.fromCharCode( Options[ 'autoKey' ] );
+		document.getElementById( 'bookkeeper-autoKey' ).disabled = !document.getElementById( 'bookkeeper-enableAutoKey' ).checked;
 	}
 }

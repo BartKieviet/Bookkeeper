@@ -32,7 +32,9 @@ function onGameMessage( event ) {
 	userloc = parseInt( data.loc );
 	time = Math.floor( parseInt( data.time ) / 1000 ); //Yes Vicky I wrote that.
 	psbCredits = parseInt( data.psbCredits );
-	trackPSB(); //Planet - SB, not player-owned Starbase ;-)
+	if ( Options[ 'enablePSB' ] ) {
+		trackPSB(); //Planet - SB, not player-owned Starbase ;-)
+	}
 }
 
 function setup() {
