@@ -39,6 +39,20 @@ function onGameMessage( event ) {
 
 	// Now check if the building is tracked
 	chrome.storage.sync.get( buildingKey, onBuildingData );
+	chrome.storage.sync.get( 'BookkeeperOptions', addKeyPress );
+}
+
+function addKeyPress( data ) {
+	let Options = data [ 'BookkeeperOptions' ];
+	if ( !Options[ 'enableAutoKey'] )
+		return;
+	window.addEventListener( 'keypress', clickAuto.bind( this, Options ) );
+}		
+
+function clickAuto( evt, Options ) {
+	if ( evt.keyCode === Options[ 'autoKey' ] ) { 
+		document.getElementById( 'quickButtonSellAndBuy' ).click();
+	}
 }
 
 function onBuildingData( data ) {

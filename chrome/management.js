@@ -53,6 +53,20 @@ function onGameMessage( event ) {
 
 	pageData = parsePage();
 	chrome.storage.sync.get( buildingKey, onBuildingData );
+	chrome.storage.sync.get( 'BookkeeperOptions', addKeyPress );
+}
+
+function addKeyPress( data ) {
+	let Options = data [ 'BookkeeperOptions' ];
+	if ( !Options[ 'enableAutoKey'] )
+		return;
+	window.addEventListener( 'keypress', clickAuto.bind( this, Options ) );
+}		
+
+function clickAuto( evt, Options ) {
+	if ( evt.keyCode === Options[ 'autoKey' ] ) { 
+		document.getElementById( 'bookkeeper-quick-buttons-sellandbuy' ).click();
+	}
 }
 
 // Lift all the data we can lift from this page.
@@ -244,6 +258,7 @@ function addUI() {
 	autoBuy.textContent = '<- Transfer production';
 	autoBoth = document.createElement( 'button' );
 	autoBoth.textContent = '<- Auto Transfer ->';
+	autoBoth.id = 'bookkeeper-quick-buttons-sellandbuy';
 	preview = document.createElement( 'label' );
 	// previewCheckBox is a global, remember
 	previewCheckbox = document.createElement( 'input' );

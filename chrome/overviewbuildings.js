@@ -1,7 +1,7 @@
 // This is a content script.  It runs on overview_buildings.php.
 
 // From other files
-var Universe, Building, Commodities, Sector, Overview;
+var Universe, Building, Commodities, Sector, Overview, Options;
 
 // Global used here XXX K you were right, Universe shouldn't be an object.
 var universe = Universe.fromDocument( document );
@@ -16,20 +16,29 @@ function setup() {
 
 	// Fetch the universe list, we need it for both the Overview component
 	// and to update the user's own buildings.
-	chrome.storage.sync.get( universe.key, onHaveUniverseListData );
+	chrome.storage.sync.get( [ universe.key, 'BookkeeperOptions' ], onHaveUniverseListData );
 
 	function onHaveUniverseListData( data ) {
+		Options = data[ 'BookkeeperOptions' ];
 		var universeList = data[ universe.key ] || [];
-		ownEntries = parseOwnBuildings();
+		if ( Options[ 'enableOwnBuildings' ] ) {
+			ownEntries = parseOwnBuildings();
+		} else {
+			ownEntries = [];
+		}
 		addOwnBuildings(
 			universeList, ownEntries, onOwnBuildingsAdded );
 	}
 
 	function onOwnBuildingsAdded( universeList ) {
 		overview = new Overview( universe.key, document );
-		overview.configure( universeList );
-		overviewsb = new Overview( universe.key, document, { psbFlag : true } );
-		overviewsb.configure( universeList, onReady );
+		if ( Options[ 'enablePSB' ] ) {
+			overview.configure( universeList );
+			overviewsb = new Overview( universe.key, document, { psbFlag : true } );
+			overviewsb.configure( universeList, onReady );
+		} else {
+			overview.configure( universeList, onReady );
+		}
 	}
 
 	function onReady() {
@@ -51,7 +60,7 @@ function setup() {
 		anchor.parentNode.insertBefore( h1, anchor );
 		anchor.parentNode.insertBefore( overview.container, anchor );
 
-		if ( overviewsb.sorTable.items.length > 0) {
+		if ( Options[ 'enablePSB' ] && overviewsb.sorTable.items.length > 0) {
 			h1 = document.createElement( 'h1' );
 			h1.className = 'bookkeeper';
 			img = document.createElement( 'img' );

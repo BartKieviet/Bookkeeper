@@ -68,5 +68,5 @@ return {
 			'bookkeeper-switch-small', 'bookkeeper-slider-small' );
 	}
 };
-
 })();
+
