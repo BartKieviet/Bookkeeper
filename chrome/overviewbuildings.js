@@ -1,7 +1,7 @@
 // This is a content script.  It runs on overview_buildings.php.
 
 // From other files
-var Universe, Building, Commodities, Sector, Overview;
+var Universe, Building, Commodities, Sector, Overview, Options;
 
 // Global used here XXX K you were right, Universe shouldn't be an object.
 var universe = Universe.fromDocument( document );
@@ -16,9 +16,10 @@ function setup() {
 
 	// Fetch the universe list, we need it for both the Overview component
 	// and to update the user's own buildings.
-	chrome.storage.sync.get( universe.key, onHaveUniverseListData );
+	chrome.storage.sync.get( [ universe.key, 'BookkeeperOptions' ], onHaveUniverseListData );
 
 	function onHaveUniverseListData( data ) {
+		Options = data[ 'BookkeeperOptions' ];
 		var universeList = data[ universe.key ] || [];
 		if ( Options[ 'enableOwnBuildings' ] ) {
 			ownEntries = parseOwnBuildings();
