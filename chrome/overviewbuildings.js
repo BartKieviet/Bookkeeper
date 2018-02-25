@@ -20,7 +20,11 @@ function setup() {
 
 	function onHaveUniverseListData( data ) {
 		var universeList = data[ universe.key ] || [];
-		ownEntries = parseOwnBuildings();
+		if ( Options[ 'enableOwnBuildings' ] ) {
+			ownEntries = parseOwnBuildings();
+		} else {
+			ownEntries = [];
+		}
 		addOwnBuildings(
 			universeList, ownEntries, onOwnBuildingsAdded );
 	}

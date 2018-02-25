@@ -22,11 +22,11 @@ function onDOMContentLoaded() {
 			parentElement.remove();
 	}
 
-	var IDLIST = ['bookkeeper-enableAutoKey', 'bookkeeper-autoKey', 'bookkeeper-enablePSB', 'bookkeeper-enableCustom'];
+	var IDLIST = ['bookkeeper-enableAutoKey', 'bookkeeper-autoKey', 'bookkeeper-enablePSB', 'bookkeeper-enableCustom', 'bookkeeper-enableOwnBuildings'];
 	//wiring
 	wire( 'bookkeeper-enableAutoKey', 'bookkeeper-autoKey' );
 
-	chrome.storage.sync.get( 'Options', setupOptions );
+	chrome.storage.sync.get( 'BookkeeperOptions', setupOptions );
 	
 	IDLIST.forEach( changeSave );
 }
@@ -38,9 +38,42 @@ function beginUsageDisplayChore() {
 }
 
 function onItems( items ) {
-	var count = Object.keys( items ).length;
+	var count = {};
+	count[ 'item_count' ] = Object.keys( items ).length;
+	count[ 'O' ] = 0;
+	count[ 'A' ] = 0;
+	count[ 'P' ] = 0;
+	count[ 'B' ] = 0;
+	
+	for ( var key in items ) {
+		switch( key[0] ) {
+			case 'O': count[ key[0] ] += 1; break;
+			case 'A': count[ key[0] ] += 1; break;
+			case 'P': count[ key[0] ] += 1; break;
+			default: count[ 'B' ] += 1;
+		}
+	}
+	
+	['O','A','P'].forEach( updateClearButtons.bind( null, items ) ); 
+	function updateClearButtons( items, key ) {
+		if ( count[ key ] > 0 ) {
+			document.getElementById( 'bookkeeper-clear-button-' + key ).addEventListener( 'click', clearUni.bind( document.getElementById( 'bookkeeper-clear-button-' + key ), items) );
+		} else {
+			document.getElementById( 'bookkeeper-clear-button-' + key ).remove();
+		}
+	}
+	
 	chrome.storage.sync.getBytesInUse(null,
 					  onKnownBytesInUse.bind(null, count));
+}
+
+function clearUni( items ) {
+	for ( var key in items ) {
+		if( key[0] === this.id.split(/-/)[3] ) {
+			chrome.storage.sync.remove( key ); //No confirm because of all the faff below
+		}
+	}
+	this.remove();
 }
 
 function onKnownBytesInUse( item_count, bytes ) {
@@ -52,13 +85,17 @@ function onKnownBytesInUse( item_count, bytes ) {
 	    item_quota = chrome.storage.sync.MAX_ITEMS,
 	    byte_quota = chrome.storage.sync.QUOTA_BYTES;
 
-	usage_span.textContent = item_count;
+	usage_span.textContent = item_count[ 'item_count' ];;
 	quota_span.textContent = item_quota;
 	byte_usage_span.textContent = bytes;
 	byte_quota_span.textContent = byte_quota;
 
 	// Let the gauge show the direst of these two
-	gauge.value = Math.max( item_count / item_quota, bytes / byte_quota );
+	gauge.value = Math.max( item_count[ 'item_count' ] / item_quota, bytes / byte_quota );
+	document.getElementById('bookkeeper-storage-orion').style.width = ( 100 * item_count[ 'O' ] / item_count[ 'item_count' ] ) + '%';
+	document.getElementById('bookkeeper-storage-artemis').style.width = ( 100 * item_count[ 'A' ] / item_count[ 'item_count' ] ) + '%';
+	document.getElementById('bookkeeper-storage-pegasus').style.width = ( 100 * item_count[ 'P' ] / item_count[ 'item_count' ] ) + '%';
+	document.getElementById('bookkeeper-storage-total').style.width = ( 100 * item_count[ 'B' ] / item_count[ 'item_count' ] ) + '%';
 }
 
 // What a faff. All I wanted was window.confirm(), but can't use that in the
@@ -110,27 +147,32 @@ function changeSave( id ) {
 	document.getElementById( id ).addEventListener( 'change', saveOptions );
 }
 
-//XXX make life easier by introducing for loops.
+//XXX TODO make life easier by introducing for loops.
 function saveOptions() {
 	let Options = {};
 	Options[ 'enablePSB' ] = document.getElementById( 'bookkeeper-enablePSB' ).checked;
 	Options[ 'enableCustom' ] = document.getElementById( 'bookkeeper-enableCustom' ).checked;
 	Options[ 'enableAutoKey' ] = document.getElementById( 'bookkeeper-enableAutoKey' ).checked;
+	Options[ 'enableOwnBuildings' ] = document.getElementById( 'bookkeeper-enableOwnBuildings' ).checked;
 	Options[ 'autoKey' ] = document.getElementById( 'bookkeeper-autoKey' ).value.charCodeAt(0);
 	let toSave = {};
-	toSave[ 'Options' ] = Options;
+	toSave[ 'BookkeeperOptions' ] = Options;
 	chrome.storage.sync.set( toSave );
 }
 
 function setupOptions( Options ) {
-	Options = Options[ 'Options' ];
+	Options = Options[ 'BookkeeperOptions' ];
 	if (Object.keys(Options).length === 0) {
 		saveOptions();
 	} else {
-		document.getElementById( 'bookkeeper-enablePSB' ).checked = Options[ 'enablePSB' ];
-		document.getElementById( 'bookkeeper-enableCustom' ).checked = Options[ 'enableCustom' ];
-		document.getElementById( 'bookkeeper-enableAutoKey' ).checked = 	Options[ 'enableAutoKey' ];
-		document.getElementById( 'bookkeeper-autoKey' ).value = String.fromCharCode( Options[ 'autoKey' ] );
+		for (var key in Options) {
+			if ( typeof Options[ key ] === "boolean" ) {
+				document.getElementById( 'bookkeeper-' + key ).checked = Options[ key ];
+			}
+		}
+		// document.getElementById( 'bookkeeper-enableCustom' ).checked = Options[ 'enableCustom' ];
+		// document.getElementById( 'bookkeeper-enableAutoKey' ).checked = 	Options[ 'enableAutoKey' ];
+		// document.getElementById( 'bookkeeper-autoKey' ).value = String.fromCharCode( Options[ 'autoKey' ] );
 		document.getElementById( 'bookkeeper-autoKey' ).disabled = !document.getElementById( 'bookkeeper-enableAutoKey' ).checked;
 	}
 }

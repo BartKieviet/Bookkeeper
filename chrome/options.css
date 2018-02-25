@@ -11,7 +11,8 @@ body > section:first-child {
 	padding-top: inherit;
 }
 
-button#bookkeeper-clear-button {
+button#bookkeeper-clear-button, button#bookkeeper-clear-button-O, 
+ button#bookkeeper-clear-button-A, button#bookkeeper-clear-button-P {
 	background-color: #00a;
 	background-image: linear-gradient(#b80000, #b80000 38%, #850000);
 	color: white;
@@ -28,6 +29,59 @@ progress#bookkeeper-storage-gauge {
 	width: 100%
 }
 
+.progress {
+  background-color: #f9f9f9;
+  color: #fff;
+  box-shadow: inset 0 1px 1px rgba(100, 100, 100, 0.1);
+  box-sizing: initial;
+  color: #fff;
+  font-size: 11px;
+  font-size: 0.6875rem;
+  height: 12px;
+  line-height: 1.182;
+  margin: 6px 0;
+  position: relative;
+  text-align: center;
+  width: 100%;
+}
+
+.progress > span {
+  background-color: #2bc253;
+  display: block;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  width: auto;
+}
+
+.progress.progress-stacked > span {
+  display: inline-block;
+  float: left;
+}
+
+span.orion {
+	background-color : green;
+	height: 12px;
+	display: inline-block;  
+}
+
+span.artemis {
+	background-color : blue;
+	height: 12px;
+	display: inline-block;  
+}
+
+span.pegasus {
+	background-color : rgb( 234, 191, 60 );
+	height: 12px;
+	display: inline-block;  
+}
+
+span.total {
+	background-color : black;
+	height: 12px;
+	display: inline-block;
+}
 /* Firefox workarounds, see dev notes. */
 
 @supports (-moz-appearance: none) {

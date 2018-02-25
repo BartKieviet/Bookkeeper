@@ -72,9 +72,9 @@ return {
 
 //Loading options 
 var Options
-chrome.storage.sync.get( 'Options', fillOptions );
+chrome.storage.sync.get( 'BookkeeperOptions', fillOptions );
 
 function fillOptions( data ) {
-	Options = data[ 'Options' ];
+	Options = data[ 'BookkeeperOptions' ];
 }
 
