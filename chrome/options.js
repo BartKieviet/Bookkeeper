@@ -23,6 +23,7 @@ function onDOMContentLoaded() {
 	}
 
 	var IDLIST = ['bookkeeper-enableAutoKey', 'bookkeeper-autoKey', 'bookkeeper-enablePSB', 'bookkeeper-enableCustom', 'bookkeeper-enableOwnBuildings'];
+
 	//wiring
 	wire( 'bookkeeper-enableAutoKey', 'bookkeeper-autoKey' );
 
@@ -34,16 +35,18 @@ function onDOMContentLoaded() {
 function beginUsageDisplayChore() {
 	// This is ugly, we don't need to fetch everything, just count it.
 	// There should be a chrome.storage.sync.getItemCount() or something.
+	// [K] We now use it to display the gravity of each universe.
 	chrome.storage.sync.get( null, onItems );
 }
 
 function onItems( items ) {
-	var count = {};
-	count[ 'item_count' ] = Object.keys( items ).length;
-	count[ 'O' ] = 0;
-	count[ 'A' ] = 0;
-	count[ 'P' ] = 0;
-	count[ 'B' ] = 0;
+	var count = {
+		'item_count' : Object.keys( items ).length,
+		'O' : 0,
+		'A' : 0,
+		'P' : 0,
+		'B' : 0
+	};
 	
 	for ( var key in items ) {
 		switch( key[0] ) {
@@ -54,23 +57,25 @@ function onItems( items ) {
 		}
 	}
 	
-	['O','A','P'].forEach( updateClearButtons.bind( null, items ) ); 
-	function updateClearButtons( items, key ) {
-		if ( count[ key ] > 0 ) {
-			document.getElementById( 'bookkeeper-clear-button-' + key ).addEventListener( 'click', clearUni.bind( document.getElementById( 'bookkeeper-clear-button-' + key ), items) );
-		} else {
-			document.getElementById( 'bookkeeper-clear-button-' + key ).remove();
-		}
-	}
-	
+	['O','A','P'].forEach( updateClearButtons.bind( null, items, count ) ); 
+
 	chrome.storage.sync.getBytesInUse(null,
 					  onKnownBytesInUse.bind(null, count));
 }
 
+function updateClearButtons( items, count, key ) {
+	if ( count[ key ] > 0 ) {
+		document.getElementById( 'bookkeeper-clear-button-' + key ).addEventListener( 'click', clearUni.bind( document.getElementById( 'bookkeeper-clear-button-' + key ), items) );
+	} else {
+		document.getElementById( 'bookkeeper-clear-button-' + key ).remove();
+	}
+}
+
 function clearUni( items ) {
+	// function clears the universe specific data. They all start with ukey. No confirmation because of all the faff below.
 	for ( var key in items ) {
 		if( key[0] === this.id.split(/-/)[3] ) {
-			chrome.storage.sync.remove( key ); //No confirm because of all the faff below
+			chrome.storage.sync.remove( key ); 
 		}
 	}
 	this.remove();
@@ -92,6 +97,8 @@ function onKnownBytesInUse( item_count, bytes ) {
 
 	// Let the gauge show the direst of these two
 	gauge.value = Math.max( item_count[ 'item_count' ] / item_quota, bytes / byte_quota );
+	
+	// Updating universe specific storage spans
 	document.getElementById('bookkeeper-storage-orion').style.width = ( 100 * item_count[ 'O' ] / item_count[ 'item_count' ] ) + '%';
 	document.getElementById('bookkeeper-storage-artemis').style.width = ( 100 * item_count[ 'A' ] / item_count[ 'item_count' ] ) + '%';
 	document.getElementById('bookkeeper-storage-pegasus').style.width = ( 100 * item_count[ 'P' ] / item_count[ 'item_count' ] ) + '%';
@@ -162,7 +169,7 @@ function saveOptions() {
 
 function setupOptions( Options ) {
 	Options = Options[ 'BookkeeperOptions' ];
-	if (Object.keys(Options).length === 0) {
+	if ( Object.keys( Options ).length === 0 ) {
 		saveOptions();
 	} else {
 		for (var key in Options) {
@@ -170,9 +177,6 @@ function setupOptions( Options ) {
 				document.getElementById( 'bookkeeper-' + key ).checked = Options[ key ];
 			}
 		}
-		// document.getElementById( 'bookkeeper-enableCustom' ).checked = Options[ 'enableCustom' ];
-		// document.getElementById( 'bookkeeper-enableAutoKey' ).checked = 	Options[ 'enableAutoKey' ];
-		// document.getElementById( 'bookkeeper-autoKey' ).value = String.fromCharCode( Options[ 'autoKey' ] );
 		document.getElementById( 'bookkeeper-autoKey' ).disabled = !document.getElementById( 'bookkeeper-enableAutoKey' ).checked;
 	}
 }
