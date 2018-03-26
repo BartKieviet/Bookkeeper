@@ -219,7 +219,7 @@ function updateBuilding() {
 		building.maximum.reduce(
 			function( buying, max, id ) {
 				var amt = pageData.stock[ id ];
-				if ( amt !== undefined )
+				if ( amt !== undefined || Building.isUpkeep( building.typeId, id ) )
 					buying[ id ] = Math.max( 0, max - amt );
 				else
 					buying[ id ] = 0;
