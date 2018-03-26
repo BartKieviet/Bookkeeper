@@ -155,7 +155,9 @@ Building.CATALOGUE = [
 	{ n: 'Class G Planet', s: 'G', i: 'planet_g',
 	  bu: {1:1.5, 2:7.5}, bp: {4:0.75, 12:5, 13:0.5} },
 	{ n: 'Class R Planet', s: 'R', i: 'planet_r',
-	  bu: {1:2.5,2:4,3:2}, bp: {4:1,5:1.5,6:0.5,19:0.1} }
+	  bu: {1:2.5,2:4,3:2}, bp: {4:1,5:1.5,6:0.5,19:0.1} },
+	{ n: 'Trading Outpost', s: 'TO', i: 'trade_outpost',
+	  bu: {}, bp: {} }
 ];
 
 // Convenience for the current time in seconds, so K's heart doesn't break that
@@ -610,6 +612,8 @@ Building.prototype.setSelling = function( a ) { this.selling = a || []; }
 Building.prototype.setBuying = function( a ) { this.buying = a || []; }
 Building.prototype.setMinimum = function( a ) { this.minimum = a || []; }
 Building.prototype.setMaximum = function( a ) { this.maximum = a || []; }
+Building.prototype.setPSB = function( a ) { this.psb = a || false; }
+Building.prototype.setCredits = function( a ) { this.credits = a || null; }
 
 Building.prototype.setUpkeep = function( a ) {
 	if ( a ) {

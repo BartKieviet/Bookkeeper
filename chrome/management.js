@@ -53,7 +53,6 @@ function onGameMessage( event ) {
 
 	pageData = parsePage();
 	chrome.storage.sync.get( buildingKey, onBuildingData );
-	chrome.storage.sync.get( 'BookkeeperOptions', addKeyPress );
 }
 
 function addKeyPress( data ) {
@@ -63,7 +62,7 @@ function addKeyPress( data ) {
 	window.addEventListener( 'keypress', clickAuto.bind( this, Options ) );
 }		
 
-function clickAuto( evt, Options ) {
+function clickAuto( Options, evt ) {
 	if ( evt.keyCode === Options[ 'autoKey' ] ) { 
 		document.getElementById( 'bookkeeper-quick-buttons-sellandbuy' ).click();
 	}
@@ -285,6 +284,7 @@ function addUI() {
 	autoBuy.addEventListener( 'click', onAutoBuy );
 	autoBoth.addEventListener( 'click', onAutoBoth );
 	previewCheckbox.addEventListener( 'click', onPreviewToggle );
+	chrome.storage.sync.get( 'BookkeeperOptions', addKeyPress );
 }
 
 // XXX - Some similar code in these three fns below.  Can we isolate the common

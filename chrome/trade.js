@@ -36,7 +36,6 @@ function onGameMessage( event ) {
 	time = data.time;
 	buildingKey = universe.key + userloc;
 	pageData = parsePage();
-
 	// Now check if the building is tracked
 	chrome.storage.sync.get( buildingKey, onBuildingData );
 	chrome.storage.sync.get( 'BookkeeperOptions', addKeyPress );
@@ -44,12 +43,12 @@ function onGameMessage( event ) {
 
 function addKeyPress( data ) {
 	let Options = data [ 'BookkeeperOptions' ];
-	if ( !Options[ 'enableAutoKey'] || document.getElementsByTagName( 'h1' ).firstChild.src.indexOf( 'outpost' ) !== -1 )
+	if ( !Options[ 'enableAutoKey'] || document.getElementsByTagName( 'h1' )[0].firstElementChild.src.indexOf( 'outpost' ) !== -1 )
 		return; //Trade outpost screws this up somehow
 	window.addEventListener( 'keypress', clickAuto.bind( this, Options ) );
 }		
 
-function clickAuto( evt, Options ) {
+function clickAuto( Options, evt ) {
 	if ( evt.keyCode === Options[ 'autoKey' ] ) { 
 		document.getElementById( 'quickButtonSellAndBuy' ).click();
 	}
@@ -188,12 +187,13 @@ function onBuildingUntracked() {
 function parsePage() {
 	var typeName, typeId, owner, buying, selling,
 	    baseUpkeep, baseProduction, upkeep, production, ticksLeft,
-	    s, a, trs, tr;
+	    s, a, trs, tr, credits;
 
 	typeName = document.evaluate(
 		'//h1', document, null, XPathResult.STRING_TYPE,
 		null).stringValue.trim();
 	typeId = Building.getTypeId( typeName );
+
 	if ( typeId === undefined )
 		return null;
 	baseUpkeep = Building.getBaseUpkeep( typeId );
@@ -203,6 +203,7 @@ function parsePage() {
 			      document.forms.building_trade, null,
 			      XPathResult.STRING_TYPE, null).stringValue.trim();
 	a = s.split( "'", 2 );
+
 	if ( a[1] !== 's ' + typeName )
 		return null;
 	owner = a[0];
@@ -223,6 +224,14 @@ function parsePage() {
 		parseRow( tr );
 
 	// XXX - get the free space here, for #49
+	
+	credits = document.evaluate(
+		'//td[contains(text(),"credits")]',
+		document.forms.building_trade, null,
+		XPathResult.UNORDERED_NODE_ITERATOR_TYPE, null );
+	credits.iterateNext();
+	credits = credits.iterateNext();
+	credits = parseInt( credits.nextElementSibling.textContent.replace( /,/g, '' ) );
 
 	return {
 		typeName,
@@ -234,7 +243,8 @@ function parsePage() {
 		production,
 		baseUpkeep,
 		baseProduction,
-		ticksLeft: Math.min.apply( null, ticksLeft )
+		ticksLeft: Math.min.apply( null, ticksLeft ),
+		credits
 	};
 
 	function parseRow( tr ) {
@@ -315,7 +325,13 @@ function updateBuilding( storeItems, building, callback ) {
 	building.setTicksLeft( pageData.ticksLeft );
 	building.setBuying( pageData.buying );
 	building.setSelling( pageData.selling );
-
+	building.setCredits( pageData.credits );
+	
+	if ( Building.getTypeShortName( building.typeId ) === 'TO' ) {
+		building.setPSB( true );
+		building.level = 0;
+	}
+	
 	if ( level === undefined ||
 	     !arrayEquals(
 		Building.getNormalUpkeep(pageData.typeId, level),
@@ -323,7 +339,7 @@ function updateBuilding( storeItems, building, callback ) {
 	     !arrayEquals(
 		Building.getNormalProduction(pageData.typeId, level),
 			pageData.production)) {
-		// The infallible estimator failed.
+		// The infallible estimator failed [LIES].
 		building.setUpkeep( pageData.upkeep );
 		building.setProduction( pageData.production );
 	}
