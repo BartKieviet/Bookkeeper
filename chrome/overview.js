@@ -371,7 +371,9 @@ var COLUMN_SPECS = {
 			th.classList.add( 'r', 'credits');
 		},
 		cell: rCell( function ( b ) {
-			return b.credits.toLocaleString('en')
+			let rvalue = '?';
+			b.credits ? rvalue = b.credits.toLocaleString('en') : null;
+			return rvalue
 		} ),
 		sortId: 'credits',
 		sort: function( a, b ) { return a.credits - b.credits; }

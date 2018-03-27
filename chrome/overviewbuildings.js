@@ -131,7 +131,7 @@ function parseBuildingRow( tr ) {
 		// No MOs yet (type 17)
 		if ( r.typeId === undefined || r.typeId === 17 )
 			return null;
-
+		
 		// Get position from col 1
 		e = xpr.snapshotItem( 1 );
 		m = /(.*): \d+,\d/.exec( e.textContent );
@@ -280,6 +280,9 @@ function addOwnBuildings( universeList, ownEntries, callback ) {
 			building = new Building(
 				entry.loc, entry.sectorId, entry.typeId, now,
 				'You', entry.level, entry.ticksLeft );
+			if ( Building.getTypeShortName( entry.typeId ) === 'TO' ) {
+				building.psb = true;
+			}
 		}
 
 		return building;
