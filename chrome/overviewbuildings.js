@@ -21,7 +21,7 @@ function setup() {
 	function onHaveUniverseListData( data ) {
 		Options = data[ 'BookkeeperOptions' ];
 		var universeList = data[ universe.key ] || [];
-		if ( Options[ 'enableOwnBuildings' ] ) {
+		if ( Options[ universe.key + 'enableOwnBuildings' ] ) {
 			ownEntries = parseOwnBuildings();
 		} else {
 			ownEntries = [];

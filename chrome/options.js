@@ -22,7 +22,7 @@ function onDOMContentLoaded() {
 			parentElement.remove();
 	}
 
-	var IDLIST = ['bookkeeper-enableAutoKey', 'bookkeeper-autoKey', 'bookkeeper-enablePSB', 'bookkeeper-enableCustom', 'bookkeeper-enableOwnBuildings'];
+	var IDLIST = ['bookkeeper-enableAutoKey', 'bookkeeper-autoKey', 'bookkeeper-enablePSB', 'bookkeeper-enableCustom', 'bookkeeper-OenableOwnBuildings', 'bookkeeper-AenableOwnBuildings', 'bookkeeper-PenableOwnBuildings'];
 
 	//wiring
 	wire( 'bookkeeper-enableAutoKey', 'bookkeeper-autoKey' );
@@ -160,7 +160,12 @@ function saveOptions() {
 	Options[ 'enablePSB' ] = document.getElementById( 'bookkeeper-enablePSB' ).checked;
 	Options[ 'enableCustom' ] = document.getElementById( 'bookkeeper-enableCustom' ).checked;
 	Options[ 'enableAutoKey' ] = document.getElementById( 'bookkeeper-enableAutoKey' ).checked;
-	Options[ 'enableOwnBuildings' ] = document.getElementById( 'bookkeeper-enableOwnBuildings' ).checked;
+	
+	let unis = ['O','A','P'];
+	for ( let i = 0; i < unis.length; i++ ) {
+		Options[ unis[i] + 'enableOwnBuildings' ] = document.getElementById( 'bookkeeper-'+ unis[i] + 'enableOwnBuildings' ).checked;
+	}
+	
 	Options[ 'autoKey' ] = document.getElementById( 'bookkeeper-autoKey' ).value.charCodeAt(0);
 	let toSave = {};
 	toSave[ 'BookkeeperOptions' ] = Options;
