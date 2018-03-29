@@ -17,7 +17,7 @@ function configure() {
 		window.addEventListener( 'message', onGameMessage );
 		script = document.createElement( 'script' );
 		script.type = 'text/javascript';
-		script.textContent = "(function(){var fn=function(){window.postMessage({pardus_bookkeeper:1,loc:typeof(userloc)==='undefined'?null:userloc,time:typeof(milliTime)==='undefined'?null:milliTime},window.location.origin);};if(typeof(addUserFunction)==='function')addUserFunction(fn);fn();})();";
+		script.textContent = "(function(){var fn=function(){window.postMessage({pardus_bookkeeper:1,loc:typeof(userloc)==='undefined'?null:userloc,time:typeof(milliTime)==='undefined'?null:milliTime,player_buy_price:typeof(player_buy_price)==='undefined'?null:player_buy_price,player_sell_price:typeof(player_sell_price)==='undefined'?null:player_sell_price,amount:typeof(amount)==='undefined'?null:amount,amount_max:typeof(amount_max)==='undefined'?null:amount_max,amount_min:typeof(amount_min)==='undefined'?null:amount_min},window.location.origin);};if(typeof(addUserFunction)==='function')addUserFunction(fn);fn();})();";
 		document.body.appendChild( script );
 		configured = true;
 	}
@@ -36,6 +36,11 @@ function onGameMessage( event ) {
 	time = data.time;
 	buildingKey = universe.key + userloc;
 	pageData = parsePage();
+	pageData.amount = data.amount;
+	pageData.buyAtPrices = data.player_buy_price;
+	pageData.sellAtPrices = data.player_sell_price;
+	pageData.max = data.amount_max
+	pageData.min = data.amount_min;
 	// Now check if the building is tracked
 	chrome.storage.sync.get( buildingKey, onBuildingData );
 	chrome.storage.sync.get( 'BookkeeperOptions', addKeyPress );
@@ -330,7 +335,16 @@ function updateBuilding( storeItems, building, callback ) {
 	if ( Building.getTypeShortName( building.typeId ) === 'TO' ) {
 		building.setPSB( true );
 		building.level = 0;
-	}
+		for ( var key in pageData.buyAtPrices ) {
+			building.amount[ parseInt( key ) ] = pageData.amount[ key ];
+			building.buyAtPrices[ parseInt( key ) ] = pageData.buyAtPrices[ key ];
+			building.sellAtPrices[ parseInt( key ) ] = pageData.sellAtPrices[ key ];
+			building.maximum[ parseInt( key ) ] = pageData.max[ key ];
+			building.minimum[ parseInt( key ) ] = pageData.min[ key ];
+			building.buying[ parseInt( key ) ] = pageData.max[ key ] - pageData.amount[ key ] < 0 ? 0 : pageData.max[ key ] - pageData.amount[ key ];
+			building.selling[ parseInt( key ) ] = pageData.amount[ key ] - pageData.min[ key ] < 0 ? 0 : pageData.amount[ key ] - pageData.min[ key ];
+			}
+		}
 	
 	if ( level === undefined ||
 	     !arrayEquals(
