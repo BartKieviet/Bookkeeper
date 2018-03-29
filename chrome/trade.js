@@ -336,13 +336,14 @@ function updateBuilding( storeItems, building, callback ) {
 		building.setPSB( true );
 		building.level = 0;
 		for ( var key in pageData.buyAtPrices ) {
-			building.amount[ parseInt( key ) ] = pageData.amount[ key ];
-			building.buyAtPrices[ parseInt( key ) ] = pageData.buyAtPrices[ key ];
-			building.sellAtPrices[ parseInt( key ) ] = pageData.sellAtPrices[ key ];
-			building.maximum[ parseInt( key ) ] = pageData.max[ key ];
-			building.minimum[ parseInt( key ) ] = pageData.min[ key ];
-			building.buying[ parseInt( key ) ] = pageData.max[ key ] - pageData.amount[ key ] < 0 ? 0 : pageData.max[ key ] - pageData.amount[ key ];
-			building.selling[ parseInt( key ) ] = pageData.amount[ key ] - pageData.min[ key ] < 0 ? 0 : pageData.amount[ key ] - pageData.min[ key ];
+			let id = parseInt( key );
+			building.amount[ id ] = pageData.amount[ key ];
+			building.buyAtPrices[ id ] = pageData.buyAtPrices[ key ];
+			building.sellAtPrices[ id ] = pageData.sellAtPrices[ key ];
+			building.maximum[ id ] = pageData.max[ key ];
+			building.minimum[ id ] = pageData.min[ key ];
+			building.buying[ id ] = pageData.max[ key ] - pageData.amount[ key ] < 0 ? 0 : pageData.max[ key ] - pageData.amount[ key ];
+			building.selling[ id ] = pageData.amount[ key ] - pageData.min[ key ] < 0 ? 0 : pageData.amount[ key ] - pageData.min[ key ];
 			}
 		}
 	

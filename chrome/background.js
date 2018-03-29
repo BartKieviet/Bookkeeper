@@ -296,6 +296,8 @@ OpHandlers.queryTicksLeft = function( message, sendResponse ) {
 		now = Building.now();
 		for ( key in data ) {
 			building = Building.createFromStorage( key, data[key] );
+			if ( Building.getTypeShortName( building.typeId ) === 'TO' ) //skip TOs
+				continue;
 			ticksNow = building.ticksNow( now );
 			r[ building.loc ] = {
 				t: ticksNow,
