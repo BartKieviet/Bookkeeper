@@ -302,7 +302,8 @@ OpHandlers.queryTicksLeft = function( message, sendResponse ) {
 			r[ building.loc ] = {
 				t: ticksNow,
 				f: ticksNow === building.ticksLeft &&
-					building.isFullyStocked()
+					building.isFullyStocked(),
+				p: building.hasProduction()
 			}
 		}
 

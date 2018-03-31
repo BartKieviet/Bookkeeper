@@ -747,7 +747,15 @@ Building.prototype.isFullyStocked = function() {
 		) === undefined;
 }
 
-
+Building.prototype.hasProduction = function() {
+	let s = this.getSelling()
+	let sum = 0;
+	for ( var i = 1; i < s.length ; i++ ) {
+		if ( Building.isProduction( this.typeId, i.toString() ) )
+			sum += s[i];
+	}
+	return sum > 0;
+}
 
 // 3. Private functions.
 

@@ -219,14 +219,16 @@ function showTicks() {
 }
 
 function onHaveTicks( r ) {
-	var key, ticks, cached, elt, stocked;
+	var key, ticks, cached, elt, stocked, prod;
 
 	for ( key in r ) {
 		ticks = r[ key ].t;
 		stocked = r [ key ].f;
+		prod = r [ key ].p;
 		cached = bldgTileCache[ key ];
 		cached.ticks = ticks;
 		cached.stocked = stocked;
+		cached.prod = prod;
 		addTickThingies( cached );
 	}
 }
@@ -241,6 +243,9 @@ function addTickThingies( cached ) {
 		elt.classList.add( 'yellow' );
 	if (cached.stocked) {
 		elt.classList.add( 'grey' );
+	}
+	if ( cached.prod ) {
+		elt.classList.add( 'grtext' );
 	}
 	elt.textContent = cached.ticks;
 	cached.td.appendChild( elt );

@@ -52,3 +52,4 @@ div.bookkeeper-ticks {
 div.bookkeeper-ticks.yellow { background: #f90 }
 div.bookkeeper-ticks.red { background: #900 }
 div.bookkeeper-ticks.grey { background: #808080 }
+div.bookkeeper-ticks.grtext { color: #0f0 }
