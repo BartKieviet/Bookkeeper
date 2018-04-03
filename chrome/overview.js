@@ -265,8 +265,6 @@ function onFilterInput( event ) {
 // Take the value of the filter input, and use it.
 
 function setFilter() {
-	if ( this.psbFlag ) //We ignore the filter option since it is not psb/building overview specific
-		return;
 	var query, storageItems;
 
 	query = this.filterInput.value;
