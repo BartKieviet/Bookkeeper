@@ -41,6 +41,9 @@ function onGameMessage( event ) {
 	pageData.sellAtPrices = data.player_sell_price;
 	pageData.max = data.amount_max
 	pageData.min = data.amount_min;
+	
+	overflowGuard();
+	
 	// Now check if the building is tracked
 	chrome.storage.sync.get( buildingKey, onBuildingData );
 	chrome.storage.sync.get( 'BookkeeperOptions', addKeyPress );
@@ -192,7 +195,7 @@ function onBuildingUntracked() {
 function parsePage() {
 	var typeName, typeId, owner, buying, selling,
 	    baseUpkeep, baseProduction, upkeep, production, ticksLeft,
-	    s, a, trs, tr, credits;
+	    s, a, trs, tr, credits, freeSpace;
 
 	typeName = document.evaluate(
 		'//h1', document, null, XPathResult.STRING_TYPE,
@@ -229,7 +232,15 @@ function parsePage() {
 		parseRow( tr );
 
 	// XXX - get the free space here, for #49
-	
+	freeSpace = document.evaluate(
+		'//td[contains(text(),"space")]',
+		document.forms.building_trade, null,
+		XPathResult.UNORDERED_NODE_ITERATOR_TYPE, null );
+	freeSpace.iterateNext();
+	freeSpace = freeSpace.iterateNext();
+	freeSpace = parseInt( freeSpace.nextElementSibling.textContent.replace( /t/g, '' ) );
+
+	// Get credits
 	credits = document.evaluate(
 		'//td[contains(text(),"credits")]',
 		document.forms.building_trade, null,
@@ -249,7 +260,8 @@ function parsePage() {
 		baseUpkeep,
 		baseProduction,
 		ticksLeft: Math.min.apply( null, ticksLeft ),
-		credits
+		credits,
+		freeSpace
 	};
 
 	function parseRow( tr ) {
@@ -409,4 +421,24 @@ function infallibleLevelEstimator(
 		return result;
 	}
 
+}
+
+function overflowGuard() {
+	let perTick = 0, L;
+	
+	pageData.upkeep.length < pageData.production.length ? L = pageData.production.length : L = pageData.upkeep.length;
+	for ( var i = 0; i < L ; i++ ) {
+		if ( pageData.upkeep[ i ] )
+			perTick -= pageData.upkeep[ i ];
+		if ( pageData.production[ i ] )
+			perTick += pageData.production[ i ];
+	}
+	
+	if ( pageData.freeSpace < pageData.ticksLeft * perTick ) {
+		let div = document.createElement( 'div' );
+		let transferButton = findTransferButton();
+		transferButton.parentNode.appendChild( document.createElement( 'br' ) );
+		div.textContent = 'Overflows in ' + ( Math.floor( pageData.freeSpace / perTick ) + 1 ) + ' ticks.';
+		transferButton.parentNode.appendChild( div );
+	}
 }
