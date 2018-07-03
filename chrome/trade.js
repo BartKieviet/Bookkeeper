@@ -365,7 +365,7 @@ function updateBuilding( storeItems, building, callback ) {
 			pageData.upkeep) ||
 	     !arrayEquals(
 		Building.getNormalProduction(pageData.typeId, level),
-			pageData.production)) {
+			pageData.production) ) {
 		// The infallible estimator failed [LIES].
 		building.setUpkeep( pageData.upkeep );
 		building.setProduction( pageData.production );
@@ -393,17 +393,17 @@ function infallibleLevelEstimator(
 	// Find the best commodity to test on.  See devnotes for the rationale
 	// behind this code.
 
-	cid = best( baseProduction );
-	if ( cid !== undefined && baseProduction[cid] > 1 ) {
-		base = baseProduction[ cid ];
-		seen = seenProduction[ cid ];
-		factor = 0.5;
-	}
-	else {
-		cid = best( baseUpkeep );
+	cid = best( baseUpkeep );
+	if ( cid !== undefined && baseUpkeep[cid] > 2 ) {	
 		base = baseUpkeep[ cid ];
 		seen = seenUpkeep[ cid ];
 		factor = 0.4;
+	}
+	else {
+		cid = best( baseProduction );
+		base = baseProduction[ cid ];
+		seen = seenProduction[ cid ];
+		factor = 0.5;
 	}
 
 	return Math.round( 1 + (seen / base - 1) / factor );
