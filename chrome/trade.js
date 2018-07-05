@@ -367,6 +367,7 @@ function updateBuilding( storeItems, building, callback ) {
 		Building.getNormalProduction(pageData.typeId, level),
 			pageData.production) ) {
 		// The infallible estimator failed [LIES].
+		building.setLevel( undefined );
 		building.setUpkeep( pageData.upkeep );
 		building.setProduction( pageData.production );
 	}
