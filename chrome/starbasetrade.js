@@ -312,8 +312,8 @@ function checkFuelSettings() {
 					value = max - amount;
 				return amount - max;
 			} else if ( ( max - min ) > 0 && ( fuelSettings - shipFuel ) > 0 && price < 250 ) {
-				document.getElementById( 'buy_16' ).
-					value = ( max - min ) < ( fuelSettings - shipFuel ) ? ( max - min ) : fuelSettings - shipFuel;
+				document.getElementById( 'buy_16' ) ? document.getElementById( 'buy_16' ).
+					value = ( max - min ) < ( fuelSettings - shipFuel ) ? ( max - min ) : fuelSettings - shipFuel : null;
 			} else {
 				return 0;
 			}
@@ -341,7 +341,6 @@ function manualComms() {
 			total -= isNaN( parseInt( commRow.value ) ) ? 0 : parseInt ( commRow.value );
 		}
 	}
-	console.log(total);
 	return total;
 }
 
