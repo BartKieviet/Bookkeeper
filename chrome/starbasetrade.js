@@ -143,18 +143,19 @@ function setup() {
 			shipCargo += energy;
 		}
 		shipCargo -= checkFuelSettings();
-
+		shipCargo += manualComms();
+		
 		if ( this.id === 'bookkeeper-transfer-FWE' ) {
 			buyFood = Math.floor( shipCargo / 5 * 3);
 			buyWater = shipCargo - buyFood;
-			document.getElementById('buy_1').value = buyFood;
-			document.getElementById('buy_3').value = buyWater;
+			buyFood > 0 ? document.getElementById('buy_1').value = buyFood : null;
+			buyWater > 0 ? document.getElementById('buy_3').value = buyWater : null;
 		} else if ( this.id === 'bookkeeper-transfer-food' ) {
 			buyFood = shipCargo;
-			document.getElementById('buy_1').value = buyFood;
+			buyFood > 0 ? document.getElementById('buy_1').value = buyFood : null;
 		} else {
 			buyWater = shipCargo;
-			document.getElementById('buy_3').value = buyWater;
+			buyWater > 0 ? document.getElementById('buy_3').value = buyWater : null;
 		}
 		if (!previewStatus) {
 			document.forms.planet_trade.submit();
@@ -188,17 +189,19 @@ function setup() {
 			shipCargo += water;
 		}
 
-		shipCargo -= checkFuelSettings();
-
+		shipCargo -= checkFuelSettings();;
+		shipCargo += manualComms();
+		
+		// buy energy or AE & energy
 		var buyEnergy;
 		if ( this.id === 'bookkeeper-transfer-FWE' ) {
 			buyEnergy = shipCargo;
 		} else {
 			buyEnergy = Math.floor( shipCargo / 9 * 4);
 			var buyAE = shipCargo - buyEnergy;
-			document.getElementById('buy_4').value = buyAE;
+			buyAE > 0 ? document.getElementById('buy_4').value = buyAE : null;
 		}
-		document.getElementById('buy_2').value = buyEnergy;
+		buyEnergy > 0 ? document.getElementById('buy_2').value = buyEnergy : null;
 		if (!previewStatus) {
 			document.forms.starbase_trade.submit();
 		}
@@ -282,26 +285,35 @@ function checkFuelSettings() {
 			'shiprow16'
 		).children[2].firstChild.textContent );
 
-	if ( ( fuelSettings - shipFuel ) < 0 &&
-	     document.getElementById( 'bookkeeper-fuel-cb' ).checked ) {
+	if( document.getElementById( 'bookkeeper-fuel-cb' ).checked ) {
 		var commRow = document.getElementById( 'baserow16' );
 		if (!commRow) {
 			return 0;
 		} else {
-			var amount, max, fuelTDs;
+			var amount, min, max, fuelTDs, price;
 			commRow = commRow.getElementsByTagName( 'td' );
 			amount = parseInt(
 				commRow[ 2 ].textContent.replace(/,/g,"") );
+			min = parseInt(
+				commRow[ commRow.length - 4 ].
+					textContent.replace(/,/g,"") );
 			max = parseInt(
 				commRow[ commRow.length - 3 ].
 					textContent.replace(/,/g,"") );
-			if ( amount + ( shipFuel - fuelSettings ) < max ) {
+			price = parseInt(
+				commRow[ commRow.length - 2 ].
+					textContent.replace(/,/g,"") );
+				
+			if ( amount + ( shipFuel - fuelSettings ) < max && ( fuelSettings - shipFuel ) < 0 ) {
 				document.getElementById( 'sell_16' ).
 					value = shipFuel - fuelSettings;
-			} else if ( amount < max ) {
+			} else if ( amount < max && ( fuelSettings - shipFuel ) < 0 ) {
 				document.getElementById( 'sell_16' ).
 					value = max - amount;
 				return amount - max;
+			} else if ( ( max - min ) > 0 && ( fuelSettings - shipFuel ) > 0 && price < 250 ) {
+				document.getElementById( 'buy_16' ).
+					value = ( max - min ) < ( fuelSettings - shipFuel ) ? ( max - min ) : fuelSettings - shipFuel;
 			} else {
 				return 0;
 			}
@@ -311,6 +323,26 @@ function checkFuelSettings() {
 	}
 
 	return ( fuelSettings - shipFuel )
+}
+
+function manualComms() {
+	let total = 0, commRow;
+	
+	for ( let i = 5; i < 33; i++ ) {
+		if ( i == 16 )
+			continue; //fuel is taken care of by other function
+
+		commRow = document.getElementById( 'sell_' + i );
+		if ( commRow ) {
+			total += isNaN( parseInt( commRow.value ) ) ? 0 : parseInt ( commRow.value );
+		}
+		commRow = document.getElementById( 'buy_' + i );
+		if ( commRow ) {
+			total -= isNaN( parseInt( commRow.value ) ) ? 0 : parseInt ( commRow.value );
+		}
+	}
+	console.log(total);
+	return total;
 }
 
 //Custom buttons
