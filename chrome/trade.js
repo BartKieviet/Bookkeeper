@@ -238,7 +238,7 @@ function parsePage() {
 		XPathResult.UNORDERED_NODE_ITERATOR_TYPE, null );
 	freeSpace.iterateNext();
 	freeSpace = freeSpace.iterateNext();
-	freeSpace = parseInt( freeSpace.nextElementSibling.textContent.replace( /t/g, '' ) );
+	freeSpace = parseInt( freeSpace.nextElementSibling.textContent.replace( /t|,/g, '' ) );
 
 	// Get credits
 	credits = document.evaluate(
