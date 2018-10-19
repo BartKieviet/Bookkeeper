@@ -219,16 +219,18 @@ function showTicks() {
 }
 
 function onHaveTicks( r ) {
-	var key, ticks, cached, elt, stocked, prod;
+	var key, ticks, cached, elt, stocked, prod, buying;
 
 	for ( key in r ) {
 		ticks = r[ key ].t;
 		stocked = r [ key ].f;
 		prod = r [ key ].p;
+		buying = r [ key ].b;
 		cached = bldgTileCache[ key ];
 		cached.ticks = ticks;
 		cached.stocked = stocked;
 		cached.prod = prod;
+		cached.buying = buying;
 		addTickThingies( cached );
 	}
 }
@@ -237,6 +239,7 @@ function addTickThingies( cached ) {
 	var elt = document.createElement( 'div' );
 	elt.className = 'bookkeeper-ticks';
 	elt.dataset.bookkeeperLoc = cached.loc;
+	cached.stocked=true;
 	if ( cached.ticks === 0 )
 		elt.classList.add( 'red' );
 	else if ( cached.ticks === 1 )
@@ -247,6 +250,22 @@ function addTickThingies( cached ) {
 	if ( cached.prod ) {
 		elt.classList.add( 'grtext' );
 	}
+	
+	// Check if our cargo has anything the buildings want.
+	let cargo = document.getElementById( 'tableCargoRes' ), cargoCommMatch = false;
+	cargo = cargo.getElementsByTagName( 'td' );
+	
+	for( var i = 0; i < cargo.length; i++ ) {
+		 if ( cached.buying[ parseInt( cargo[i].id.split(/Res/)[1]) ] ) {
+			 cargoCommMatch = true;
+			 break; //one match'll do.
+		 }
+	}
+	// If we have cargo for that building, let it know on nav.
+	if ( cargoCommMatch ) {
+		elt.classList.add( 'bluecirc' );
+	}
+	
 	elt.textContent = cached.ticks;
 	cached.td.appendChild( elt );
 	//elt.addEventListener( 'click', onSkittleClick, false );

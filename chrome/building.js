@@ -747,6 +747,7 @@ Building.prototype.isFullyStocked = function() {
 		) === undefined;
 }
 
+// Returns true if the building has any production commodities to sell.
 Building.prototype.hasProduction = function() {
 	let s = this.getSelling()
 	let sum = 0;
