@@ -239,7 +239,7 @@ function addTickThingies( cached ) {
 	var elt = document.createElement( 'div' );
 	elt.className = 'bookkeeper-ticks';
 	elt.dataset.bookkeeperLoc = cached.loc;
-	cached.stocked=true;
+	
 	if ( cached.ticks === 0 )
 		elt.classList.add( 'red' );
 	else if ( cached.ticks === 1 )
