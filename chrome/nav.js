@@ -256,7 +256,7 @@ function addTickThingies( cached ) {
 	cargo = cargo.getElementsByTagName( 'td' );
 	
 	for( var i = 0; i < cargo.length; i++ ) {
-		 if ( cached.buying[ parseInt( cargo[i].id.split(/Res/)[1]) ] ) {
+		 if ( cached.buying[ parseInt( cargo[i].id.split( /Res/ )[ 1 ] ) ] ) {
 			 cargoCommMatch = true;
 			 break; //one match'll do.
 		 }

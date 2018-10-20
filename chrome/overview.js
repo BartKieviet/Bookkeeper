@@ -533,7 +533,7 @@ function makeSpec( buildings ) {
 			header: makeCommHeaderFn( commId ),
 			cell: makeCommCellFn( commId, this.options ),
 			sortId: commId,
-			sort: makeCommSortFn( commId ),
+			sort: makeCommSortFn( commId, this.options ),
 			initDesc: true
 		} );
 	}
@@ -570,10 +570,10 @@ function makeCommCellFn( commId , options ) {
 	};
 }
 
-function makeCommSortFn( commId ) {
+function makeCommSortFn( commId, options ) {
 	return function( a, b ) {
-		a = sortval( overviewFigure(a, commId) );
-		b = sortval( overviewFigure(b, commId) );
+		a = sortval( overviewFigure(a, commId, options) );
+		b = sortval( overviewFigure(b, commId, options) );
 		return a - b;
 	}
 
