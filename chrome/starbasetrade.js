@@ -228,12 +228,17 @@ function addKeyPress( data ) {
 	let Options = data [ 'BookkeeperOptions' ];
 	if ( !Options[ 'enableAutoKey'] )
 		return;
-	window.addEventListener( 'keypress', clickAuto.bind( this, 'bookkeeper-transfer-FWE', Options ) );
+	if ( document.getElementsByTagName( 'h1' )[0].firstElementChild.src.split(/_/i)[1][0].toUpperCase() === 'I' ) {
+		window.addEventListener( 'keypress', clickAuto.bind( this, 'bookkeeper-transfer-water', Options ) );
+		}
+	else {
+		window.addEventListener( 'keypress', clickAuto.bind( this, 'bookkeeper-transfer-FWE', Options ) );
+	}
 }		
 
-//clicks button with id = id if g is pressed.
+//clicks button with id = id if trade key is pressed.
 function clickAuto( id, Options, evt ) {
-	if ( evt.keyCode === Options[ 'autoKey' ] ) { // g <- not to interfere with standard SGPvP
+	if ( evt.keyCode === Options[ 'autoKey' ] ) { 
 		document.getElementById( id ).click()
 	}
 }
