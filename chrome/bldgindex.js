@@ -21,6 +21,41 @@ function setup() {
 
 	universe = Universe.fromDocument( document );
 
+	// Add population estimate to planet section, if available.
+	if ( document.getElementsByClassName( 'pad2' )[ 0 ].firstElementChild.src.indexOf( 'planet' ) !== -1 ) {
+		// let's get the data we need from the page.
+		let pTypeId = Building.getTypeIdByIcon( document.getElementsByClassName( 'pad2' )[ 0 ].firstElementChild.src.split( /\/([^/]+)\.png$/ )[ 1 ] );
+		let pBuy = document.getElementsByClassName( 'pad2' )[ 1 ].getElementsByTagName( 'table' )[ 1 ];
+		let pImg = pBuy.getElementsByTagName( 'img' );
+		let pToSell = parseInt( pImg[0].nextSibling.textContent.split( / × /g)[ 1 ] );
+		let pPrice = parseInt( pImg[1].nextSibling.textContent );
+		let pUpkeep = Building.getBaseUpkeep( pTypeId );
+		let pComm = Commodities.getId( pImg[ 0 ].src.split( /\/([^/]+)\.png$/ )[ 1 ] );
+		let pBase = { 
+			1: 200,
+			2: 120,
+			3: 160 
+		} // All thrives on these three
+		
+		let pop = ( pToSell / ( Math.log10( pPrice / pBase[ pComm ] ) + 1 ) - 20 ) / ( 20 * pUpkeep [ pComm ] ) ;
+		// The derivation of the above formula is left as an exercise for the reader ( https://abstrusegoose.com/12 )
+		
+		// Right, we got the population estimate. Time to display it.
+		let tab = document.createElement( 'table' );
+		let tr = document.createElement( 'tr' );
+		let td = document.createElement( 'td' );
+		let i = document.createElement( 'i' );
+		i.textContent = 'Population estimate: ';
+		td.appendChild( i );
+		tr.appendChild( td );
+		td = document.createElement( 'td' );
+		td.textContent = Math.round( pop * 1000 );
+		tr.appendChild( td );
+
+		tab.appendChild( tr );
+		pBuy.parentNode.appendChild( tab );
+	}
+
 	// Get the sector from the H1 header
 
 	h1 = document.evaluate(
