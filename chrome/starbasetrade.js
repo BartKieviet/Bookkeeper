@@ -84,8 +84,8 @@ function setup() {
 
 	//Add fuel option.
 	chrome.storage.sync.get( 
-    [ Universe.key + 'Fuel', Universe.key + 'FuelCB' ], 
-    addFuelInput.bind( middleNode ) );
+        [ Universe.key + 'Fuel', Universe.key + 'FuelCB' ], 
+        addFuelInput.bind( middleNode ) );
 	chrome.storage.sync.get( [ Universe.key + 'NCustomBtns', 'BookkeeperOptions' ], fetchCustomBtns.bind( middleNode ) );
 	chrome.storage.sync.get( [ 'BookkeeperOptions' ], addKeyPress );
 	
@@ -113,7 +113,7 @@ function setup() {
 
 		addBR( middleNode );
 		button = makeButton ( 'bookkeeper-transfer-SF' )
-		button.textContent = '<- SF E/AE | FW ->';
+		button.textContent = '<- SF E/AE | FWB ->';
 		middleNode.appendChild( button ) ;
 		button.addEventListener('click', sbBtnClick );
 
@@ -189,7 +189,13 @@ function setup() {
 			shipCargo += water;
 		}
 
-		shipCargo -= checkFuelSettings();;
+		shipCargo -= checkFuelSettings();
+        if ( this.id === 'bookkeeper-transfer-SF' ) {
+            // get rid of the bio-waste too.
+            let bwLink = document.getElementById('shiprow21')
+                .getElementsByTagName('a')[1];
+            bwLink ? bwLink.click() : null;
+        }
 		shipCargo += manualComms();
 		
 		// buy energy or AE & energy
@@ -331,6 +337,7 @@ function checkFuelSettings() {
 }
 
 function manualComms() {
+    // returns total amount of commodities filled in the form, from ore downwards.
 	let total = 0, commRow;
 	
 	for ( let i = 5; i < 33; i++ ) {
@@ -339,11 +346,11 @@ function manualComms() {
 
 		commRow = document.getElementById( 'sell_' + i );
 		if ( commRow ) {
-			total += isNaN( parseInt( commRow.value ) ) ? 0 : parseInt ( commRow.value );
+			total += isNaN( parseInt( commRow.value ) ) ? 0 : parseInt( commRow.value );
 		}
 		commRow = document.getElementById( 'buy_' + i );
 		if ( commRow ) {
-			total -= isNaN( parseInt( commRow.value ) ) ? 0 : parseInt ( commRow.value );
+			total -= isNaN( parseInt( commRow.value ) ) ? 0 : parseInt( commRow.value );
 		}
 	}
 	return total;
