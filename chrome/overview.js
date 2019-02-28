@@ -433,15 +433,15 @@ function rCell( fn ) {
 // This one was a bit too verbose to define inline in the spec object above.
 
 function ticksToDowngradeCell( b, td ) {
-	if ( b.getTypeShortName() !== 'P' )
-		return;
+	// if ( b.getTypeShortName() !== 'P' )
+		// return;
 
 	// "level" is population.  Because we abuse a data structure intended
 	// for buildings originally.
 	let population = b.level;
 
 	// How many ticks we have left.  This is not very accurate for
-	// starbases, because consumption increases with population... so this
+	// planets, because consumption increases with population... so this
 	// number actually overestimates the ticks left.
 	let ticksLeft = b.getTicksLeft();
 
@@ -454,16 +454,31 @@ function ticksToDowngradeCell( b, td ) {
 	// Find the first number in this sequence that is less than or equal to
 	// the current population.  These of course are the thresholds for the
 	// 4th, 3rd, and 2nd ring, and the final downgrade.
-	let threshold = [ 30000, 15000, 5000, 500 ].find(
+    // For NPC bases the limits are the div limits. See manual. If the limit 
+    // is below the div limit, threshold becomes undefined.
+    let popLimit = [];
+    
+    switch( b.getTypeShortName() ) {
+        case 'P': popLimit = [ 30000, 15000, 5000, 500 ]; break;
+        case 'M': popLimit = [ 100000 ]; break;
+        case 'F': popLimit = [ 50000 ]; break;
+        case 'I': popLimit = [ 30000 ]; break;
+        case 'R': popLimit = [ 25000 ]; break;
+        case 'D': popLimit = [ 15000 ]; break;
+        case 'G': popLimit = [ 15000 ]; break;
+        default: return;
+    }
+    
+	let threshold = popLimit.find(
 		function(t) { return t <= population; } );
-
+    
 	// The number of ticks for the base to shrink from the size it'll grown
-	// to, to the next downgrade threshold.
+	// to, to the next downgrade threshold. Becomes NaN if pop < threshold.
 	//
 	// Kahldar is too smart.
 	let n = Math.ceil( Math.log(threshold/grownPop) / Math.log(15/16) );
-
-	td.textContent = ticksLeft + n;
+    
+    isNaN( n ) ? null : td.textContent = ticksLeft + n;
 	td.className = 'r';
 }
 
