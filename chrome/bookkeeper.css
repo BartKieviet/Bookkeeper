@@ -11,7 +11,7 @@ div.bookkeeper-overview {
 	display: flex;
 	flex-direction: column;
 	align-items: stretch;
-	width: min-content;
+	width: max-content;
 }
 
 div.bookkeeper-overview > div {
