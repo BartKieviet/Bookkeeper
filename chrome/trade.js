@@ -69,6 +69,9 @@ function onBuildingData( data ) {
 		// Building is tracked.
 		building = Building.createFromStorage(
 			buildingKey, data[buildingKey] );
+		if ( building.typeId == 17 ) {
+			buildMODOM( building );
+		}
 		updateBuilding( {}, building );
 		addButton( 'Untrack', onTrackButtonClick );
 	}
@@ -292,7 +295,7 @@ function parsePage() {
 		if ( !m )
 			return;
 
-		if ( typeId == 17 ) { // MO
+		if ( typeId == 17 ) { // MO	
 			bal = parseInt( m.split(/ /g)[2] );
 		} else {
 			bal = parseInt( m );
@@ -374,6 +377,29 @@ function updateBuilding( storeItems, building, callback ) {
 		building.setLevel( undefined );
 		building.setUpkeep( pageData.upkeep );
 		building.setProduction( pageData.production );
+		
+		if (building.typeId == 17) { // MO. We basically redo our upkeep/ticksleft based on the entered grid strength, 15 at default.
+			if (!document.getElementById( 'bookkeeper-grid' )) 
+				buildMODOM( building );
+			
+			building.level = parseInt( document.getElementById( 'bookkeeper-grid' ).value );
+			
+			let upkeepMO = {
+				2: Math.min(15, 5 + building.level),
+				16: Math.min(15, 5 + building.level),
+				19: Math.max( Math.max(0, building.level - 10) + Math.max(0, building.level - 15) )
+			};	
+			
+			let cidlist = [2, 16, 19], upklist = [], ticksLeft = [];
+			cidlist.forEach ( function( cid ) {
+				upklist[ cid ] = upkeepMO[ cid ];
+				if (upklist[ cid ] > 0) 
+					ticksLeft.push( Math.floor(pageData.amount[cid] / upkeepMO[ cid ] ) );
+			} );
+			
+			building.setUpkeep( upklist );
+			building.setTicksLeft( Math.min( ...ticksLeft ) );
+		}
 	}
 	else {
 		building.setUpkeep( undefined );
@@ -447,4 +473,32 @@ function overflowGuard() {
 		div.textContent = 'Overflows in ' + ( Math.floor( pageData.freeSpace / perTick ) + 1 ) + ' ticks.';
 		transferButton.parentNode.appendChild( div );
 	}
+}
+
+function buildMODOM( building ) {
+	let creditsTR = a = document.evaluate(
+		'./table/tbody/tr[position()=2]/td[position()=3]/table/tbody/tr[contains(td,"credits")]/..',
+		document.forms.building_trade, null,
+		XPathResult.UNORDERED_NODE_ITERATOR_TYPE, null).iterateNext();
+	let tr = document.createElement( 'tr' );
+	let td = document.createElement( 'td' );
+	td.setAttribute( 'colspan', '4');
+	td.textContent = 'Grid strength';
+	tr.appendChild(td);
+	td = document.createElement( 'td' );
+	let gridInput = document.createElement( 'input' );
+	gridInput.type = 'textarea';
+	gridInput.size = '1';
+	gridInput.id = 'bookkeeper-grid';
+	building.level ? gridInput.value = building.level : gridInput.value = 15;
+	td.setAttribute( 'colspan', '4' );
+	td.setAttribute( 'align', 'right' );
+	td.appendChild( gridInput );
+	tr.appendChild( td );
+	tr.setAttribute( 'style', 'background-color:#003040' );
+	creditsTR.appendChild( tr );
+	gridInput.addEventListener('change', 
+		function() { 
+			updateBuilding( {}, building );
+		} );
 }
