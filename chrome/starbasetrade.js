@@ -86,7 +86,6 @@ function setup() {
 	chrome.storage.sync.get( 
         [ Universe.key + 'Fuel', Universe.key + 'FuelCB' ], 
         addFuelInput.bind( middleNode ) );
-	chrome.storage.sync.get( [ Universe.key + 'NCustomBtns', 'BookkeeperOptions' ], fetchCustomBtns.bind( middleNode ) );
 	chrome.storage.sync.get( [ 'BookkeeperOptions' ], addKeyPress );
 	
 	if (document.forms.planet_trade) {
@@ -232,7 +231,8 @@ function addBR( node ) {
 
 function addKeyPress( data ) {
 	let Options = data [ 'BookkeeperOptions' ];
-	if ( !Options[ 'enableAutoKey'] )
+	
+	if ( !Options || !Options[ 'enableAutoKey'] )
 		return;
 	if ( document.getElementsByTagName( 'h1' )[0].firstElementChild.src.split(/_/i)[1][0].toUpperCase() === 'I' ) {
 		window.addEventListener( 'keypress', clickAuto.bind( this, 'bookkeeper-transfer-water', Options ) );
@@ -356,132 +356,10 @@ function manualComms() {
 	return total;
 }
 
-//Custom buttons
-function fetchCustomBtns( data ) {
-	let Options = data[ 'BookkeeperOptions' ];
-	if ( !Options[ 'enableCustom' ] ) 
-		return;
-	var nButtons = data [ Universe.key + 'NCustomBtns' ] || 1;
-	for ( var i = 1; i <= nButtons ; i++ ) {
-		chrome.storage.sync.get( [ Universe.key + 'CustomBtn' + i ], makeCustomBtn.bind( this, i ) );
-	}
-}
-
-function saveCustomBtn( id , n ) {
-	var toSave = {};
-	for ( var i = 0; i < Infinity ; i++) {
-		var dropdown = document.getElementById('bookkeeper-cbtn-conf-' + n + '-name-' + i );
-		if ( dropdown === null ) { break }
-		var name = document.getElementById('bookkeeper-cbtn-conf-' + n + '-name-' + i ).value;
-		var amount = parseInt( document.getElementById('bookkeeper-cbtn-conf-' + n + '-amount-' + i).value ) ;
-		( toSave[ name ] || isNaN(amount) || amount == 0 ) ? null : toSave[ name ] = amount;
-	}
-	document.getElementById( id ).remove();
-	
-	var key = Universe.key + 'CustomBtn' + n;
-	var toSaveData = {};
-	toSaveData[ key ] = toSave;
-	chrome.storage.sync.set( toSaveData );
-	
-	var old_element = document.getElementById( 'bookkeeper-cbtn-' + n );
-	var new_element = old_element.cloneNode(true);
-	old_element.parentNode.replaceChild(new_element, old_element);
-	new_element.addEventListener( 'click', clickCustomButton.bind( null, toSave ) );
-
-	var old_element = document.getElementById( 'bookkeeper-cbtn-' + n + '-conf' );
-	var new_element = old_element.cloneNode(true);
-	old_element.parentNode.replaceChild(new_element, old_element);
-	new_element.addEventListener( 'click', showConfDiv.bind( new_element , n , toSaveData ) );
-	
-}
-
-function makeCustomBtn( n, data ) {
-	var button = makeButton( 'bookkeeper-cbtn-' + n );
-	addBR( this );
-	button.textContent = 'Custom ';// + n;
-	button.style.width = '147px';
-	this.appendChild( button );	
-	button.addEventListener( 'click', clickCustomButton.bind ( null, data[ Universe.key + 'CustomBtn' + n ] ) );
-	var button = makeButton( 'bookkeeper-cbtn-' + n + '-conf');
-	button.textContent = 'C';
-	button.style = '';
-	button.style.width = '25px';
-	button.style.height = '35px';
-	this.appendChild( button );	
-	button.addEventListener( 'click', showConfDiv.bind( this, n , data ) );
-}
-
-function clickCustomButton( btnData ) {
-	for ( key in btnData ) {
-		var base = '';
-		btnData[key] < 0 ? base = 'sell_' : base = 'buy_';
-		document.getElementById( base + key ) ? document.getElementById( base + key ).value = Math.abs( btnData[ key ] ) : null;
-	}
-	var frm = document.forms.planet_trade || document.forms.starbase_trade;
-	var prviewStatus = document.getElementById('preview_checkbox').checked;
-	if (!prviewStatus) { frm.submit() };
-}
-
-
-function showConfDiv( n , data ) {
-	data = data[ Universe.key + 'CustomBtn' + n ];
-	if ( !data )
-		data = {};
-	var container = document.createElement( 'div' );
-	container.id = 'bookkeeper-cbtn-conf-' + n;
-	container.className = 'bookkeeper-cbtn-conf';
-	this.parentNode.appendChild(container);
-	
-	var button = makeButton( 'bookkeeper-cbtn-conf-submit' + n );
-	button.textContent = 'Submit';
-	container.appendChild( button );
-	
-	for ( key in data ) {
-		addRow( button, key, data[key] );	
-	}
-	Object.keys( data ).length === 0 ? addRow( button, 0, 0 ) : null;
-	
-	function addRow( button, comm, dataAmount ) {
-		var div = document.createElement( 'div' );
-		div.textContent = 'Commodity: ';
-		//div.id = 'bookkeeper-cbtn-conf-' + n 
-		var dropdown = document.createElement( 'select' );
-		dropdown.type = 'select';
-		dropdown.id = 'bookkeeper-cbtn-conf-' + n + '-name-' + document.getElementsByTagName( 'select' ).length;
-		
-		for (var i = 1; i < 33 ; i++) {
-			if ( document.getElementById( 'baserow' + i ) ) {
-				var option = document.createElement( 'option' );
-				option.innerHTML = Commodities.getCommodity( i ).n;
-				option.value = i;
-				dropdown.appendChild( option );
-			}
-			if ( comm == i ) { // == on purpose since comm is string and i is int.
-				option.selected = 'selected';
-			}
-		}	
-		var amount = document.createElement( 'input' );
-		amount.type = 'textarea';
-		amount.size = '1';
-		amount.id = 'bookkeeper-cbtn-conf-' + n + '-amount-' + document.getElementsByTagName( 'select' ).length;
-		amount.title = 'Positive for buy, negative for sell';
-		amount.value = dataAmount
-
-		div.appendChild( dropdown );		
-		div.appendChild( amount );
-		addBR( div );
-		amount.addEventListener( 'change', addRow.bind( null, button, 0, 0) );
-		container.insertBefore( div , button );
-		
-	}
-	button.addEventListener('click', saveCustomBtn.bind( null, container.id, n ) ); 
-}
-
-
 // Below comes all the tracking Planets and Starbases stuff
 function trackPSB( data ) {
 	let Options = data[ 'BookkeeperOptions' ];
-	if ( !Options[ 'enablePSB' ] )
+	if ( !Options || !Options[ 'enablePSB' ] )
 		return;
 	chrome.storage.sync.get( [ Universe.key, Universe.key + userloc ], setTrackBtn.bind ( null, userloc) )
 }

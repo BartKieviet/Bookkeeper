@@ -20,6 +20,10 @@ function setup() {
 
 	function onHaveUniverseListData( data ) {
 		Options = data[ 'BookkeeperOptions' ];
+		if ( !Options ) {
+			Options = {};
+			Options[ universe.key + 'enableOwnBuildings' ] = false;
+		}
 		var universeList = data[ universe.key ] || [];
 		if ( Options[ universe.key + 'enableOwnBuildings' ] ) {
 			ownEntries = parseOwnBuildings();
@@ -32,6 +36,7 @@ function setup() {
 
 	function onOwnBuildingsAdded( universeList ) {
 		overview = new Overview( universe.key, document );
+		
 		if ( Options[ 'enablePSB' ] ) {
 			overview.configure( universeList );
 			overviewsb = new Overview( universe.key, document, { psbFlag : true } );
