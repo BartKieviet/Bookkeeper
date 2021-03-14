@@ -289,7 +289,7 @@ function addBookkeeperHeader( entry ) {
 	td.textContent = 'BK';
 	btn.textContent = 'all';
 	entry.tr.appendChild( td );
-	btn.addEventListener( 'click', trackAllBuildings );
+	btn.addEventListener( 'click', function() {chrome.storage.sync.get( universe.key, trackAllBuildings ); });
 	td.appendChild( btn );
 }
 
@@ -431,7 +431,28 @@ function trackBuilding( entry ) {
 	}
 }
 
-function trackAllBuildings() {
+function trackAllBuildings( data ) {
+	var list = list = data[ universe.key ];
+	
+	for (key in pageData ) {
+		if (!pageData[ key ].tracked) {
+			entry = pageData[ key ];
+			
+			if ( !entry.building ) {
+				entry.building = new Building( entry.loc, sectorId );
+				updateBuildingFromEntry( entry );
+			}
+			let index;
+			index = list.indexOf( entry.loc );
+			if ( index === -1 )
+			list.push( entry.loc );
+			data[ universe.key + entry.loc ] = entry.building.toStorage();
+			entry.tracked = true;
+			entry.ui.checked = true;
+		}
+	}
+	data[ universe.key ] = list;
+	chrome.storage.sync.set( data );
 }
 
 function untrackBuilding( entry ) {
