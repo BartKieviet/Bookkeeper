@@ -51,7 +51,7 @@ function onGameMessage( event ) {
 
 function addKeyPress( data ) {
 	let Options = data [ 'BookkeeperOptions' ];
-	if ( !Options || !Options[ 'enableAutoKey'] || document.getElementsByTagName( 'h1' )[0].firstElementChild.src.indexOf( 'outpost' ) !== -1 )
+	if ( !Options || !Options[ 'enableAutoKey'] || document.getElementsByTagName( 'h1' )[0].firstElementChild.src.indexOf( 'Trading Outpost' ) !== -1 )
 		return; //Trade outpost screws this up somehow
 	window.addEventListener( 'keypress', clickAuto.bind( this, Options ) );
 }		
