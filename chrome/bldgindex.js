@@ -285,8 +285,11 @@ function parsePage( buildingsTable ) {
 
 function addBookkeeperHeader( entry ) {
 	var td = document.createElement( 'th' );
-	td.textContent = 'BK';
+	var btn = document.createElement( 'button' );
+	btn.textContent = 'all';
 	entry.tr.appendChild( td );
+	btn.addEventListener( 'click', trackAllBuildings );
+	td.appendChild( btn );
 }
 
 function addBookkeeperRowCells( entries ) {
@@ -425,6 +428,9 @@ function trackBuilding( entry ) {
 		entry.tracked = true;
 		entry.ui.checked = true;
 	}
+}
+
+function trackAllBuildings() {
 }
 
 function untrackBuilding( entry ) {
