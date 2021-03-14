@@ -288,11 +288,15 @@ function parsePage() {
 		// for those, and probably will soon to fully close #32, but for
 		// now we'll just assume the higher value applies.
 
-		m = /([+-]\d+)(:?\s+to\s+([+-]\d+))?/.exec(
-			tr.children[3].textContent );
+		m = tr.children[3].textContent;
 		if ( !m )
 			return;
-		bal = parseInt( m[2] ? m[2] : m[1] );
+
+		if ( typeId == 17 ) { // MO
+			bal = parseInt( m.split(/ /g)[2] );
+		} else {
+			bal = parseInt( m );
+		}
 
 		if ( baseProduction[cid] ) {
 			if ( !(bal > 0) )
@@ -307,7 +311,7 @@ function parsePage() {
 			selling[ cid ] = amt > lim ? amt - lim : 0;
 			production[ cid ] = bal;
 		}
-		else if ( baseUpkeep[cid] ) {
+		else if ( cid in baseUpkeep ) {
 			if ( !(bal < 0) )
 				// What is this? :S
 				return;
@@ -425,6 +429,7 @@ function infallibleLevelEstimator(
 }
 
 function overflowGuard() {
+	// Lets user know if and when the building overflows.
 	let perTick = 0, L;
 	
 	pageData.upkeep.length < pageData.production.length ? L = pageData.production.length : L = pageData.upkeep.length;

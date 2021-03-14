@@ -117,7 +117,7 @@ Building.CATALOGUE = [
 	{ n: 'Medical Laboratory', s: 'ML', i: 'medical_laboratory',
 	  bu: {1:2,2:2,3:2,12:7}, bp: {11:4} },
 	{ n: 'Military Outpost', s: 'MO', i: 'military_outpost',
-	  bu: {2:5,16:5}, bp: {} },
+	  bu: {2:5,16:5,19:0}, bp: {} },
 	{ n: 'Nebula Plant', s: 'NP', i: 'nebula_plant',
 	  bu: {1:2,3:2,17:3}, bp: {2:35,12:4} },
 	{ n: 'Neural Laboratory', s: 'NL', i: 'neural_laboratory',
