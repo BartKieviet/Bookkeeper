@@ -286,6 +286,7 @@ function parsePage( buildingsTable ) {
 function addBookkeeperHeader( entry ) {
 	var td = document.createElement( 'th' );
 	var btn = document.createElement( 'button' );
+	td.textContent = 'BK';
 	btn.textContent = 'all';
 	entry.tr.appendChild( td );
 	btn.addEventListener( 'click', trackAllBuildings );
