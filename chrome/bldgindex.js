@@ -372,7 +372,8 @@ function updateBuildingFromEntry( entry ) {
 	building.setType( entry.typeId );
 	building.setTime( now );
 	building.setOwner( entry.owner );
-	if (!building.typeId == 17) // Grid setting is not taken into account in the b-index.
+	console.log(building.typeId)
+	if (!(building.typeId == 17)) // Grid setting is not taken into account in the b-index.
 		building.setTicksLeft( entry.ticksLeft );
 	building.setSelling( entry.selling );
 	building.setBuying( entry.buying );
@@ -419,6 +420,9 @@ function trackBuilding( entry ) {
 	function onBuildingList( data ) {
 		var list, index;
 		list = data[ universe.key ];
+		if ( !list )
+			list = [];
+		
 		index = list.indexOf( entry.loc );
 		if ( index === -1 )
 			list.push( entry.loc );
@@ -433,9 +437,11 @@ function trackBuilding( entry ) {
 }
 
 function trackAllBuildings( data ) {
-	var list = list = data[ universe.key ];
+	var list = data[ universe.key ];
+	if ( !list )
+		list = [];
 	
-	for (key in pageData ) {
+	for ( key in pageData ) {
 		if (!pageData[ key ].tracked) {
 			entry = pageData[ key ];
 			
