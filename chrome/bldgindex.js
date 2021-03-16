@@ -372,7 +372,8 @@ function updateBuildingFromEntry( entry ) {
 	building.setType( entry.typeId );
 	building.setTime( now );
 	building.setOwner( entry.owner );
-	building.setTicksLeft( entry.ticksLeft );
+	if (!building.typeId == 17) // Grid setting is not taken into account in the b-index.
+		building.setTicksLeft( entry.ticksLeft );
 	building.setSelling( entry.selling );
 	building.setBuying( entry.buying );
 }
