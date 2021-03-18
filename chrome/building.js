@@ -37,7 +37,7 @@ var NAME_IDS, ICON_IDS;
 // or defer to getNormalUpkeep and getNormalProduction if not.
 
 function Building( loc, sectorId, typeId, time, owner, level, ticksLeft,
-		   selling, buying, minimum, maximum, upkeep, production, buyAtPrices, sellAtPrices, credits, psb, amount )
+		   selling, buying, minimum, maximum, upkeep, production, buyAtPrices, sellAtPrices, credits, psb, amount, tag )
 {
 	this.loc = intPropVal( loc );
 	this.sectorId = intPropVal( sectorId );
@@ -57,6 +57,7 @@ function Building( loc, sectorId, typeId, time, owner, level, ticksLeft,
 	this.credits = credits ? parseInt( credits ) : undefined;
 	this.psb = psb ? true : false;
 	this.amount = amount || [];
+	this.tag = tag || Building.makeTag( typeId );
 
 	// These three won't be used until they're needed.  But defining them
 	// already anyway so V8 can optimise.
@@ -91,9 +92,9 @@ Building.CATALOGUE = [
 	{ n: 'Battleweapons Factory', s: 'BWF', i: 'battleweapons_factory',
 	  bu: {1:1,2:2,3:1,6:3,7:3,18:4}, bp: {27:2} },
 	{ n: 'Brewery', s: 'Br', i: 'brewery',
-	  bu: {1:2,2:2,3:2,13:4}, bp: {15:4} },
+	  bu: {1:2,2:2,3:2,13:4}, bp: {15:4}, tag: 'drugchain' },
 	{ n: 'Chemical Laboratory', s: 'CL', i: 'chemical_laboratory',
-	  bu: {1:1,2:3,3:1}, bp: {13:9} },
+	  bu: {1:1,2:3,3:1}, bp: {13:9}, tag: 'support' },
 	{ n: 'Clod Generator', s: 'CG', i: 'clod_generator',
 	  bu: {2:4,13:4,21:18}, bp: {23:5} },
 	{ n: 'Dark Dome', s: 'DD', i: 'dark_dome',
@@ -101,7 +102,7 @@ Building.CATALOGUE = [
 	{ n: 'Droid Assembly Complex', s: 'DAC', i: 'droid_assembly_complex',
 	  bu: {1:1,2:3,3:1,8:2,19:3}, bp: {20:1} },
 	{ n: 'Drug Station', s: 'DS', i: 'drug_station',
-	  bu: {1:3,2:1,3:3,17:3,50:3}, bp: {51:1} },
+	  bu: {1:3,2:1,3:3,17:3,50:3}, bp: {51:1}, tag: 'drugchain' },
 	{ n: 'Electronics Facility', s: 'EF', i: 'electronics_facility',
 	  bu: {1:1,2:4,3:1,6:3,9:2}, bp: {7:6} },
 	{ n: 'Energy Well', s: 'EW', i: 'energy_well',
@@ -115,11 +116,11 @@ Building.CATALOGUE = [
 	{ n: 'Leech Nursery', s: 'LN', i: 'leech_nursery',
 	  bu: {1:2,2:6,3:10,19:6,23:40}, bp: {21:3,22:1} },
 	{ n: 'Medical Laboratory', s: 'ML', i: 'medical_laboratory',
-	  bu: {1:2,2:2,3:2,12:7}, bp: {11:4} },
+	  bu: {1:2,2:2,3:2,12:7}, bp: {11:4}, tag: 'drugchain' },
 	{ n: 'Military Outpost', s: 'MO', i: 'military_outpost',
 	  bu: {2:5,16:5,19:0}, bp: {} },
 	{ n: 'Nebula Plant', s: 'NP', i: 'nebula_plant',
-	  bu: {1:2,3:2,17:3}, bp: {2:35,12:4} },
+	  bu: {1:2,3:2,17:3}, bp: {2:35,12:4}, tag: 'support' },
 	{ n: 'Neural Laboratory', s: 'NL', i: 'neural_laboratory',
 	  bu: {1:2,2:2,3:2,4:12,11:2}, bp: {28:16} },
 	{ n: 'Optics Research Center', s: 'ORC', i: 'optics_research_center',
@@ -129,15 +130,15 @@ Building.CATALOGUE = [
 	{ n: 'Radiation Collector', s: 'RC', i: 'radiation_collector',
 	  bu: {1:1,2:3,3:1}, bp: {19:6} },
 	{ n: 'Recyclotron', s: 'Rcy', i: 'recyclotron',
-	  bu: {2:3,13:1,21:5}, bp: {1:7,3:5} },
+	  bu: {2:3,13:1,21:5}, bp: {1:7,3:5}, tag: 'support' },
 	{ n: 'Robot Factory', s: 'RF', i: 'robot_factory',
 	  bu: {1:2,2:2,3:2,6:1,7:4,18:2}, bp: {8:3} },
 	{ n: 'Slave Camp', s: 'SC', i: 'slave_camp',
-	  bu: {1:3,2:1,3:3,11:2,15:2}, bp: {50:3} },
+	  bu: {1:3,2:1,3:3,11:2,15:2}, bp: {50:3}, tag: 'drugchain' },
 	{ n: 'Smelting Facility', s: 'Sm', i: 'smelting_facility',
 	  bu: {1:2,2:2,3:2,5:4}, bp: {6:6} },
 	{ n: 'Space Farm', s: 'SF', i: 'space_farm',
-	  bu: {2:4,4:5}, bp: {1:8,3:2,21:1} },
+	  bu: {2:4,4:5}, bp: {1:8,3:2,21:1}, tag: 'support' },
 	{ n: 'Stim Chip Mill', s: 'SCM', i: 'stim_chip_mill',
 	  bu: {1:3,3:3,7:2,17:2,28:44}, bp: {29:2} },
 	{ n: 'Faction Starbase', s: 'F', i: 'starbase_f',
@@ -310,7 +311,7 @@ Building.storageKey = function( universeKey, location ) {
 // modify the app anywhere but here.
 
 Building.createFromStorage = function( key, a ) {
-	// V2.2 format is a 3- to 12-element array.
+	// V3.1 format is a 3- to 18-element array.
 	var loc = parseInt( key.substr(1) );
 	return new Building(
 		loc,
@@ -330,7 +331,8 @@ Building.createFromStorage = function( key, a ) {
 		unpackArray( a[13] ), // sellAtPrices, 
 		v(a[14]), //credits
 		v(a[15]), //psb
-		unpackArray( a[16] ) // amount
+		unpackArray( a[16] ), // amount
+		v(a[17]) // tag
 	);
 
 	// Apparently, we get `null` for items where we set as `undefined` when
@@ -389,7 +391,10 @@ Building.removeStorage = function( loc, ukey, callback ) {
 	}
 }
 
-
+Building.makeTag = function( typeId ) {
+	// Puts the tag in tag unless there is no tag then it's blank.
+	return Building.CATALOGUE[ typeId ].tag || ''
+}
 
 // 2.  Methods of Building instances.
 
@@ -674,7 +679,7 @@ Building.prototype.storageKey = function( universeKey ) {
 // anywhere but here.
 
 Building.prototype.toStorage = function() {
-	// V2.2 format is a 3 to 12-element array.
+	// V3.1 format is a 3 to 18-element array.
 	var a = [
 		this.sectorId,
 		this.typeId,
@@ -692,7 +697,8 @@ Building.prototype.toStorage = function() {
 		packArray( this.sellAtPrices ), 
 		this.credits, 
 		this.psb,
-		packArray( this.amount )
+		packArray( this.amount ),
+		this.tag
 	];
 
 	// Shave off the last undefined elements of this.  a.length should never
