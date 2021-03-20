@@ -57,7 +57,7 @@ function Building( loc, sectorId, typeId, time, owner, level, ticksLeft,
 	this.credits = credits ? parseInt( credits ) : undefined;
 	this.psb = psb ? true : false;
 	this.amount = amount || [];
-	this.tag = tag || Building.makeTag( typeId );
+	this.tag = this.typeId ? Building.makeTag( typeId ) : undefined;
 
 	// These three won't be used until they're needed.  But defining them
 	// already anyway so V8 can optimise.
@@ -393,7 +393,7 @@ Building.removeStorage = function( loc, ukey, callback ) {
 
 Building.makeTag = function( typeId ) {
 	// Puts the tag in tag unless there is no tag then it's blank.
-	return Building.CATALOGUE[ typeId ].tag || ''
+	return Building.CATALOGUE[ typeId ].tag
 }
 
 // 2.  Methods of Building instances.
