@@ -282,7 +282,7 @@ function parsePage() {
 
 		// Amount
 
-		amt = parseInt( tr.children[2].textContent );
+		amt = parseInt( tr.children[2].textContent.replaceAll(',', '') );
 		if ( isNaN(amt) )
 			return;
 
