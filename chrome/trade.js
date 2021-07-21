@@ -282,7 +282,7 @@ function parsePage() {
 
 		// Amount
 
-		amt = parseInt( tr.children[2].textContent );
+		amt = parseInt( tr.children[2].textContent.replace( /,/g, '' ) );
 		if ( isNaN(amt) )
 			return;
 
@@ -307,7 +307,7 @@ function parsePage() {
 				return;
 
 			// Minimum
-			lim = parseInt( tr.children[4].textContent );
+			lim = parseInt( tr.children[4].textContent.replace( /,/g, '' ) );
 			if ( isNaN(lim) )
 				return;
 
@@ -321,7 +321,7 @@ function parsePage() {
 			bal = -bal;
 
 			// Maximum
-			lim = parseInt( tr.children[5].textContent );
+			lim = parseInt( tr.children[5].textContent.replace( /,/g, '' ) );
 			if ( isNaN(lim) )
 				return;
 
