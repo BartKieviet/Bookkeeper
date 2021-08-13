@@ -37,7 +37,11 @@ function setup() {
 			3: 160 
 		} // All thrives on these three
 		
-		let pop = ( pToSell / ( Math.log10( pPrice / pBase[ pComm ] ) + 1 ) - 20 ) / ( 20 * pUpkeep [ pComm ] ) ;
+		// pPrice is rounded, pToSell is not.
+		let pPriceMax = pPrice + 0.4, pPriceMin = pPrice - 0.5;
+		
+		let popMin = ( pToSell / ( Math.log10( pPriceMax / pBase[ pComm ] ) + 1 ) - 20 ) / ( 20 * pUpkeep [ pComm ] ) ;
+		let popMax = ( pToSell / ( Math.log10( pPriceMin / pBase[ pComm ] ) + 1 ) - 20 ) / ( 20 * pUpkeep [ pComm ] ) ;
 		// The derivation of the above formula is left as an exercise for the reader ( https://abstrusegoose.com/12 )
 		
 		// Right, we got the population estimate. Time to display it.
@@ -45,13 +49,12 @@ function setup() {
 		let tr = document.createElement( 'tr' );
 		let td = document.createElement( 'td' );
 		let i = document.createElement( 'i' );
-		i.textContent = 'Population estimate: ';
+		i.textContent = 'population estimated via ' + Commodities.getCommodity( pComm ).n.toLowerCase() + ':';
 		td.appendChild( i );
 		tr.appendChild( td );
 		td = document.createElement( 'td' );
-		td.textContent = Math.round( pop * 1000 );
+		td.textContent = Math.round( popMin * 1000 ).toLocaleString('en-GB') + ' - ' + Math.round( popMax * 1000 ).toLocaleString('en-GB');
 		tr.appendChild( td );
-
 		tab.appendChild( tr );
 		pBuy.parentNode.appendChild( tab );
 	}
