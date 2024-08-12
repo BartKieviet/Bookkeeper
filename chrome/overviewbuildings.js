@@ -57,7 +57,7 @@ function setup() {
 		h1 = document.createElement( 'h1' );
 		h1.className = 'bookkeeper';
 		img = document.createElement( 'img' );
-		img.src = chrome.extension.getURL( 'icons/24.png' );
+		img.src = chrome.runtime.getURL( 'icons/24.png' );
 		img.title = 'Pardus Bookkeeper';
 		h1.appendChild( img );
 		h1.appendChild( document.createTextNode('Bookkeeping') );
@@ -69,7 +69,7 @@ function setup() {
 			h1 = document.createElement( 'h1' );
 			h1.className = 'bookkeeper';
 			img = document.createElement( 'img' );
-			img.src = chrome.extension.getURL( 'icons/24.png' );
+			img.src = chrome.runtime.getURL( 'icons/24.png' );
 			img.title = 'Pardus Bookkeeper';
 			h1.appendChild( img );
 			h1.appendChild( document.createTextNode('Planets and starbases') );

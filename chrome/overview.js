@@ -329,6 +329,17 @@ var COLUMN_SPECS = {
 		}
 	},
 
+	pclass: {
+		header: simpleHeader( 'Class' ),
+		cell: simpleCell(
+			function( b ) { return b.getTypeShortName() } ),
+		sortId: 'type',
+		sort: function( a, b ) {
+			return compare(
+				a.getTypeShortName(), b.getTypeShortName() );
+		}
+	},
+
 	owner: {
 		header: simpleHeader( 'Owner' ),
 		cell: simpleCell( function( b ) { return b.owner } ),
@@ -338,6 +349,18 @@ var COLUMN_SPECS = {
 
 	level: {
 		header: simpleHeader('Lvl'), //this.options.psbFlag ? simpleHeader( 'population') : simpleHeader( 'Lvl' ),
+		cell: rCell( function( b ) { 
+					let rvalue = '?';
+					!isNaN(b.level) ? rvalue = b.level.toLocaleString( 'en' ) : null; 
+					return rvalue 
+					} ),
+		sortId: 'level',
+		sort: function( a, b ) { return a.level - b.level; },
+		initDesc: true
+	},
+
+	pop: {
+		header: simpleHeader('Pop'),
 		cell: rCell( function( b ) { 
 					let rvalue = '?';
 					b.level ? rvalue = b.level.toLocaleString( 'en' ) : null; 
@@ -489,41 +512,67 @@ function makeSpec( buildings ) {
 	var spec, before, after;
 
 	spec = { columns: [] };
-	this.options.psbFlag ? null : spec [ 'foot' ] = foot ;
 	before = [];
 	after = [];
 
-	// In compact mode, if all buildings are in the same sector, then we
-	// want to show only cooords.
-	if ( this.options.mode === 'compact' && this.filter.singleSector )
-		before.push( COLUMN_SPECS.coords );
-	else
-		before.push( COLUMN_SPECS.location );
+	//colum spec of PSB style
+	if (this.options.psbFlag) {
+		// In compact mode, if all buildings are in the same sector, then we
+		// want to show only cooords.
+		if ( this.options.mode === 'compact' && this.filter.singleSector )
+			before.push( COLUMN_SPECS.coords );
+		else
+			before.push( COLUMN_SPECS.location );
 
-	// If we have coords, show a "distance" column.
-	if ( this.filter.coords )
-		before.push( makeDistanceSpec(this.filter) );
+		// If we have coords, show a "distance" column.
+		if ( this.filter.coords )
+			before.push( makeDistanceSpec(this.filter) );
 
-	// Always show type and owner.
-	before.push( COLUMN_SPECS.type );
-	if ( !this.options.psbFlag ) {
-		before.push( COLUMN_SPECS.owner );
-	}
+		// Always show class.
+		before.push( COLUMN_SPECS.pclass );
 
-	// In full mode, show the level, too.
-	if ( this.options.mode !== 'compact' )
-		before.push( COLUMN_SPECS.level );
+		// In full mode, show the population, too
+		if ( this.options.mode !== 'compact' ) {
+			before.push( COLUMN_SPECS.pop );
+		}
 
-	// Always show the time
-	after.push( COLUMN_SPECS.time );
+		// Always show the time
+		after.push( COLUMN_SPECS.time );
 
-	// Always show ticks
-	after.push( COLUMN_SPECS.ticksLeft );
-
-	// PSB option
-	if ( this.options.psbFlag ) {
+		// Always show ticks
+		after.push( COLUMN_SPECS.ticksLeft );
 		after.push( COLUMN_SPECS.ticksToDowngrade );
 		after.push( COLUMN_SPECS.credits );
+	} else { // spec of non-psb style (aka buildings only)
+
+		spec [ 'foot' ] = foot ;
+
+		// In compact mode, if all buildings are in the same sector, then we
+		// want to show only cooords.
+		if ( this.options.mode === 'compact' && this.filter.singleSector )
+			before.push( COLUMN_SPECS.coords );
+		else
+			before.push( COLUMN_SPECS.location );
+
+		// If we have coords, show a "distance" column.
+		if ( this.filter.coords )
+			before.push( makeDistanceSpec(this.filter) );
+
+		// Always show type and owner.
+		before.push( COLUMN_SPECS.type );
+		before.push( COLUMN_SPECS.owner );
+
+		// In full mode, show the level, too.
+		// show planet style
+		if ( this.options.mode !== 'compact' ) {
+			before.push( COLUMN_SPECS.level );
+		}
+
+		// Always show the time
+		after.push( COLUMN_SPECS.time );
+
+		// Always show ticks
+		after.push( COLUMN_SPECS.ticksLeft );
 	}
 
 	// In full mode, show the "remove" button
@@ -719,7 +768,7 @@ function setImgSrc( img, dim ) {
 	if ( cmd ) {
 		if ( dim )
 			cmd += 'dim';
-		img.src = chrome.extension.getURL( 'icons/' + cmd + '.svg' );
+		img.src = chrome.runtime.getURL( 'icons/' + cmd + '.svg' );
 	}
 }
 

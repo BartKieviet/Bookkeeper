@@ -36,10 +36,10 @@ function configure( data ) {
 	// Insert a bit of script to execute in the page's context and
 	// send us what we need. And add a listener to receive the call.
 	window.addEventListener( 'message', onMessage, false );
-	var script = document.createElement( 'script' );
-	script.type = 'text/javascript';
-	script.textContent = "(function() {var fn=function(){window.postMessage({bookkeeper:2,loc:typeof(userloc)=='undefined'?null:userloc},window.location.origin);};if(typeof(addUserFunction)=='function') addUserFunction(fn);fn();})();";
-	document.body.appendChild(script);
+	var script = document.createElement('script');
+	script.src = chrome.runtime.getURL('inject/script.js');
+	script.onload = function() { this.remove(); };
+	(document.head || document.documentElement).appendChild(script);
 
 	// Find the Cargo box and append our UI to it.
 	cargoBox = document.getElementById( 'cargo_content' );
@@ -50,7 +50,7 @@ function configure( data ) {
 	ui.id = 'bookkeeper-ui';
 	e = document.createElement( 'img' );
 	e.title = 'Pardus Bookkeeper';
-	e.src = chrome.extension.getURL( 'icons/16.png' );
+	e.src = chrome.runtime.getURL( 'icons/16.png' );
 	ui.appendChild( e );
 	e = document.createElement( 'button' );
 	e.id = 'bookkeeper-navticks-switch';
@@ -110,7 +110,7 @@ function onMessage( event ) {
 	var element, sector, m, x, y,
 	    data = event.data;
 
-	if ( data.bookkeeper != 2 )
+	if ( data.pardus_bookkeeper !== 2 )
 		return;
 
 	event.stopPropagation();
@@ -314,8 +314,8 @@ function onToggleOverview( event ) {
 			'/overlay.js',
 			'/navov.js'
 		]
-	}
 
+	}
 	// Empty function is actually needed.
 	chrome.runtime.sendMessage( op, function() {} );
 }

@@ -15,10 +15,10 @@ function configure() {
 	if ( !configured ) {
 		universe = Universe.fromDocument( document );
 		window.addEventListener( 'message', onGameMessage );
-		script = document.createElement( 'script' );
-		script.type = 'text/javascript';
-		script.textContent = "(function(){var fn=function(){window.postMessage({pardus_bookkeeper:1,loc:typeof(userloc)==='undefined'?null:userloc,time:typeof(milliTime)==='undefined'?null:milliTime,player_buy_price:typeof(player_buy_price)==='undefined'?null:player_buy_price,player_sell_price:typeof(player_sell_price)==='undefined'?null:player_sell_price,amount:typeof(amount)==='undefined'?null:amount,amount_max:typeof(amount_max)==='undefined'?null:amount_max,amount_min:typeof(amount_min)==='undefined'?null:amount_min},window.location.origin);};if(typeof(addUserFunction)==='function')addUserFunction(fn);fn();})();";
-		document.body.appendChild( script );
+		var script = document.createElement('script');
+		script.src = chrome.runtime.getURL('inject/script.js');
+		script.onload = function() { this.remove(); };
+		(document.head || document.documentElement).appendChild(script);
 		configured = true;
 	}
 }
@@ -378,7 +378,7 @@ function updateBuilding( storeItems, building, callback ) {
 		building.setUpkeep( pageData.upkeep );
 		building.setProduction( pageData.production );
 		
-		if (building.typeId == 17) { // MO. We basically redo our upkeep/ticksleft based on the entered grid strength, 15 at default.
+		if (building.typeId == 17) { // MO. We basically redo our upkeep/ticksleft based on the entered grid strength, 0 at default.
 			if (!document.getElementById( 'bookkeeper-grid' )) 
 				buildMODOM( building );
 			
@@ -490,7 +490,7 @@ function buildMODOM( building ) {
 	gridInput.type = 'textarea';
 	gridInput.size = '1';
 	gridInput.id = 'bookkeeper-grid';
-	building.level ? gridInput.value = building.level : gridInput.value = 15;
+	building.level ? gridInput.value = building.level : gridInput.value = 0;
 	td.setAttribute( 'colspan', '4' );
 	td.setAttribute( 'align', 'right' );
 	td.appendChild( gridInput );

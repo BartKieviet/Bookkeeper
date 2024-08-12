@@ -40,8 +40,9 @@ div.bookkeeper-overview > div > img {
 }
 
 div.bookkeeper-overview > p {
-	color: #777;
-	font-size: x-small;
+	color: #888;
+	text-align: left;
+	font-size: small;
 	margin: 8px 0;
 }
 
@@ -199,7 +200,7 @@ div#bookkeeper-quick-buttons label {
 div#bookkeeper-quick-buttons > label:first-child {
 	background: #A1A1AF;
 	color: #00001C;
-	font-size: 12px;
+	font-size: small;
 	font-weight: bold;
 	margin-bottom: 3px;
 	padding: 1px 0;

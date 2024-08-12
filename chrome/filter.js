@@ -202,7 +202,7 @@ Filter.prototype.makeHumanDescription = function() {
 	var parts;
 
 	if ( !this.filtering )
-		return 'Showing all tracked buildings.';
+		return 'Showing all tracked objects.';
 
 	parts = [ 'Showing' ];
 

@@ -17,18 +17,10 @@ configure();
 function configure() {
 	if (!configured) {
 		document.defaultView.addEventListener( 'message', onGameMessage );
-		var script = document.createElement( 'script' );
-		script.type = 'text/javascript';
-		var s = "\
-(function() {var fn=function(){window.postMessage({pardus_bookkeeper:3,\
-loc:typeof(userloc)=='undefined'?null:userloc,\
-time:typeof(milliTime)=='undefined'?null:milliTime,\
-ship_space:typeof(ship_space)=='undefined'?null:ship_space,\
-obj_space:typeof(obj_space)=='undefined'?null:obj_space,\
-},window.location.origin);};\
-if(typeof(addUserFunction)=='function')addUserFunction(fn);fn();})();";
-		script.textContent = s;
-		document.body.appendChild( script );
+		var script = document.createElement('script');
+		script.src = chrome.runtime.getURL('inject/script.js');
+		script.onload = function() { this.remove(); };
+		(document.head || document.documentElement).appendChild(script);
 		configured = true;
 	}
 }
@@ -139,7 +131,7 @@ function requestUpdateGUI( haveData ) {
 	div.id = 'bookkeeper-quick-buttons';
 	label = document.createElement( 'label' );
 	img = document.createElement( 'img' );
-	img.src = chrome.extension.getURL( 'icons/16.png' );
+	img.src = chrome.runtime.getURL( 'icons/16.png' );
 	img.title = 'Pardus Bookkeeper';
 	label.appendChild( img );
 	label.appendChild( document.createTextNode('Quick Buttons') );
@@ -249,7 +241,7 @@ function addUI() {
 
 	label = document.createElement( 'label' );
 	img = document.createElement( 'img' );
-	img.src = chrome.extension.getURL( 'icons/16.png' );
+	img.src = chrome.runtime.getURL( 'icons/16.png' );
 	img.title = 'Pardus Bookkeeper';
 	label.appendChild( img );
 	label.appendChild( document.createTextNode('Quick Buttons') );

@@ -15,10 +15,10 @@ function configure() {
 	var script;
 	if ( !configured ) {
 		window.addEventListener( 'message', onGameMessage );
-		script = document.createElement( 'script' );
-		script.type = 'text/javascript';
-		script.textContent = "(function(){var fn=function(){window.postMessage({pardus_bookkeeper:1,loc:typeof(userloc)==='undefined'?null:userloc,time:typeof(milliTime)==='undefined'?null:milliTime,psbCredits:typeof(obj_credits)==='undefined'?null:obj_credits},window.location.origin);};if(typeof(addUserFunction)==='function')addUserFunction(fn);fn();})();";
-		document.body.appendChild( script );
+		var script = document.createElement('script');
+		script.src = chrome.runtime.getURL('inject/script.js');
+		script.onload = function() { this.remove(); };
+		(document.head || document.documentElement).appendChild(script);
 		configured = true;
 	}
 }
@@ -31,7 +31,7 @@ function onGameMessage( event ) {
 	if ( !data || data.pardus_bookkeeper != 1 ) {
 		return;
 	}
-
+	
 	userloc = parseInt( data.loc );
 	time = Math.floor( parseInt( data.time ) / 1000 ); //Yes Vicky I wrote that.
 	psbCredits = parseInt( data.psbCredits );
@@ -51,7 +51,7 @@ function setup() {
 
 	img = document.createElement( 'img' );
 	img.title = 'Pardus Bookkeeper';
-	img.src = chrome.extension.getURL( 'icons/16.png' );
+	img.src = chrome.runtime.getURL( 'icons/16.png' );
 	container.appendChild( img );
 
 	button = document.createElement( 'button' );
