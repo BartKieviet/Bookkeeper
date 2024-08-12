@@ -3,7 +3,6 @@
     "extension_pages": "script-src 'self'; object-src 'self'"
   },
   "background": {
-    "persistent": false,
     "service_worker": "background.js"
   },
   "content_scripts": [
@@ -99,13 +98,13 @@
         "*://*.pardus.at/starbase_trade.php*"
       ],
       "js": [
-        "/functions.js",
-        "/commodity.js",
-        "/sector.js",
-        "/building.js",
-        "/table.js",
-        "/filter.js",
-        "/overview.js",
+        "functions.js",
+        "commodity.js",
+        "sector.js",
+        "building.js",
+        "table.js",
+        "filter.js",
+        "overview.js",
         "overlay.js",
         "starbasetrade.js"
       ],
@@ -118,8 +117,8 @@
   ],
   "description": "User trade interface enhancements for the online game Pardus",
   "manifest_version": 3,
-  "minimum_chrome_version": "61",
-  "name": "Pardus Bookkeeper Continued",
+  "minimum_chrome_version": "88",
+  "name": "Pardus Bookkeeper",
   "permissions": [
     "notifications",
     "storage"
